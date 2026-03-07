@@ -851,8 +851,8 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
     ${whereClause}
     ORDER BY
       CASE WHEN available_for_sale THEN 0 ELSE 1 END,
-      ${rankExpr} DESC,
-      title ASC
+      ROUND(${rankExpr}::numeric, 0) DESC,
+      RANDOM()
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
   params.push(limit, offset);

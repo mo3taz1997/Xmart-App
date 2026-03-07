@@ -420,6 +420,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (mergedProducts.length > 0) {
+            for (let i = mergedProducts.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [mergedProducts[i], mergedProducts[j]] = [mergedProducts[j], mergedProducts[i]];
+            }
             const sfLang = language === 'ar' ? 'AR' : 'EN';
             const collectionData = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language: sfLang });
             const allCollections = collectionData.collections.edges.map((edge: any) => edge.node);
