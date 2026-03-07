@@ -285,6 +285,11 @@ const splashStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  logo: {
+    width: 180,
+    height: 180,
+    marginBottom: 25,
+  },
   tagline: {
     fontFamily: 'Cairo_600SemiBold',
     fontSize: 22,
@@ -419,6 +424,16 @@ export default function RootLayout() {
       } catch (_) {}
     }
     checkForUpdates();
+  }, []);
+
+  useEffect(() => {
+    async function lockOrientation() {
+      try {
+        const SO = await import("expo-screen-orientation");
+        await SO.lockAsync(SO.OrientationLock.PORTRAIT_UP);
+      } catch (e) {}
+    }
+    lockOrientation();
   }, []);
 
   if (!fontsLoaded) return null;
