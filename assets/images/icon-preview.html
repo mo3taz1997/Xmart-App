@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Icon Preview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; padding: 30px; }
+h2 { color: #fff; font-size: 18px; margin-bottom: 10px; text-align: center; }
+.phone-frame {
+  width: 320px; background: #000; border-radius: 36px; padding: 12px;
+  border: 3px solid #333; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.screen { background: #f2f2f7; border-radius: 28px; overflow: hidden; padding-bottom: 20px; }
+.status-bar { height: 44px; background: #f2f2f7; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 14px; font-weight: 600; }
+.notch { width: 120px; height: 28px; background: #000; border-radius: 0 0 18px 18px; margin: 0 auto; position: relative; top: -4px; }
+.app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px; padding: 20px 24px; }
+.app-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.app-icon { width: 60px; height: 60px; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.app-icon img { width: 100%; height: 100%; object-fit: cover; }
+.app-icon.placeholder { display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; }
+.app-name { font-size: 10px; color: #333; text-align: center; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock { display: flex; justify-content: center; gap: 20px; padding: 10px 30px; margin: 10px 16px 0; background: rgba(200,200,210,0.4); border-radius: 22px; }
+.dock .app-icon { width: 54px; height: 54px; border-radius: 13px; }
+
+.android-frame { width: 320px; }
+.android-screen { background: #1e1e2e; border-radius: 28px; padding: 20px 0; border: 3px solid #333; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.android-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 12px; padding: 30px 24px; }
+.android-icon { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.android-icon img { width: 100%; height: 100%; object-fit: cover; }
+.android-icon.placeholder { display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; }
+.android-name { font-size: 10px; color: #ccc; text-align: center; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.android-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.both { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div class="both">
+
+<div>
+<h2>iPhone</h2>
+<div class="phone-frame">
+<div class="screen">
+  <div class="notch"></div>
+  <div class="app-grid">
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#5fc3f5,#1b8dd6)">📷</div>
+      <span class="app-name">Camera</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#34c759,#248a3d)">📞</div>
+      <span class="app-name">Phone</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#ff9500,#c93400)">⚙️</div>
+      <span class="app-name">Settings</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon"><img src="icon.png" alt="Xmart"></div>
+      <span class="app-name">Xmart</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#ff2d55,#c21a47)">🎵</div>
+      <span class="app-name">Music</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#007aff,#0040dd)">✉️</div>
+      <span class="app-name">Mail</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#5856d6,#3634a3)">🗓</div>
+      <span class="app-name">Calendar</span>
+    </div>
+    <div class="app-item">
+      <div class="app-icon placeholder" style="background:linear-gradient(135deg,#ff9f0a,#ff6723)">🛒</div>
+      <span class="app-name">Store</span>
+    </div>
+  </div>
+  <div class="dock">
+    <div class="app-icon placeholder" style="background:linear-gradient(135deg,#34c759,#248a3d)">💬</div>
+    <div class="app-icon placeholder" style="background:linear-gradient(135deg,#007aff,#0040dd)">🌐</div>
+    <div class="app-icon"><img src="icon.png" alt="Xmart"></div>
+    <div class="app-icon placeholder" style="background:linear-gradient(135deg,#ff2d55,#c21a47)">📸</div>
+  </div>
+</div>
+</div>
+</div>
+
+<div>
+<h2>Android</h2>
+<div class="android-frame">
+<div class="android-screen">
+  <div class="android-grid">
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#4285f4,#1a73e8)">📷</div>
+      <span class="android-name">Camera</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#34a853,#1e8e3e)">📞</div>
+      <span class="android-name">Phone</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#9aa0a6,#5f6368)">⚙️</div>
+      <span class="android-name">Settings</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon"><img src="icon.png" alt="Xmart"></div>
+      <span class="android-name">Xmart</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#ea4335,#c5221f)">▶️</div>
+      <span class="android-name">YouTube</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#fbbc04,#f29900)">📧</div>
+      <span class="android-name">Gmail</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#4285f4,#1a73e8)">🗺</div>
+      <span class="android-name">Maps</span>
+    </div>
+    <div class="android-item">
+      <div class="android-icon placeholder" style="background:linear-gradient(135deg,#34a853,#1e8e3e)">🛒</div>
+      <span class="android-name">Play Store</span>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>
