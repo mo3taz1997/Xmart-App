@@ -1,64 +1,212 @@
-// template
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
-import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+import { NativeTabs, Icon, Label, Badge } from "expo-router/unstable-native-tabs";
 import { BlurView } from "expo-blur";
-import { SymbolView } from "expo-symbols";
-import { Platform, StyleSheet, useColorScheme } from "react-native";
-import React from "react";
+import { Platform, StyleSheet, View, Pressable, Animated as RNAnimated, Dimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useRef, useCallback } from "react";
+import { useNavigation } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { useCart } from "@/contexts/CartContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { tabEvents } from "@/lib/tabEvents";
 
-import Colors from "@/constants/colors";
+const TAB_CONFIGS = [
+  { name: 'index', icon: 'home', iconOutline: 'home-outline', activeColor: '#C4A265', event: 'homeTabPress' },
+  { name: 'categories', icon: 'grid', iconOutline: 'grid-outline', activeColor: '#4CAF50', event: 'categoriesTabPress' },
+  { name: 'wishlist', icon: 'heart', iconOutline: 'heart-outline', activeColor: '#E53935', event: 'wishlistTabPress' },
+  { name: 'cart', icon: 'cart', iconOutline: 'cart-outline', activeColor: '#FFC107', event: 'cartTabPress' },
+  { name: 'profile', icon: 'person', iconOutline: 'person-outline', activeColor: '#248CCC', event: 'profileTabPress' },
+] as const;
 
-//IMPORTANT: iOS 26 Exists, feel free to use NativeTabs for native tabs with liquid glass support.
+function AnimatedTabButton({ children, onPress, onLongPress, accessibilityState, style, activeColor }: any) {
+  const focused = accessibilityState?.selected;
+  const scaleAnim = useRef(new RNAnimated.Value(1)).current;
+  const bgAnim = useRef(new RNAnimated.Value(focused ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    RNAnimated.timing(bgAnim, {
+      toValue: focused ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [focused]);
+
+  const handlePressIn = useCallback(() => {
+    RNAnimated.spring(scaleAnim, {
+      toValue: 0.85,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 200,
+    }).start();
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    RNAnimated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 4,
+      tension: 150,
+    }).start();
+  }, []);
+
+  const handlePress = useCallback(() => {
+    onPress?.();
+  }, [onPress]);
+
+  const pillBg = bgAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', activeColor + '18'],
+  });
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onLongPress={onLongPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[style, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}
+    >
+      <RNAnimated.View style={{
+        transform: [{ scale: scaleAnim }],
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+      }}>
+        <RNAnimated.View style={{
+          backgroundColor: pillBg,
+          borderRadius: 16,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {children}
+        </RNAnimated.View>
+      </RNAnimated.View>
+    </Pressable>
+  );
+}
+
 function NativeTabLayout() {
+  const { cartCount } = useCart();
+  const { t } = useLanguage();
+  const navigation = useNavigation();
+
+  const handleTriggerPress = useCallback((tabName: string) => {
+    const state = (navigation as any).getState?.();
+    const currentRouteName = state?.routes?.[state?.index]?.name;
+    if (currentRouteName === tabName) {
+      const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
+      if (tab?.event) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        tabEvents.emit(tab.event);
+      }
+    }
+  }, [navigation]);
+
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger name="index" onPress={() => handleTriggerPress('index')}>
         <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
+        <Label>{t('tab.home')}</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="categories" onPress={() => handleTriggerPress('categories')}>
+        <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
+        <Label>{t('tab.categories')}</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="wishlist" onPress={() => handleTriggerPress('wishlist')}>
+        <Icon sf={{ default: "heart", selected: "heart.fill" }} />
+        <Label>{t('tab.wishlist')}</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="cart" onPress={() => handleTriggerPress('cart')}>
+        <Icon sf={{ default: "cart", selected: "cart.fill" }} />
+        <Label>{t('tab.cart')}</Label>
+        {cartCount > 0 ? <Badge>{String(cartCount)}</Badge> : null}
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile" onPress={() => handleTriggerPress('profile')}>
+        <Icon sf={{ default: "person", selected: "person.fill" }} />
+        <Label>{t('tab.profile')}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
 
 function ClassicTabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { cartCount } = useCart();
+  const { t, isRTL } = useLanguage();
+  const { colors, isDark } = useTheme();
+  const safeAreaInsets = useSafeAreaInsets();
+  const isWeb = Platform.OS === "web";
+  const isIOS = Platform.OS === "ios";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        tabBarInactiveTintColor: Colors.light.tabIconDefault,
-        headerShown: true,
+        headerShown: false,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: Platform.select({
-            ios: "transparent",
-            android: isDark ? "#000" : "#fff",
-          }),
-          borderTopWidth: 0,
+          backgroundColor: isIOS ? "transparent" : colors.surface,
+          borderTopWidth: isWeb ? 1 : 0,
+          borderTopColor: colors.border,
           elevation: 0,
-        },
+          paddingBottom: isWeb ? 0 : safeAreaInsets.bottom,
+          direction: isRTL ? "rtl" : "ltr",
+          ...(isWeb ? { height: 84 } : {}),
+          ...(Dimensions.get('window').width >= 768 ? { paddingHorizontal: Math.round(Dimensions.get('window').width * 0.15) } : {}),
+        } as any,
         tabBarBackground: () =>
-          Platform.OS === "ios" ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+          isIOS ? (
+            <BlurView intensity={100} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+          ) : isWeb ? (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
           ) : null,
+        tabBarLabelStyle: {
+          fontFamily: "Cairo_600SemiBold",
+          fontSize: 9,
+          flexShrink: 0,
+        },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => (
-            <SymbolView name="house" tintColor={color} size={24} />
-          ),
-        }}
-      />
+      {TAB_CONFIGS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: t(`tab.${tab.name === 'index' ? 'home' : tab.name}` as any),
+            tabBarActiveTintColor: tab.activeColor,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? tab.icon : tab.iconOutline}
+                size={size}
+                color={color}
+              />
+            ),
+            ...(tab.name === 'cart' ? {
+              tabBarBadge: cartCount > 0 ? cartCount : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: '#FFC107',
+                color: '#000',
+                fontSize: 10,
+                fontFamily: 'Cairo_600SemiBold',
+              },
+            } : {}),
+            tabBarButton: (props: any) => (
+              <AnimatedTabButton {...props} activeColor={tab.activeColor} />
+            ),
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: () => {
+              if (navigation.isFocused() && tab.event) {
+                tabEvents.emit(tab.event);
+              }
+            },
+          })}
+        />
+      ))}
     </Tabs>
   );
 }
