@@ -2532,8 +2532,8 @@ async function advancedSearch(options) {
     ${whereClause}
     ORDER BY
       CASE WHEN available_for_sale THEN 0 ELSE 1 END,
-      ${rankExpr} DESC,
-      title ASC
+      ROUND(${rankExpr}::numeric, 0) DESC,
+      RANDOM()
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
   params.push(limit, offset);
@@ -3100,6 +3100,10 @@ async function registerRoutes(app2) {
             });
           }
           if (mergedProducts.length > 0) {
+            for (let i = mergedProducts.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [mergedProducts[i], mergedProducts[j]] = [mergedProducts[j], mergedProducts[i]];
+            }
             const sfLang = language === "ar" ? "AR" : "EN";
             const collectionData = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language: sfLang });
             const allCollections = collectionData.collections.edges.map((edge) => edge.node);
