@@ -292,17 +292,17 @@ export default function CartScreen() {
     <View style={[styles.container, { paddingTop: insets.top + webTopInset }]}>
         <PageBackground isDark={isDark} />
         <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('cart.title')}</Text>
         <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 12 }}>
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/search'); }}>
+            <Ionicons name="search-outline" size={22} color={colors.text} />
+          </Pressable>
           {lines.length > 0 ? (
             <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); clearCart(); }}>
               <Ionicons name="trash-outline" size={22} color={colors.primary} />
             </Pressable>
           ) : null}
-          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/search'); }}>
-            <Ionicons name="search-outline" size={22} color={colors.text} />
-          </Pressable>
         </View>
-        <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('cart.title')}</Text>
       </View>
 
       <FlatList
