@@ -270,7 +270,7 @@ export default function AddressesScreen() {
         >
           {addresses.map((addr, i) => (
             <Animated.View key={addr.id} entering={FadeInDown.delay(i * 50).duration(300)}>
-              <View style={[styles.addressCard, addr.isDefault && styles.addressCardDefault]}>
+              <Pressable onPress={() => openEditForm(addr)} style={[styles.addressCard, addr.isDefault && styles.addressCardDefault]}>
                 <View style={[styles.cardTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View style={{ flex: 1 }}>
                     <View style={[styles.labelRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
@@ -284,10 +284,10 @@ export default function AddressesScreen() {
                     <Text style={[styles.nameText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.firstName} {addr.lastName}</Text>
                   </View>
                   <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                    <Pressable onPress={() => openEditForm(addr)} style={styles.actionBtn}>
+                    <Pressable onPress={() => openEditForm(addr)} hitSlop={8} style={styles.actionBtn}>
                       <Ionicons name="create-outline" size={18} color={colors.primary} />
                     </Pressable>
-                    <Pressable onPress={() => handleDelete(addr)} style={styles.actionBtn}>
+                    <Pressable onPress={() => handleDelete(addr)} hitSlop={8} style={styles.actionBtn}>
                       <Ionicons name="trash-outline" size={18} color={colors.error} />
                     </Pressable>
                   </View>
@@ -304,7 +304,7 @@ export default function AddressesScreen() {
                     </View>
                   )}
                 </View>
-              </View>
+              </Pressable>
             </Animated.View>
           ))}
         </ScrollView>

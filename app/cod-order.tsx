@@ -324,7 +324,7 @@ export default function CodOrderScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL, language, formatCurrency } = useLanguage();
   const { cart, addToCart, clearCart, getCheckoutUrl } = useCart();
-  const { customer } = useAuth();
+  const { customer, token } = useAuth();
 
   const autoEmail = customer?.email || '';
   const formValues = useRef({
@@ -382,6 +382,7 @@ export default function CodOrderScreen() {
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isAddressModified, setIsAddressModified] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [productQty, setProductQty] = useState(parseInt(params.qty || '1'));
   const [upsellItems, setUpsellItems] = useState<Array<{ variantId: string; productTitle: string; variantTitle?: string; quantity: number; price: string; currency: string; imageUrl?: string }>>([]);
@@ -430,7 +431,7 @@ export default function CodOrderScreen() {
 
   useEffect(() => {
     if (customer?.email) {
-      api.getAddresses(customer.email).then((addrs: any[]) => {
+      api.getAddresses(customer.email, token || undefined).then((addrs: any[]) => {
         setSavedAddresses(addrs);
         const defaultAddr = addrs.find((a: any) => a.isDefault);
         if (defaultAddr) {
@@ -452,6 +453,7 @@ export default function CodOrderScreen() {
     phoneRef.current?.setNativeProps({ text: addr.phone || '' });
     addressRef.current?.setNativeProps({ text: addr.address || '' });
     cityRef.current?.setNativeProps({ text: addr.city || '' });
+    setFormKey(k => k + 1);
     setIsAddressModified(false);
   };
 
@@ -1481,6 +1483,7 @@ export default function CodOrderScreen() {
               </ScrollView>
             )}
 
+            <View key={formKey}>
             <View style={[s.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={s.formField}>
                 <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.firstName')} *</Text>
@@ -1521,6 +1524,7 @@ export default function CodOrderScreen() {
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.notes')}</Text>
             <ScrollableInput inputRef={notesRef} style={[s.input, s.textArea, { textAlign: isRTL ? 'right' : 'left', textAlignVertical: 'top' }]} defaultValue={formValues.current.notes} onChangeText={(v: string) => { formValues.current.notes = v; }} placeholder={t('checkout.notesPlaceholder')} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
+            </View>
 
             {!!customer && (!selectedAddressId || isAddressModified) && (
               <Pressable
