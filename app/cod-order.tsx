@@ -382,7 +382,7 @@ export default function CodOrderScreen() {
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isAddressModified, setIsAddressModified] = useState(false);
-  const [formKey, setFormKey] = useState(0);
+  const [addressLoaded, setAddressLoaded] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [productQty, setProductQty] = useState(parseInt(params.qty || '1'));
   const [upsellItems, setUpsellItems] = useState<Array<{ variantId: string; productTitle: string; variantTitle?: string; quantity: number; price: string; currency: string; imageUrl?: string }>>([]);
@@ -435,8 +435,20 @@ export default function CodOrderScreen() {
         setSavedAddresses(addrs);
         const defaultAddr = addrs.find((a: any) => a.isDefault);
         if (defaultAddr) {
-          applyAddress(defaultAddr);
+          formValues.current.firstName = defaultAddr.firstName || '';
+          formValues.current.lastName = defaultAddr.lastName || '';
+          formValues.current.phone = defaultAddr.phone || '';
+          formValues.current.address = defaultAddr.address || '';
+          formValues.current.city = defaultAddr.city || '';
           setSelectedAddressId(defaultAddr.id);
+          setAddressLoaded(prev => !prev);
+          setTimeout(() => {
+            firstNameInputRef.current?.setNativeProps({ text: defaultAddr.firstName || '' });
+            lastNameRef.current?.setNativeProps({ text: defaultAddr.lastName || '' });
+            phoneRef.current?.setNativeProps({ text: defaultAddr.phone || '' });
+            addressRef.current?.setNativeProps({ text: defaultAddr.address || '' });
+            cityRef.current?.setNativeProps({ text: defaultAddr.city || '' });
+          }, 200);
         }
       }).catch(() => {});
     }
@@ -453,7 +465,7 @@ export default function CodOrderScreen() {
     phoneRef.current?.setNativeProps({ text: addr.phone || '' });
     addressRef.current?.setNativeProps({ text: addr.address || '' });
     cityRef.current?.setNativeProps({ text: addr.city || '' });
-    setFormKey(k => k + 1);
+    setAddressLoaded(prev => !prev);
     setIsAddressModified(false);
   };
 
@@ -1483,7 +1495,7 @@ export default function CodOrderScreen() {
               </ScrollView>
             )}
 
-            <View key={formKey}>
+            <View key={String(addressLoaded)}>
             <View style={[s.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={s.formField}>
                 <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.firstName')} *</Text>
@@ -1952,6 +1964,7 @@ function getStyles(colors: typeof Colors.dark, isDark: boolean, isRTL: boolean) 
     },
     addressInput: {
       flex: 1,
+      height: 46,
     },
     locationIconBtn: {
       width: 42,

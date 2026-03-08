@@ -2,36 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Platform,
   TextInput, ActivityIndicator, Alert, Modal, Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
-
-function ScrollableInput({ inputRef, style, onFocusCb, onBlurCb, ...props }: any) {
-  const [focused, setFocused] = useState(false);
-  const localRef = useRef<TextInput>(null);
-  const ref = inputRef || localRef;
-  return (
-    <View style={{ position: 'relative' }}>
-      <TextInput
-        ref={ref}
-        style={style}
-        onFocus={(e: any) => { setFocused(true); onFocusCb?.(e); }}
-        onBlur={(e: any) => { setFocused(false); onBlurCb?.(e); }}
-        {...props}
-      />
-      {!focused && (
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={() => ref.current?.focus()}
-        />
-      )}
-    </View>
-  );
-}
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageBackground from '@/components/PageBackground';
@@ -268,169 +245,177 @@ export default function AddressesScreen() {
           contentContainerStyle={{ padding: 16, paddingBottom: 40 + webBottomInset }}
           showsVerticalScrollIndicator={false}
         >
-          {addresses.map((addr, i) => (
-            <Animated.View key={addr.id} entering={FadeInDown.delay(i * 50).duration(300)}>
-              <Pressable onPress={() => openEditForm(addr)} style={[styles.addressCard, addr.isDefault && styles.addressCardDefault]}>
-                <View style={[styles.cardTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  <View style={{ flex: 1 }}>
-                    <View style={[styles.labelRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      {addr.label && <Text style={[styles.labelText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.label}</Text>}
-                      {addr.isDefault && (
-                        <View style={styles.defaultBadge}>
-                          <Text style={styles.defaultBadgeText}>{t('addresses.default')}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.nameText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.firstName} {addr.lastName}</Text>
+          {addresses.map((addr) => (
+            <Pressable
+              key={addr.id}
+              onPress={() => openEditForm(addr)}
+              style={({ pressed }) => [styles.addressCard, addr.isDefault && styles.addressCardDefault, { opacity: pressed ? 0.85 : 1 }]}
+            >
+              <View style={[styles.cardTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={{ flex: 1 }}>
+                  <View style={[styles.labelRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    {addr.label && <Text style={[styles.labelText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.label}</Text>}
+                    {addr.isDefault && (
+                      <View style={styles.defaultBadge}>
+                        <Text style={styles.defaultBadgeText}>{t('addresses.default')}</Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                    <Pressable onPress={() => openEditForm(addr)} hitSlop={8} style={styles.actionBtn}>
-                      <Ionicons name="create-outline" size={18} color={colors.primary} />
-                    </Pressable>
-                    <Pressable onPress={() => handleDelete(addr)} hitSlop={8} style={styles.actionBtn}>
-                      <Ionicons name="trash-outline" size={18} color={colors.error} />
-                    </Pressable>
-                  </View>
+                  <Text style={[styles.nameText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.firstName} {addr.lastName}</Text>
                 </View>
-                <View style={styles.cardDetails}>
+                <Pressable
+                  onPress={(e) => { e.stopPropagation(); handleDelete(addr); }}
+                  hitSlop={10}
+                  style={styles.actionBtn}
+                >
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
+                </Pressable>
+              </View>
+              <View style={styles.cardDetails}>
+                <View style={[styles.detailRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <Ionicons name="call-outline" size={15} color={colors.textSecondary} />
+                  <Text style={styles.detailText}>{addr.phone}</Text>
+                </View>
+                {addr.address && (
                   <View style={[styles.detailRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                    <Ionicons name="call-outline" size={15} color={colors.textSecondary} />
-                    <Text style={styles.detailText}>{addr.phone}</Text>
+                    <Ionicons name="location-outline" size={15} color={colors.textSecondary} />
+                    <Text style={[styles.detailText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.address}{addr.city ? `, ${addr.city}` : ''}</Text>
                   </View>
-                  {addr.address && (
-                    <View style={[styles.detailRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <Ionicons name="location-outline" size={15} color={colors.textSecondary} />
-                      <Text style={[styles.detailText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.address}{addr.city ? `, ${addr.city}` : ''}</Text>
-                    </View>
-                  )}
-                </View>
-              </Pressable>
-            </Animated.View>
+                )}
+              </View>
+              <View style={[styles.editHint, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Ionicons name="create-outline" size={14} color={colors.primary} />
+                <Text style={styles.editHintText}>{isRTL ? 'اضغط للتعديل' : 'Tap to edit'}</Text>
+              </View>
+            </Pressable>
           ))}
         </ScrollView>
       )}
 
-      <Modal visible={showForm} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 16) + webBottomInset }]}>
-            <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.modalTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                {editingAddress ? t('addresses.edit') : t('addresses.add')}
-              </Text>
-              <Pressable onPress={() => setShowForm(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
+      <Modal visible={showForm} animationType="slide" transparent={false}>
+        <View style={[styles.fullScreenModal, { paddingTop: insets.top + webTopInset }]}>
+          <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Pressable onPress={() => setShowForm(false)} style={styles.closeBtn}>
+              <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color={colors.text} />
+            </Pressable>
+            <Text style={[styles.modalTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {editingAddress ? t('addresses.edit') : t('addresses.add')}
+            </Text>
+            <View style={{ width: 36 }} />
+          </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 20, paddingBottom: Math.max(insets.bottom, 16) + webBottomInset + 20 }}
+            onScrollBeginDrag={() => { if (Platform.OS !== 'web') Keyboard.dismiss(); }}
+          >
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('addresses.label')}</Text>
+              <TextInput
+                style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                value={label}
+                onChangeText={setLabel}
+                placeholder={t('addresses.labelPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="next"
+              />
             </View>
-            <Pressable style={{ flex: 1 }} onPress={() => { if (Platform.OS !== 'web') Keyboard.dismiss(); }}>
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('addresses.label')}</Text>
-                <ScrollableInput
+            <View style={[styles.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={styles.formHalf}>
+                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.firstName')} *</Text>
+                <TextInput
                   style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                  value={label}
-                  onChangeText={setLabel}
-                  placeholder={t('addresses.labelPlaceholder')}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder={t('auth.firstName')}
                   placeholderTextColor={colors.textMuted}
                   returnKeyType="next"
+                  onSubmitEditing={() => lastNameRef.current?.focus()}
                 />
               </View>
-              <View style={[styles.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                <View style={styles.formHalf}>
-                  <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.firstName')} *</Text>
-                  <ScrollableInput
-                    style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    placeholder={t('auth.firstName')}
-                    placeholderTextColor={colors.textMuted}
-                    returnKeyType="next"
-                    onSubmitEditing={() => lastNameRef.current?.focus()}
-                  />
-                </View>
-                <View style={styles.formHalf}>
-                  <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.lastName')} *</Text>
-                  <ScrollableInput
-                    inputRef={lastNameRef}
-                    style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    value={lastName}
-                    onChangeText={setLastName}
-                    placeholder={t('auth.lastName')}
-                    placeholderTextColor={colors.textMuted}
-                    returnKeyType="next"
-                    onSubmitEditing={() => phoneRef.current?.focus()}
-                  />
-                </View>
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.phone')} *</Text>
-                <ScrollableInput
-                  inputRef={phoneRef}
-                  style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }, phoneError ? { borderColor: '#E53935', borderWidth: 1.5 } : {}]}
-                  value={phone}
-                  onChangeText={(v: string) => { setPhone(v); if (phoneError) setPhoneError(''); }}
-                  placeholder="07XXXXXXXX"
+              <View style={styles.formHalf}>
+                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.lastName')} *</Text>
+                <TextInput
+                  ref={lastNameRef}
+                  style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder={t('auth.lastName')}
                   placeholderTextColor={colors.textMuted}
-                  keyboardType="phone-pad"
                   returnKeyType="next"
-                  maxLength={10}
-                  onSubmitEditing={() => addressRef.current?.focus()}
+                  onSubmitEditing={() => phoneRef.current?.focus()}
                 />
-                {!!phoneError && (
-                  <Text style={{ color: '#E53935', fontSize: 12, fontFamily: 'Cairo_400Regular', textAlign: isRTL ? 'right' : 'left', marginTop: 4 }}>
-                    {phoneError}
-                  </Text>
-                )}
               </View>
-              <Pressable
-                style={({ pressed }) => [styles.locationBtn, { opacity: pressed ? 0.85 : 1, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                onPress={detectLocation}
-                disabled={isLocating}
-              >
-                {isLocating ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Ionicons name="navigate" size={18} color={colors.primary} />
-                )}
-                <Text style={styles.locationBtnText}>{t('addresses.detectLocation')}</Text>
-              </Pressable>
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.phone')} *</Text>
+              <TextInput
+                ref={phoneRef}
+                style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }, phoneError ? { borderColor: '#E53935', borderWidth: 1.5 } : {}]}
+                value={phone}
+                onChangeText={(v: string) => { setPhone(v); if (phoneError) setPhoneError(''); }}
+                placeholder="07XXXXXXXX"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+                maxLength={10}
+                onSubmitEditing={() => addressRef.current?.focus()}
+              />
+              {!!phoneError && (
+                <Text style={{ color: '#E53935', fontSize: 12, fontFamily: 'Cairo_400Regular', textAlign: isRTL ? 'right' : 'left', marginTop: 4 }}>
+                  {phoneError}
+                </Text>
+              )}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.locationBtn, { opacity: pressed ? 0.85 : 1, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              onPress={detectLocation}
+              disabled={isLocating}
+            >
+              {isLocating ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="navigate" size={18} color={colors.primary} />
+              )}
+              <Text style={styles.locationBtnText}>{t('addresses.detectLocation')}</Text>
+            </Pressable>
 
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.address')}</Text>
-                <ScrollableInput
-                  inputRef={addressRef}
-                  style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder={t('checkout.addressPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  returnKeyType="next"
-                  onSubmitEditing={() => cityRef.current?.focus()}
-                />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.city')}</Text>
-                <ScrollableInput
-                  inputRef={cityRef}
-                  style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                  value={city}
-                  onChangeText={setCity}
-                  placeholder={t('checkout.cityPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                />
-              </View>
-              <Pressable
-                style={[styles.defaultToggle, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                onPress={() => setIsDefault(!isDefault)}
-              >
-                <Ionicons
-                  name={isDefault ? "checkbox" : "square-outline"}
-                  size={22}
-                  color={isDefault ? colors.primary : colors.textMuted}
-                />
-                <Text style={[styles.defaultToggleText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('addresses.setDefault')}</Text>
-              </Pressable>
-            </ScrollView>
-          </Pressable>
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.address')}</Text>
+              <TextInput
+                ref={addressRef}
+                style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                value={address}
+                onChangeText={setAddress}
+                placeholder={t('checkout.addressPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="next"
+                onSubmitEditing={() => cityRef.current?.focus()}
+              />
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.city')}</Text>
+              <TextInput
+                ref={cityRef}
+                style={[styles.formInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                value={city}
+                onChangeText={setCity}
+                placeholder={t('checkout.cityPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <Pressable
+              style={[styles.defaultToggle, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              onPress={() => setIsDefault(!isDefault)}
+            >
+              <Ionicons
+                name={isDefault ? "checkbox" : "square-outline"}
+                size={22}
+                color={isDefault ? colors.primary : colors.textMuted}
+              />
+              <Text style={[styles.defaultToggleText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('addresses.setDefault')}</Text>
+            </Pressable>
+
             <Pressable
               style={({ pressed }) => [styles.saveBtn, { opacity: pressed || isSaving ? 0.8 : 1 }]}
               onPress={handleSave}
@@ -442,7 +427,7 @@ export default function AddressesScreen() {
                 <Text style={styles.saveBtnText}>{t('addresses.save')}</Text>
               )}
             </Pressable>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -468,14 +453,14 @@ function getStyles(colors: typeof Colors.dark, isDark: boolean) {
     defaultBadge: { backgroundColor: colors.primary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
     defaultBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 10, color: colors.primary },
     nameText: { fontFamily: 'Cairo_600SemiBold', fontSize: 15, color: colors.text },
-    cardActions: { gap: 4 },
-    actionBtn: { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+    actionBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' },
     cardDetails: { gap: 6 },
     detailRow: { alignItems: 'center', gap: 8 },
     detailText: { fontFamily: 'Cairo_400Regular', fontSize: 13, color: colors.textSecondary, flex: 1 },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-    modalHeader: { alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+    editHint: { alignItems: 'center', gap: 4, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
+    editHintText: { fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.primary },
+    fullScreenModal: { flex: 1, backgroundColor: colors.background },
+    modalHeader: { alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.header },
     modalTitle: { fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text, flex: 1 },
     closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' },
     formGroup: { marginBottom: 14 },
