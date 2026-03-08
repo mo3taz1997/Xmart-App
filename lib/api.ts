@@ -147,7 +147,7 @@ export const api = {
   getOrders: (email: string, token?: string) => request("GET", `/api/orders?email=${encodeURIComponent(email)}`, undefined, token),
   getDeliveryCodes: (orderNames: string[]) => request("POST", `/api/orders/delivery-codes`, { orderNames }),
 
-  getAddresses: (email: string) => request("GET", `/api/addresses?email=${encodeURIComponent(email)}`),
+  getAddresses: (email: string, token?: string) => request("GET", `/api/addresses?email=${encodeURIComponent(email)}`, undefined, token),
   addAddress: (data: {
     email: string;
     label?: string;
