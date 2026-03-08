@@ -1014,6 +1014,23 @@ export const QUERIES = {
         firstName
         lastName
         phone
+        addresses(first: 20) {
+          edges {
+            node {
+              id
+              address1
+              address2
+              city
+              company
+              country
+              firstName
+              lastName
+              phone
+              province
+              zip
+            }
+          }
+        }
         orders(first: 50, sortKey: PROCESSED_AT, reverse: true) {
           edges {
             node {

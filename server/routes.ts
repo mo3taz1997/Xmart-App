@@ -1122,12 +1122,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const email = req.query.email as string;
       if (!email) return res.status(400).json({ error: "email is required" });
-      const addresses = await db
+
+      const localAddresses = await db
         .select()
         .from(customerAddresses)
         .where(eq(customerAddresses.customerEmail, email))
         .orderBy(desc(customerAddresses.isDefault), asc(customerAddresses.createdAt));
-      res.json(addresses);
+
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      let shopifyAddresses: any[] = [];
+      if (token) {
+        try {
+          const lang = ((req.query.lang as string) || "EN").toUpperCase();
+          const data = await shopifyFetch(QUERIES.GET_CUSTOMER, {
+            customerAccessToken: token,
+            language: lang,
+          });
+          if (data.customer?.addresses?.edges) {
+            shopifyAddresses = data.customer.addresses.edges.map((edge: any) => {
+              const addr = edge.node;
+              const addressParts = [addr.address1, addr.address2].filter(Boolean);
+              return {
+                id: `shopify_${addr.id}`,
+                customerEmail: email,
+                label: addr.company || null,
+                firstName: addr.firstName || '',
+                lastName: addr.lastName || '',
+                phone: addr.phone || '',
+                address: addressParts.join(', ') || null,
+                city: addr.city || null,
+                country: addr.country || null,
+                province: addr.province || null,
+                zip: addr.zip || null,
+                isDefault: false,
+                source: 'shopify',
+              };
+            });
+          }
+        } catch (e: any) {
+          console.error("[Addresses] Error fetching Shopify addresses:", e.message);
+        }
+      }
+
+      const localWithSource = localAddresses.map(a => ({ ...a, source: 'local' }));
+
+      const existingPhones = new Set(localAddresses.map(a => a.phone?.replace(/\s/g, '')));
+      const existingNames = new Set(localAddresses.map(a => `${a.firstName}_${a.lastName}_${a.city || ''}`));
+      const filteredShopify = shopifyAddresses.filter(sa => {
+        const phoneClean = sa.phone?.replace(/\s/g, '') || '';
+        const nameKey = `${sa.firstName}_${sa.lastName}_${sa.city || ''}`;
+        return !existingPhones.has(phoneClean) && !existingNames.has(nameKey);
+      });
+
+      res.json([...localWithSource, ...filteredShopify]);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
