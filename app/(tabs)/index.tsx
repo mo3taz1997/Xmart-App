@@ -1395,6 +1395,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
       <FlatList
         data={products}
         horizontal
+        inverted={isRTL}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_: any, i: number) => String(i)}
         contentContainerStyle={{ paddingHorizontal: 16 }}
