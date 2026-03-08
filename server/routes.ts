@@ -1251,7 +1251,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put(/^\/api\/addresses\/shopify_gid:\/\/shopify\/MailingAddress\/(\d+)$/, async (req: Request, res: Response) => {
+    req.params = { id: `shopify_${req.params[0]}` } as any;
+    return handleAddressUpdate(req, res);
+  });
+  app.delete(/^\/api\/addresses\/shopify_gid:\/\/shopify\/MailingAddress\/(\d+)$/, async (req: Request, res: Response) => {
+    req.params = { id: `shopify_${req.params[0]}` } as any;
+    return handleAddressDelete(req, res);
+  });
+
   app.put("/api/addresses/:id", async (req: Request, res: Response) => {
+    return handleAddressUpdate(req, res);
+  });
+
+  async function handleAddressUpdate(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const { email, label, firstName, lastName, phone, address, city, isDefault } = req.body;
@@ -1341,9 +1354,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  });
+  }
 
   app.delete("/api/addresses/:id", async (req: Request, res: Response) => {
+    return handleAddressDelete(req, res);
+  });
+
+  async function handleAddressDelete(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const customerToken = req.headers.authorization?.replace("Bearer ", "");
@@ -1396,7 +1413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  });
+  }
 
   app.post("/api/checkout/auto-complete", async (req: Request, res: Response) => {
     try {
