@@ -1258,8 +1258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerToken = req.headers.authorization?.replace("Bearer ", "");
 
       if (id.startsWith("shopify_")) {
-        const numericId = id.replace("shopify_", "");
-        const shopifyGid = `gid://shopify/MailingAddress/${numericId}`;
+        const rawId = id.replace("shopify_", "");
+        const shopifyGid = rawId.startsWith("gid://") ? rawId : `gid://shopify/MailingAddress/${rawId}`;
         if (customerToken) {
           try {
             const shopifyAddr: any = {
@@ -1349,8 +1349,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerToken = req.headers.authorization?.replace("Bearer ", "");
 
       if (id.startsWith("shopify_")) {
-        const numericId = id.replace("shopify_", "");
-        const shopifyGid = `gid://shopify/MailingAddress/${numericId}`;
+        const rawId = id.replace("shopify_", "");
+        const shopifyGid = rawId.startsWith("gid://") ? rawId : `gid://shopify/MailingAddress/${rawId}`;
         if (customerToken) {
           try {
             console.log("[Addresses] Deleting Shopify address:", shopifyGid);
