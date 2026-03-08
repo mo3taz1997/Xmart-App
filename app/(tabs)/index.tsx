@@ -1392,6 +1392,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
           <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.primary} />
         </Pressable>
       </View>
+      <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
       <FlatList
         data={products}
         horizontal
@@ -1409,7 +1410,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
           const compareAt = p.compareAtPriceRange?.minVariantPrice?.amount || p.compareAtPrice;
           const imgUrl = p.images?.edges?.[0]?.node?.url || p.imageUrl || p.image || null;
           return (
-            <View style={{ width: CARD_W_CP }}>
+            <View style={{ width: CARD_W_CP, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
               <ProductCard
                 handle={p.handle}
                 title={title}
@@ -1425,6 +1426,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
           );
         }}
       />
+      </View>
     </View>
   );
 }
