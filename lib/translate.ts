@@ -1,6 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetch } from 'expo/fetch';
-
 const CACHE_PREFIX = 'translate_cache_';
 const memoryCache: Record<string, string> = {};
 
