@@ -735,10 +735,10 @@
 
   <div id="page-notifications" style="display:none;">
     <div class="page-header">
-      <h1>الإشعارات</h1>
+      <h1 data-i18n="الإشعارات">الإشعارات</h1>
       <button class="btn btn-primary" onclick="openNotifModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        إرسال إشعار
+        <span data-i18n="إرسال إشعار">إرسال إشعار</span>
       </button>
     </div>
     <div id="notifList"></div>
@@ -1401,59 +1401,59 @@
 <div class="modal-overlay" id="notifModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>إرسال إشعار جديد</h3>
+      <h3 data-i18n="إرسال إشعار جديد">إرسال إشعار جديد</h3>
       <button class="btn-icon" onclick="closeModal('notifModal')">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label>العنوان (عربي) *</label>
+        <label data-i18n="العنوان (عربي) *">العنوان (عربي) *</label>
         <input type="text" id="notifTitleAr" placeholder="عنوان الإشعار بالعربي">
       </div>
       <div class="form-group">
-        <label>العنوان (إنجليزي) *</label>
+        <label data-i18n="العنوان (إنجليزي) *">العنوان (إنجليزي) *</label>
         <input type="text" id="notifTitleEn" placeholder="Notification title in English">
       </div>
       <div class="form-group">
-        <label>النص (عربي)</label>
+        <label data-i18n="النص (عربي)">النص (عربي)</label>
         <textarea id="notifBodyAr" rows="3" placeholder="نص الإشعار بالعربي" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-family:Cairo,sans-serif;font-size:14px;resize:vertical;"></textarea>
       </div>
       <div class="form-group">
-        <label>النص (إنجليزي)</label>
+        <label data-i18n="النص (إنجليزي)">النص (إنجليزي)</label>
         <textarea id="notifBodyEn" rows="3" placeholder="Notification body in English" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-family:Cairo,sans-serif;font-size:14px;resize:vertical;"></textarea>
       </div>
       <div class="form-group">
-        <label>رابط الصورة (اختياري)</label>
+        <label data-i18n="رابط الصورة (اختياري)">رابط الصورة (اختياري)</label>
         <input type="text" id="notifImageUrl" placeholder="https://example.com/image.jpg">
       </div>
       <div class="form-group">
-        <label>نوع الرابط</label>
+        <label data-i18n="نوع الرابط">نوع الرابط</label>
         <select id="notifLinkType" onchange="onNotifLinkTypeChange()">
-          <option value="none">بدون رابط</option>
-          <option value="collection">مجموعة (Collection)</option>
-          <option value="product">منتج</option>
-          <option value="url">رابط خارجي</option>
+          <option value="none" data-i18n="بدون رابط">بدون رابط</option>
+          <option value="collection" data-i18n="مجموعة (Collection)">مجموعة (Collection)</option>
+          <option value="product" data-i18n="منتج">منتج</option>
+          <option value="url" data-i18n="رابط خارجي">رابط خارجي</option>
         </select>
       </div>
       <div class="form-group" id="notifLinkSearchGroup" style="display:none;">
-        <label id="notifSearchLabel">بحث</label>
+        <label id="notifSearchLabel" data-i18n="بحث">بحث</label>
         <div style="position:relative;">
           <input type="text" id="notifLinkSearch" placeholder="ابحث..." oninput="onNotifLinkSearch()" autocomplete="off">
           <div id="notifSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-top:4px;"></div>
         </div>
       </div>
       <div class="form-group" id="notifSelectedItem" style="display:none;">
-        <label>تم الاختيار</label>
+        <label data-i18n="تم الاختيار">تم الاختيار</label>
         <div id="notifSelectedDisplay" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(36,140,204,0.06);border-radius:8px;border:1px solid rgba(36,140,204,0.2);"></div>
       </div>
       <div class="form-group" id="notifLinkUrlGroup" style="display:none;">
-        <label>الرابط الخارجي</label>
+        <label data-i18n="الرابط الخارجي">الرابط الخارجي</label>
         <input type="text" id="notifLinkValue" placeholder="https://example.com">
       </div>
       <input type="hidden" id="notifLinkValueHidden" value="">
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('notifModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="sendNotification()">إرسال</button>
+      <button class="btn btn-outline" onclick="closeModal('notifModal')" data-i18n="إلغاء">إلغاء</button>
+      <button class="btn btn-primary" onclick="sendNotification()" data-i18n="إرسال">إرسال</button>
     </div>
   </div>
 </div>
@@ -1588,11 +1588,51 @@ const ADMIN_TRANS = {
   'اختر الأقسام': 'Select Categories',
   /* Notification modal */
   'إرسال إشعار جديد': 'Send New Notification',
+  'العنوان (عربي) *': 'Title (Arabic) *',
+  'العنوان (إنجليزي) *': 'Title (English) *',
+  'النص (عربي)': 'Body (Arabic)',
+  'النص (إنجليزي)': 'Body (English)',
   'عنوان الإشعار (عربي)': 'Notification Title (Arabic)',
   'عنوان الإشعار (إنجليزي)': 'Notification Title (English)',
   'نص الإشعار (عربي)': 'Notification Body (Arabic)',
   'نص الإشعار (إنجليزي)': 'Notification Body (English)',
   'إرسال للجميع': 'Send to All',
+  'إرسال': 'Send',
+  'إلغاء': 'Cancel',
+  'حفظ': 'Save',
+  'نوع الرابط': 'Link Type',
+  'رابط الصورة (اختياري)': 'Image URL (optional)',
+  'بدون رابط': 'No Link',
+  'مجموعة (Collection)': 'Collection',
+  'منتج': 'Product',
+  'رابط خارجي': 'External URL',
+  'تم الاختيار': 'Selected',
+  'الرابط الخارجي': 'External Link',
+  /* Toast messages */
+  'تم تحديث القسم بنجاح': 'Section updated successfully',
+  'تم إضافة القسم بنجاح': 'Section added successfully',
+  'حدث خطأ': 'An error occurred',
+  'تم رفع الصورة بنجاح': 'Image uploaded successfully',
+  'تم تحديث البانر': 'Banner updated',
+  'تم إضافة البانر': 'Banner added',
+  'تم حذف البانر': 'Banner deleted',
+  'تم حفظ الإعدادات بنجاح': 'Settings saved successfully',
+  'حدث خطأ في حفظ الإعدادات': 'Error saving settings',
+  'تم إرسال الإشعار بنجاح': 'Notification sent successfully',
+  'حدث خطأ في إرسال الإشعار': 'Error sending notification',
+  'تم حذف الإشعار': 'Notification deleted',
+  'حدث خطأ في حذف الإشعار': 'Error deleting notification',
+  'تم حفظ الترتيب ✓': 'Order saved ✓',
+  'فشل حفظ الترتيب': 'Failed to save order',
+  'حدث خطأ في حفظ القسم': 'Error saving section',
+  'أدخل الرابط أولاً': 'Enter the URL first',
+  'حجم الملف كبير جداً. الحد الأقصى 5 ميغابايت': 'File too large. Max 5 MB',
+  'حدث خطأ في الرفع': 'Upload error',
+  'حدث خطأ في قراءة الملف': 'Error reading file',
+  'تم إضافة البراند ✓': 'Brand added ✓',
+  'تم تغيير الصورة بنجاح ✓': 'Image changed successfully ✓',
+  'فشل رفع الصورة': 'Image upload failed',
+  'الرجاء إدخال رابط الصورة': 'Please enter image URL',
   /* Dynamic content */
   'لا توجد أقسام بعد': 'No sections yet',
   'لا توجد بانرات': 'No banners',
@@ -1671,7 +1711,33 @@ function applyAdminLang() {
   });
   if (isEn) {
     translateDOM(document.querySelector('.main'));
+    translateDOM(document.querySelector('.sidebar'));
+  } else {
+    reverseTranslateDOM(document.querySelector('.main'));
   }
+}
+
+function reverseTranslateDOM(root) {
+  if (!root) return;
+  if (!reverseTranslateDOM._map) {
+    reverseTranslateDOM._map = {};
+    for (const [ar, en] of Object.entries(ADMIN_TRANS)) {
+      reverseTranslateDOM._map[en] = ar;
+    }
+  }
+  const rMap = reverseTranslateDOM._map;
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const replacements = [];
+  let node;
+  while ((node = walk.nextNode())) {
+    const trimmed = node.textContent.trim();
+    if (trimmed && rMap[trimmed] && node.parentElement && !['SCRIPT','STYLE','INPUT','TEXTAREA'].includes(node.parentElement.tagName)) {
+      replacements.push({ node, original: trimmed, translated: rMap[trimmed] });
+    }
+  }
+  replacements.forEach(({ node, original, translated }) => {
+    node.textContent = node.textContent.replace(original, translated);
+  });
 }
 
 function setAdminLang(lang) {
@@ -1699,7 +1765,7 @@ async function api(method, path, body) {
 
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  t.textContent = (adminLang === 'en' && ADMIN_TRANS[msg]) ? ADMIN_TRANS[msg] : msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => t.className = 'toast', 3000);
 }
@@ -1709,13 +1775,26 @@ function showPage(page) {
   document.getElementById('page-' + page).style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  const pageEl = document.getElementById('page-' + page);
   if (adminLang === 'en') {
-    setTimeout(() => translateDOM(document.getElementById('page-' + page)), 50);
+    setTimeout(() => translateDOM(pageEl), 50);
+  } else {
+    setTimeout(() => reverseTranslateDOM(pageEl), 50);
   }
 }
 
 function openModal(id) {
-  document.getElementById(id).classList.add('show');
+  const modal = document.getElementById(id);
+  modal.classList.add('show');
+  if (adminLang === 'en') {
+    setTimeout(() => {
+      modal.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = ADMIN_TRANS[key] || key;
+      });
+      translateDOM(modal);
+    }, 20);
+  }
 }
 
 function closeModal(id) {
@@ -4267,10 +4346,15 @@ async function deleteNotification(id) {
 
 function formatNotifDate(dateStr) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('ar-JO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const locale = adminLang === 'en' ? 'en-US' : 'ar-JO';
+  return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function getLinkTypeName(type) {
+  if (adminLang === 'en') {
+    const names = { none: 'No Link', collection: 'Collection', product: 'Product', url: 'External URL' };
+    return names[type] || type;
+  }
   const names = { none: 'بدون رابط', collection: 'مجموعة', product: 'منتج', url: 'رابط خارجي' };
   return names[type] || type;
 }
@@ -4279,7 +4363,7 @@ async function loadNotifications() {
   notifsList = await api('GET', '/api/admin/notifications');
   const list = document.getElementById('notifList');
   if (!notifsList || notifsList.length === 0) {
-    list.innerHTML = '<div class="card" style="text-align:center;padding:48px 24px;color:#888;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin-bottom:12px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><br>لا توجد إشعارات بعد<br><span style="font-size:13px">أرسل إشعارات لمستخدمي التطبيق من هنا</span></div>';
+    list.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px;color:#888;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin-bottom:12px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><br>${adminLang === 'en' ? 'No notifications yet' : 'لا توجد إشعارات بعد'}<br><span style="font-size:13px">${adminLang === 'en' ? 'Send notifications to app users from here' : 'أرسل إشعارات لمستخدمي التطبيق من هنا'}</span></div>`;
     return;
   }
   list.innerHTML = notifsList.map(n => `
@@ -4298,7 +4382,7 @@ async function loadNotifications() {
             ${n.linkType && n.linkType !== 'none' ? `<span style="font-size:12px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;">${getLinkTypeName(n.linkType)}: ${n.linkValue || ''}</span>` : ''}
             <button class="btn btn-outline" style="margin-right:auto;font-size:12px;padding:4px 12px;color:#e53935;border-color:#e53935;" onclick="deleteNotification('${n.id}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              حذف
+              ${adminLang === 'en' ? 'Delete' : 'حذف'}
             </button>
           </div>
         </div>
