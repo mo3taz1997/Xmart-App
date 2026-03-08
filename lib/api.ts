@@ -1,3 +1,5 @@
+import { fetch } from "expo/fetch";
+
 function getApiUrl(): string {
   let host = process.env.EXPO_PUBLIC_DOMAIN;
   if (!host) {

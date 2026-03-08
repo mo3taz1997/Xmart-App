@@ -110,7 +110,8 @@ function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }:
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: 'row' }}
+        style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}
       >
         {cats.map((cat: any) => {
           const catTitle = (language === 'ar' ? cat.titleAr : cat.titleEn) || '';
@@ -122,7 +123,7 @@ function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }:
                 alignItems: 'center',
                 opacity: pressed ? 0.7 : 1,
                 width: circleSize + 12,
-                transform: [{ scale: pressed ? 0.95 : 1 }],
+                transform: [{ scaleX: isRTL ? -1 : 1 }, { scale: pressed ? 0.95 : 1 }],
               })}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -423,28 +424,24 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
             </Text>
           </View>
         ) : (
-          <FlatList
-            ref={productsScrollRef as any}
-            data={products}
+          <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+          <ScrollView
+            ref={productsScrollRef}
             horizontal
-            inverted={isRTL}
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item: any) => item.id || item.handle}
             contentContainerStyle={{
               paddingHorizontal: 16,
               gap: 10,
               alignItems: 'flex-start',
             }}
-            initialNumToRender={4}
-            maxToRenderPerBatch={4}
-            windowSize={3}
-            renderItem={({ item }: { item: any }) => {
+          >
+            {products.map((item: any) => {
               const price = item.priceRange?.minVariantPrice?.amount || '0';
               const currency = item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
               const compareAt = item.compareAtPriceRange?.minVariantPrice?.amount;
               const imgUrl = item.images?.edges?.[0]?.node?.url || null;
               return (
-                <View style={{ width: HSCROLL_CARD_W }}>
+                <View key={item.id || item.handle} style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
                   <ProductCard
                     handle={item.handle}
                     title={item.title}
@@ -457,51 +454,51 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
                   />
                 </View>
               );
-            }}
-            ListFooterComponent={
-              !!activeTab?.handle && products.length * (HSCROLL_CARD_W + 10) + 32 > width ? (
-                <Pressable
-                  onPress={() => router.push({ pathname: '/collection/[handle]', params: { handle: activeTab.handle } })}
-                  style={{
-                    width: HSCROLL_CARD_W * 0.55,
-                    height: 220,
-                    borderRadius: 16,
-                    backgroundColor: TAB_PALETTE[activeIdx % TAB_PALETTE.length].bg,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    shadowColor: TAB_PALETTE[activeIdx % TAB_PALETTE.length].shadow,
-                    shadowOpacity: 0.35,
-                    shadowRadius: 12,
-                    shadowOffset: { width: 0, height: 6 },
-                    elevation: 8,
-                    alignSelf: 'center',
-                  }}
-                >
-                  <View style={{
-                    width: 44, height: 44, borderRadius: 22,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Ionicons
-                      name={isRTL ? 'chevron-back' : 'chevron-forward'}
-                      size={22} color="#fff"
-                    />
-                  </View>
-                  <Text style={{
-                    fontFamily: 'Cairo_700Bold',
-                    fontSize: 13,
-                    color: '#fff',
-                    textAlign: 'center',
-                    paddingHorizontal: 8,
-                    lineHeight: 20,
-                  }}>
-                    {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
-                  </Text>
-                </Pressable>
-              ) : undefined
-            }
-          />
+            })}
+            {activeTab?.handle && products.length * (HSCROLL_CARD_W + 10) + 32 > width && (
+              <Pressable
+                onPress={() => router.push({ pathname: '/collection/[handle]', params: { handle: activeTab.handle } })}
+                style={{
+                  width: HSCROLL_CARD_W * 0.55,
+                  height: 220,
+                  borderRadius: 16,
+                  backgroundColor: TAB_PALETTE[activeIdx % TAB_PALETTE.length].bg,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  shadowColor: TAB_PALETTE[activeIdx % TAB_PALETTE.length].shadow,
+                  shadowOpacity: 0.35,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 8,
+                  alignSelf: 'center',
+                  transform: isRTL ? [{ scaleX: -1 }] : [],
+                }}
+              >
+                <View style={{
+                  width: 44, height: 44, borderRadius: 22,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons
+                    name={isRTL ? 'chevron-back' : 'chevron-forward'}
+                    size={22} color="#fff"
+                  />
+                </View>
+                <Text style={{
+                  fontFamily: 'Cairo_700Bold',
+                  fontSize: 13,
+                  color: '#fff',
+                  textAlign: 'center',
+                  paddingHorizontal: 8,
+                  lineHeight: 20,
+                }}>
+                  {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
+                </Text>
+              </Pressable>
+            )}
+          </ScrollView>
+          </View>
         )}
       </RNAnimated.View>
     </View>
@@ -1398,7 +1395,6 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
       <FlatList
         data={products}
         horizontal
-        inverted={isRTL}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_: any, i: number) => String(i)}
         contentContainerStyle={{ paddingHorizontal: 16 }}
