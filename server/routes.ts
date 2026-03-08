@@ -1142,8 +1142,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             shopifyAddresses = data.customer.addresses.edges.map((edge: any) => {
               const addr = edge.node;
               const addressParts = [addr.address1, addr.address2].filter(Boolean);
+              const numericId = (addr.id || '').replace(/.*\//, '');
               return {
-                id: `shopify_${addr.id}`,
+                id: `shopify_${numericId}`,
+                shopifyGid: addr.id,
                 customerEmail: email,
                 label: addr.company || null,
                 firstName: addr.firstName || '',
@@ -1206,19 +1208,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             country: "JO",
           };
           if (label) shopifyAddr.company = label;
+          console.log("[Addresses] Creating Shopify address for customer, token length:", customerToken.length);
           const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_CREATE, {
             customerAccessToken: customerToken,
             address: shopifyAddr,
           });
+          console.log("[Addresses] Shopify create response:", JSON.stringify(data.customerAddressCreate));
           if (data.customerAddressCreate?.customerAddress?.id) {
             shopifyAddressId = data.customerAddressCreate.customerAddress.id;
+            console.log("[Addresses] Shopify address created:", shopifyAddressId);
           }
           if (data.customerAddressCreate?.customerUserErrors?.length) {
-            console.error("[Addresses] Shopify create errors:", data.customerAddressCreate.customerUserErrors);
+            console.error("[Addresses] Shopify create errors:", JSON.stringify(data.customerAddressCreate.customerUserErrors));
           }
         } catch (e: any) {
           console.error("[Addresses] Shopify address create failed:", e.message);
         }
+      } else {
+        console.log("[Addresses] No customer token provided, skipping Shopify sync");
       }
 
       const [newAddress] = await db
@@ -1247,7 +1254,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerToken = req.headers.authorization?.replace("Bearer ", "");
 
       if (id.startsWith("shopify_")) {
-        const shopifyId = id.replace("shopify_", "");
+        const numericId = id.replace("shopify_", "");
+        const shopifyGid = `gid://shopify/MailingAddress/${numericId}`;
         if (customerToken) {
           try {
             const shopifyAddr: any = {
@@ -1259,9 +1267,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               country: "JO",
             };
             if (label) shopifyAddr.company = label;
+            console.log("[Addresses] Updating Shopify address:", shopifyGid);
             const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_UPDATE, {
               customerAccessToken: customerToken,
-              id: shopifyId,
+              id: shopifyGid,
               address: shopifyAddr,
             });
             if (data.customerAddressUpdate?.customerUserErrors?.length) {
@@ -1302,26 +1311,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .returning();
       if (!updated) return res.status(404).json({ error: "Address not found" });
 
-      if (customerToken) {
-        try {
-          const shopifyAddr: any = {
-            firstName,
-            lastName,
-            phone,
-            address1: address || "",
-            city: city || "",
-            country: "JO",
-          };
-          if (label) shopifyAddr.company = label;
-          await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_CREATE, {
-            customerAccessToken: customerToken,
-            address: shopifyAddr,
-          });
-        } catch (e: any) {
-          console.error("[Addresses] Shopify sync on update failed:", e.message);
-        }
-      }
-
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1334,12 +1323,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerToken = req.headers.authorization?.replace("Bearer ", "");
 
       if (id.startsWith("shopify_")) {
-        const shopifyId = id.replace("shopify_", "");
+        const numericId = id.replace("shopify_", "");
+        const shopifyGid = `gid://shopify/MailingAddress/${numericId}`;
         if (customerToken) {
           try {
+            console.log("[Addresses] Deleting Shopify address:", shopifyGid);
             const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_DELETE, {
               customerAccessToken: customerToken,
-              id: shopifyId,
+              id: shopifyGid,
             });
             if (data.customerAddressDelete?.customerUserErrors?.length) {
               const errors = data.customerAddressDelete.customerUserErrors;
