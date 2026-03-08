@@ -1103,6 +1103,65 @@ export const QUERIES = {
     }
   `,
 
+  CUSTOMER_ADDRESS_CREATE: `
+    mutation CustomerAddressCreate($customerAccessToken: String!, $address: MailingAddressInput!) {
+      customerAddressCreate(customerAccessToken: $customerAccessToken, address: $address) {
+        customerAddress {
+          id
+          address1
+          address2
+          city
+          company
+          country
+          firstName
+          lastName
+          phone
+          province
+          zip
+        }
+        customerUserErrors {
+          code
+          field
+          message
+        }
+      }
+    }
+  `,
+
+  CUSTOMER_ADDRESS_UPDATE: `
+    mutation CustomerAddressUpdate($customerAccessToken: String!, $id: ID!, $address: MailingAddressInput!) {
+      customerAddressUpdate(customerAccessToken: $customerAccessToken, id: $id, address: $address) {
+        customerAddress {
+          id
+          address1
+          city
+          company
+          firstName
+          lastName
+          phone
+        }
+        customerUserErrors {
+          code
+          field
+          message
+        }
+      }
+    }
+  `,
+
+  CUSTOMER_ADDRESS_DELETE: `
+    mutation CustomerAddressDelete($customerAccessToken: String!, $id: ID!) {
+      customerAddressDelete(customerAccessToken: $customerAccessToken, id: $id) {
+        deletedCustomerAddressId
+        customerUserErrors {
+          code
+          field
+          message
+        }
+      }
+    }
+  `,
+
   CUSTOMER_UPDATE: `
     mutation CustomerUpdate($customerAccessToken: String!, $customer: CustomerUpdateInput!) {
       customerUpdate(customerAccessToken: $customerAccessToken, customer: $customer) {

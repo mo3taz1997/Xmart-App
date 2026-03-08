@@ -157,7 +157,7 @@ export const api = {
     address?: string;
     city?: string;
     isDefault?: boolean;
-  }) => request("POST", "/api/addresses", data),
+  }, token?: string) => request("POST", "/api/addresses", data, token),
   updateAddress: (id: string, data: {
     email?: string;
     label?: string;
@@ -167,8 +167,8 @@ export const api = {
     address?: string;
     city?: string;
     isDefault?: boolean;
-  }) => request("PUT", `/api/addresses/${id}`, data),
-  deleteAddress: (id: string) => request("DELETE", `/api/addresses/${id}`),
+  }, token?: string) => request("PUT", `/api/addresses/${id}`, data, token),
+  deleteAddress: (id: string, token?: string) => request("DELETE", `/api/addresses/${id}`, undefined, token),
 
   getCartUpsell: (handles: string[], lang?: string) =>
     request("POST", addLang("/api/cart-upsell", lang), { handles }),

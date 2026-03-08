@@ -191,7 +191,7 @@ export default function AddressesScreen() {
           address: address.trim() || undefined,
           city: city.trim() || undefined,
           isDefault,
-        });
+        }, token || undefined);
       } else {
         await api.addAddress({
           email: customer?.email || '',
@@ -202,7 +202,7 @@ export default function AddressesScreen() {
           address: address.trim() || undefined,
           city: city.trim() || undefined,
           isDefault,
-        });
+        }, token || undefined);
       }
       setShowForm(false);
       await loadAddresses();
@@ -224,7 +224,7 @@ export default function AddressesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.deleteAddress(addr.id);
+              await api.deleteAddress(addr.id, token || undefined);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               await loadAddresses();
             } catch {}
@@ -283,21 +283,14 @@ export default function AddressesScreen() {
                     </View>
                     <Text style={[styles.nameText, { textAlign: isRTL ? 'right' : 'left' }]}>{addr.firstName} {addr.lastName}</Text>
                   </View>
-                  {addr.source === 'shopify' ? (
-                    <View style={[styles.shopifyBadge]}>
-                      <Ionicons name="bag-outline" size={12} color="#5C6AC4" />
-                      <Text style={styles.shopifyBadgeText}>Shopify</Text>
-                    </View>
-                  ) : (
-                    <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <Pressable onPress={() => openEditForm(addr)} style={styles.actionBtn}>
-                        <Ionicons name="create-outline" size={18} color={colors.primary} />
-                      </Pressable>
-                      <Pressable onPress={() => handleDelete(addr)} style={styles.actionBtn}>
-                        <Ionicons name="trash-outline" size={18} color={colors.error} />
-                      </Pressable>
-                    </View>
-                  )}
+                  <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <Pressable onPress={() => openEditForm(addr)} style={styles.actionBtn}>
+                      <Ionicons name="create-outline" size={18} color={colors.primary} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDelete(addr)} style={styles.actionBtn}>
+                      <Ionicons name="trash-outline" size={18} color={colors.error} />
+                    </Pressable>
+                  </View>
                 </View>
                 <View style={styles.cardDetails}>
                   <View style={[styles.detailRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
@@ -475,8 +468,6 @@ function getStyles(colors: typeof Colors.dark, isDark: boolean) {
     defaultBadge: { backgroundColor: colors.primary + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
     defaultBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 10, color: colors.primary },
     nameText: { fontFamily: 'Cairo_600SemiBold', fontSize: 15, color: colors.text },
-    shopifyBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#5C6AC4' + '18', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    shopifyBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 10, color: '#5C6AC4' },
     cardActions: { gap: 4 },
     actionBtn: { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' },
     cardDetails: { gap: 6 },

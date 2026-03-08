@@ -1192,6 +1192,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ isDefault: false })
           .where(eq(customerAddresses.customerEmail, email));
       }
+
+      const customerToken = req.headers.authorization?.replace("Bearer ", "");
+      let shopifyAddressId: string | null = null;
+      if (customerToken) {
+        try {
+          const shopifyAddr: any = {
+            firstName,
+            lastName,
+            phone,
+            address1: address || "",
+            city: city || "",
+            country: "JO",
+          };
+          if (label) shopifyAddr.company = label;
+          const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_CREATE, {
+            customerAccessToken: customerToken,
+            address: shopifyAddr,
+          });
+          if (data.customerAddressCreate?.customerAddress?.id) {
+            shopifyAddressId = data.customerAddressCreate.customerAddress.id;
+          }
+          if (data.customerAddressCreate?.customerUserErrors?.length) {
+            console.error("[Addresses] Shopify create errors:", data.customerAddressCreate.customerUserErrors);
+          }
+        } catch (e: any) {
+          console.error("[Addresses] Shopify address create failed:", e.message);
+        }
+      }
+
       const [newAddress] = await db
         .insert(customerAddresses)
         .values({
@@ -1205,7 +1234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isDefault: isDefault || false,
         })
         .returning();
-      res.json(newAddress);
+      res.json({ ...newAddress, shopifyAddressId });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1215,6 +1244,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { email, label, firstName, lastName, phone, address, city, isDefault } = req.body;
+      const customerToken = req.headers.authorization?.replace("Bearer ", "");
+
+      if (id.startsWith("shopify_")) {
+        const shopifyId = id.replace("shopify_", "");
+        if (customerToken) {
+          try {
+            const shopifyAddr: any = {
+              firstName,
+              lastName,
+              phone,
+              address1: address || "",
+              city: city || "",
+              country: "JO",
+            };
+            if (label) shopifyAddr.company = label;
+            const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_UPDATE, {
+              customerAccessToken: customerToken,
+              id: shopifyId,
+              address: shopifyAddr,
+            });
+            if (data.customerAddressUpdate?.customerUserErrors?.length) {
+              const errors = data.customerAddressUpdate.customerUserErrors;
+              console.error("[Addresses] Shopify update errors:", errors);
+              return res.status(400).json({ error: errors[0]?.message || "Failed to update address in Shopify" });
+            }
+            res.json({ id, firstName, lastName, phone, address, city, label, isDefault, source: 'shopify' });
+          } catch (e: any) {
+            console.error("[Addresses] Shopify address update failed:", e.message);
+            res.status(500).json({ error: "Failed to update address" });
+          }
+        } else {
+          res.status(401).json({ error: "Authentication required" });
+        }
+        return;
+      }
+
       if (isDefault && email) {
         await db
           .update(customerAddresses)
@@ -1236,6 +1301,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(customerAddresses.id, id))
         .returning();
       if (!updated) return res.status(404).json({ error: "Address not found" });
+
+      if (customerToken) {
+        try {
+          const shopifyAddr: any = {
+            firstName,
+            lastName,
+            phone,
+            address1: address || "",
+            city: city || "",
+            country: "JO",
+          };
+          if (label) shopifyAddr.company = label;
+          await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_CREATE, {
+            customerAccessToken: customerToken,
+            address: shopifyAddr,
+          });
+        } catch (e: any) {
+          console.error("[Addresses] Shopify sync on update failed:", e.message);
+        }
+      }
+
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1245,6 +1331,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/addresses/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      const customerToken = req.headers.authorization?.replace("Bearer ", "");
+
+      if (id.startsWith("shopify_")) {
+        const shopifyId = id.replace("shopify_", "");
+        if (customerToken) {
+          try {
+            const data = await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_DELETE, {
+              customerAccessToken: customerToken,
+              id: shopifyId,
+            });
+            if (data.customerAddressDelete?.customerUserErrors?.length) {
+              const errors = data.customerAddressDelete.customerUserErrors;
+              console.error("[Addresses] Shopify delete errors:", errors);
+              return res.status(400).json({ error: errors[0]?.message || "Failed to delete address" });
+            }
+            res.json({ success: true });
+          } catch (e: any) {
+            console.error("[Addresses] Shopify address delete failed:", e.message);
+            res.status(500).json({ error: "Failed to delete address" });
+          }
+        } else {
+          res.status(401).json({ error: "Authentication required" });
+        }
+        return;
+      }
+
       const [deleted] = await db
         .delete(customerAddresses)
         .where(eq(customerAddresses.id, id))
