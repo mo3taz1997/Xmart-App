@@ -1696,7 +1696,7 @@ function closeModal(id) {
 }
 
 function getTypeBadge(type) {
-  const labels = {
+  const labelsAr = {
     hero_banner: '🖼️ البانر الرئيسي',
     banner_slider: 'سلايدر بانرات',
     category_row: '📂 صف الأقسام',
@@ -1712,13 +1712,30 @@ function getTypeBadge(type) {
     static_banner: '🖼️ بانر ثابت',
     product_slider: '🎠 سلايدر منتجات (تقليب تلقائي)',
   };
+  const labelsEn = {
+    hero_banner: '🖼️ Hero Banner',
+    banner_slider: 'Banner Slider',
+    category_row: '📂 Category Row',
+    selected_categories: '⭕ Selected Categories',
+    best_selling: '⭐ Best Selling',
+    mid_banner: '🖼️ Mid Banner',
+    new_arrivals: '🆕 New Arrivals',
+    product_grid: 'Product Grid',
+    collection_slider: 'Collection Slider',
+    multi_collection: '📑 Multi-Collection (Tabs)',
+    collection_showcase: '🖼️ Collection Showcase',
+    collection_products: '🛍️ Collection Products',
+    static_banner: '🖼️ Static Banner',
+    product_slider: '🎠 Product Slider (Auto-scroll)',
+  };
+  const labels = adminLang === 'en' ? labelsEn : labelsAr;
   return `<span class="section-type-badge badge-${type.replace('_','-')}">${labels[type] || type}</span>`;
 }
 
 function getLangBadge(lang) {
-  if (lang === 'ar') return '<span style="background:#fff3e0;color:#e65100;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;">عربي</span>';
+  if (lang === 'ar') return `<span style="background:#fff3e0;color:#e65100;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;">${adminLang === 'en' ? 'Arabic' : 'عربي'}</span>`;
   if (lang === 'en') return '<span style="background:#e3f2fd;color:#1565c0;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;">English</span>';
-  if (lang === 'both' || !lang) return '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;">كلا اللغتين</span>';
+  if (lang === 'both' || !lang) return `<span style="background:#e8f5e9;color:#2e7d32;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;">${adminLang === 'en' ? 'Both Languages' : 'كلا اللغتين'}</span>`;
   return '';
 }
 
@@ -1758,10 +1775,10 @@ function renderSectionsList() {
       ondrop="_secDrop(event,this)" ondragend="_secDE(event,this)">
       <div class="section-header">
         <div class="section-header-left">
-          <span class="drag-handle" title="اسحب لتغيير الترتيب">⠿</span>
+          <span class="drag-handle" title="${adminLang === 'en' ? 'Drag to reorder' : 'اسحب لتغيير الترتيب'}">⠿</span>
           ${getTypeBadge(section.type)}
-          <strong>${section.titleAr || section.titleEn || 'بدون عنوان'}</strong>
-          ${!section.visible ? '<span style="color:#e53935;font-size:12px;">(مخفي)</span>' : ''}
+          <strong>${adminLang === 'en' ? (section.titleEn || section.titleAr || 'No Title') : (section.titleAr || section.titleEn || 'بدون عنوان')}</strong>
+          ${!section.visible ? `<span style="color:#e53935;font-size:12px;">(${adminLang === 'en' ? 'Hidden' : 'مخفي'})</span>` : ''}
         </div>
         <div class="section-header-right">
           <button class="btn-icon" onclick="moveSec('${section.id}', -1)" title="تحريك للأعلى" style="font-size:16px;padding:2px 6px;">↑</button>
@@ -1781,10 +1798,10 @@ function renderSectionsList() {
       <div class="section-body">
         ${(section.type === 'banner_slider' || section.type === 'collection_slider') ? `
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span style="font-size:13px;color:#888;">البانرات (${section.banners?.length || 0})</span>
+            <span style="font-size:13px;color:#888;">${adminLang === 'en' ? 'Banners' : 'البانرات'} (${section.banners?.length || 0})</span>
             <button class="btn btn-outline btn-sm" onclick="openAddBannerModal('${section.id}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              إضافة بانر
+              ${adminLang === 'en' ? 'Add Banner' : 'إضافة بانر'}
             </button>
           </div>
           ${(section.banners?.length > 0) ? `
@@ -1811,20 +1828,20 @@ function renderSectionsList() {
                 </div>
               `).join('')}
             </div>
-          ` : '<div class="empty-state" style="padding:20px;"><p style="font-size:13px;color:#aaa;">لا توجد بانرات - اضغط "إضافة بانر"</p></div>'}
+          ` : `<div class="empty-state" style="padding:20px;"><p style="font-size:13px;color:#aaa;">${adminLang === 'en' ? 'No banners — click "Add Banner"' : 'لا توجد بانرات - اضغط "إضافة بانر"'}</p></div>`}
         ` : `
           <div style="padding:8px 0;color:#888;font-size:13px;">
-            ${section.type === 'hero_banner' ? '🖼️ البانر الرئيسي أعلى الصفحة — تحكم بالإظهار/الإخفاء والعنوان' : ''}
-            ${section.type === 'category_row' ? '📂 صف الأقسام (المجموعات) — يعرض تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء' : ''}
-            ${section.type === 'best_selling' ? '⭐ يعرض المنتجات الأكثر مبيعاً تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء' : ''}
-            ${section.type === 'mid_banner' ? '🖼️ بانر وسط الصفحة — تحكم بالإظهار/الإخفاء' : ''}
-            ${section.type === 'new_arrivals' ? '🆕 يعرض المنتجات الجديدة تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء' : ''}
-            ${section.type === 'product_grid' ? 'سيعرض المنتجات تلقائياً من Shopify' : ''}
+            ${section.type === 'hero_banner' ? (adminLang === 'en' ? '🖼️ Main hero banner at the top — control visibility and title' : '🖼️ البانر الرئيسي أعلى الصفحة — تحكم بالإظهار/الإخفاء والعنوان') : ''}
+            ${section.type === 'category_row' ? (adminLang === 'en' ? '📂 Category row — auto-loaded from Shopify — control title, order and visibility' : '📂 صف الأقسام (المجموعات) — يعرض تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء') : ''}
+            ${section.type === 'best_selling' ? (adminLang === 'en' ? '⭐ Auto-displays best-selling products from Shopify — control title, order and visibility' : '⭐ يعرض المنتجات الأكثر مبيعاً تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء') : ''}
+            ${section.type === 'mid_banner' ? (adminLang === 'en' ? '🖼️ Mid-page banner — control visibility' : '🖼️ بانر وسط الصفحة — تحكم بالإظهار/الإخفاء') : ''}
+            ${section.type === 'new_arrivals' ? (adminLang === 'en' ? '🆕 Auto-displays new products from Shopify — control title, order and visibility' : '🆕 يعرض المنتجات الجديدة تلقائياً من Shopify — تحكم بالعنوان والترتيب والإظهار/الإخفاء') : ''}
+            ${section.type === 'product_grid' ? (adminLang === 'en' ? 'Auto-displays products from Shopify' : 'سيعرض المنتجات تلقائياً من Shopify') : ''}
             ${section.type === 'selected_categories' ? (() => {
               try {
                 const ids = JSON.parse(section.metadata || '{}').categoryIds || [];
-                return `⭕ يعرض ${ids.length} قسم محدد على شكل دوائر — اضغط تعديل لتغيير الأقسام`;
-              } catch { return '⭕ أقسام محددة (دوائر)'; }
+                return adminLang === 'en' ? `⭕ Displays ${ids.length} selected categories as circles — click edit to change` : `⭕ يعرض ${ids.length} قسم محدد على شكل دوائر — اضغط تعديل لتغيير الأقسام`;
+              } catch { return adminLang === 'en' ? '⭕ Selected Categories (circles)' : '⭕ أقسام محددة (دوائر)'; }
             })() : ''}
           </div>
         `}
@@ -1898,7 +1915,7 @@ function renderColChips() {
   if (!chipsEl) return;
   if (_selectedCollections.size === 0) { chipsEl.innerHTML = ''; return; }
   chipsEl.innerHTML = Array.from(_selectedCollections.values()).map(c => {
-    const name = c.titleAr || c.titleEn || c.handle;
+    const name = adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle);
     const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : '';
     return `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f4ff;color:#163259;border:1px solid #b3d7f0;border-radius:20px;padding:3px 10px 3px 6px;font-size:12px;cursor:default;">
       ${img}<span>${name}</span>
@@ -1940,7 +1957,7 @@ async function doColPickerSearch(query) {
       return `<div data-col-handle="${c.handle}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${isSelected ? '#e8f4ff' : '#fff'};border-bottom:1px solid #f0f0f0;">
         ${img}
         <div style="flex:1;min-width:0;pointer-events:none;">
-          <div style="font-size:13px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.titleAr || c.titleEn}</div>
+          <div style="font-size:13px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (c.titleEn || c.titleAr) : (c.titleAr || c.titleEn)}</div>
           <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.titleEn} — ${c.handle}</div>
         </div>
         <span style="color:${isSelected ? '#248CCC' : '#ddd'};font-size:18px;flex-shrink:0;pointer-events:none;">${isSelected ? '✓' : '+'}</span>
@@ -2038,7 +2055,7 @@ function renderMultiColTabs() {
       renderMultiColTabs();
     } else if (delBtn) {
       const idx = +delBtn.getAttribute('data-mc-del');
-      if (confirm(`هل تريد حذف التاب "${_multiColTabs[idx]?.titleAr || _multiColTabs[idx]?.handle}"؟`)) {
+      if (confirm(adminLang === 'en' ? `Delete tab "${_multiColTabs[idx]?.titleEn || _multiColTabs[idx]?.handle}"?` : `هل تريد حذف التاب "${_multiColTabs[idx]?.titleAr || _multiColTabs[idx]?.handle}"؟`)) {
         _multiColTabs.splice(idx, 1);
         if (_multiColEditIdx >= idx) _multiColEditIdx = -1;
         renderMultiColTabs();
@@ -2052,7 +2069,7 @@ function renderMultiColTabs() {
       const finalHandle = newHandle || _multiColTabs[idx].handle;
       const finalAr = newAr || _multiColTabs[idx].titleAr;
       const finalEn = newEn || _multiColTabs[idx].titleEn;
-      if (!finalAr && !finalEn) { alert('يرجى إدخال عنوان واحد على الأقل'); return; }
+      if (!finalAr && !finalEn) { alert(adminLang === 'en' ? 'Please enter at least one title' : 'يرجى إدخال عنوان واحد على الأقل'); return; }
       _multiColTabs[idx] = { handle: finalHandle, titleAr: finalAr, titleEn: finalEn };
       _multiColEditIdx = -1;
       renderMultiColTabs();
@@ -2085,7 +2102,7 @@ async function doMultiColSearch(query) {
       return `<div data-mc-pick="${c.handle}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-bottom:1px solid #f5f5f5;direction:rtl;">
         ${img}
         <div style="flex:1;min-width:0;pointer-events:none;">
-          <div style="font-size:12px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.titleAr || c.titleEn}</div>
+          <div style="font-size:12px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (c.titleEn || c.titleAr) : (c.titleAr || c.titleEn)}</div>
           <div style="font-size:11px;color:#888;">${c.titleEn} — ${c.handle}</div>
         </div>
       </div>`;
@@ -2147,7 +2164,7 @@ async function doMcEditSearch(query, idx) {
       return `<div data-mc-epick="${c.handle}" data-mc-eidx="${idx}" data-mc-ear="${c.titleAr || ''}" data-mc-een="${c.titleEn || ''}" style="display:flex;align-items:center;gap:7px;padding:6px 10px;cursor:pointer;border-bottom:1px solid #f5f5f5;direction:rtl;">
         ${img}
         <div style="flex:1;min-width:0;pointer-events:none;">
-          <div style="font-size:12px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.titleAr || c.titleEn}</div>
+          <div style="font-size:12px;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (c.titleEn || c.titleAr) : (c.titleAr || c.titleEn)}</div>
           <div style="font-size:10px;color:#888;">${c.handle}</div>
         </div>
       </div>`;
@@ -2241,7 +2258,7 @@ function moveShowcaseCol(idx, dir) {
 }
 
 function deleteShowcaseCol(idx) {
-  if (confirm(`هل تريد حذف "${_showcaseCols[idx]?.titleAr || _showcaseCols[idx]?.handle}"؟`)) {
+  if (confirm(adminLang === 'en' ? `Delete "${_showcaseCols[idx]?.titleEn || _showcaseCols[idx]?.handle}"?` : `هل تريد حذف "${_showcaseCols[idx]?.titleAr || _showcaseCols[idx]?.handle}"؟`)) {
     _showcaseCols.splice(idx, 1);
     renderShowcaseCols();
   }
@@ -2280,7 +2297,7 @@ function onShowcaseSearch(query) {
       _showcaseSearchResultsMap = new Map();
       results.forEach(c => _showcaseSearchResultsMap.set(c.handle, c));
       sr.innerHTML = results.map(c => {
-        const name = c.titleAr || c.titleEn || c.handle;
+        const name = adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle);
         const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">` : '';
         return `<div data-showcase-pick="${c.handle}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
           ${img}<span style="font-size:13px;pointer-events:none;">${name}</span><span style="font-size:11px;color:#aaa;margin-right:auto;pointer-events:none;">${c.handle}</span>
@@ -2300,7 +2317,7 @@ function selectShowcaseCol(handle) {
   const sr = document.getElementById('showcaseSearchResults');
   const si = document.getElementById('showcaseSearchInput');
   if (sr) { sr.style.display = 'none'; sr.innerHTML = ''; }
-  if (si) si.value = c.titleAr || c.titleEn || c.handle;
+  if (si) si.value = adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle);
   const badge = document.getElementById('showcaseSelectedBadge');
   if (badge) badge.textContent = `${c.titleAr || c.handle} (${c.handle})`;
   document.getElementById('showcaseTitleAr').value = c.titleAr || '';
@@ -2439,7 +2456,7 @@ function moveFeaturedProduct(idx, dir) {
 }
 
 function deleteFeaturedProduct(idx) {
-  if (confirm(`هل تريد حذف "${_featuredProducts[idx]?.titleAr || _featuredProducts[idx]?.handle}"؟`)) {
+  if (confirm(adminLang === 'en' ? `Delete "${_featuredProducts[idx]?.titleEn || _featuredProducts[idx]?.handle}"?` : `هل تريد حذف "${_featuredProducts[idx]?.titleAr || _featuredProducts[idx]?.handle}"؟`)) {
     _featuredProducts.splice(idx, 1);
     renderFeaturedProducts();
   }
@@ -2458,7 +2475,7 @@ function onFeaturedSearch(query) {
       _featuredSearchResultsMap = new Map();
       results.forEach(p => _featuredSearchResultsMap.set(p.handle, p));
       sr.innerHTML = results.map(p => {
-        const name = p.titleAr || p.titleEn || p.handle;
+        const name = adminLang === 'en' ? (p.titleEn || p.titleAr || p.handle) : (p.titleAr || p.titleEn || p.handle);
         const img = p.imageUrl ? `<img src="${p.imageUrl}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">` : '';
         return `<div data-featured-pick="${p.handle}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#fff5f7'" onmouseout="this.style.background=''">
           ${img}<div style="flex:1;min-width:0;pointer-events:none;"><div style="font-size:13px;">${name}</div><div style="font-size:11px;color:#E91E63;">${parseFloat(p.price||0).toFixed(2)} ${p.currency||'JOD'}</div></div>
@@ -2479,7 +2496,7 @@ function selectFeaturedProduct(handle) {
   const sr = document.getElementById('featuredSearchResults');
   const si = document.getElementById('featuredSearchInput');
   if (sr) { sr.style.display = 'none'; sr.innerHTML = ''; }
-  if (si) si.value = p.titleAr || p.titleEn || p.handle;
+  if (si) si.value = adminLang === 'en' ? (p.titleEn || p.titleAr || p.handle) : (p.titleAr || p.titleEn || p.handle);
   const img = document.getElementById('featuredSelImg');
   if (img) { img.src = p.imageUrl || ''; img.style.display = p.imageUrl ? '' : 'none'; }
   const vendor = document.getElementById('featuredSelVendor');
@@ -2559,7 +2576,7 @@ function onColProdSearch(q) {
       }
       results.innerHTML = items.map((c, idx) => {
         const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:32px;height:32px;border-radius:6px;background:#eee;"></div>';
-        const name = c.titleAr || c.titleEn || c.handle;
+        const name = adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle);
         const safeName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         return `<div data-handle="${c.handle}" data-name="${safeName}" onclick="selectColProduct(this.dataset.handle, this.dataset.name)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;direction:rtl;" onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background=''">
           ${img}
@@ -2695,7 +2712,7 @@ function onStaticBannerSearch() {
       }
       resultsEl.innerHTML = '';
       results.forEach(item => {
-        const title = item.titleAr || item.titleEn || item.title || item.handle;
+        const title = adminLang === 'en' ? (item.titleEn || item.titleAr || item.title || item.handle) : (item.titleAr || item.titleEn || item.title || item.handle);
         const handle = item.handle;
         const img = item.imageUrl || '';
         const row = document.createElement('div');
@@ -2899,10 +2916,10 @@ async function saveSection() {
 }
 
 async function deleteSection(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا القسم وجميع بانراته؟')) return;
+  if (!confirm(adminLang === 'en' ? 'Are you sure you want to delete this section and all its banners?' : 'هل أنت متأكد من حذف هذا القسم وجميع بانراته؟')) return;
   try {
     await api('DELETE', '/api/admin/sections/' + id);
-    showToast('تم حذف القسم');
+    showToast(adminLang === 'en' ? 'Section deleted' : 'تم حذف القسم');
     loadSections();
   } catch (e) {
     showToast('حدث خطأ', true);
@@ -3076,7 +3093,7 @@ async function doCatColSearch() {
       row.style.cssText = 'padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.15s;direction:rtl;';
       row.onmouseover = () => row.style.background = '#f5f8ff';
       row.onmouseout = () => row.style.background = '';
-      row.onclick = () => selectCatCollection(c.handle, c.titleAr || c.titleEn || c.handle, c.titleEn || '', c.imageUrl || '');
+      row.onclick = () => selectCatCollection(c.handle, adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle), c.titleEn || '', c.imageUrl || '');
       const imgEl = document.createElement('div');
       if (c.imageUrl) {
         imgEl.innerHTML = `<img src="${resolveImageUrl(c.imageUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">`;
@@ -3225,7 +3242,7 @@ async function saveBanner() {
 }
 
 async function deleteBanner(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا البانر؟')) return;
+  if (!confirm(adminLang === 'en' ? 'Are you sure you want to delete this banner?' : 'هل أنت متأكد من حذف هذا البانر؟')) return;
   try {
     await api('DELETE', '/api/admin/banners/' + id);
     showToast('تم حذف البانر');
@@ -3660,7 +3677,7 @@ function onBrandCollSearch(q) {
              onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
           ${c.imageUrl ? `<img src="${c.imageUrl}" style="width:36px;height:24px;object-fit:cover;border-radius:4px;border:1px solid #eee;">` : '<div style="width:36px;height:24px;background:#eee;border-radius:4px;"></div>'}
           <div>
-            <div style="font-size:12px;font-weight:600;color:#163259;">${c.titleAr || c.titleEn}</div>
+            <div style="font-size:12px;font-weight:600;color:#163259;">${adminLang === 'en' ? (c.titleEn || c.titleAr) : (c.titleAr || c.titleEn)}</div>
             <div style="font-size:10px;color:#888;">${c.handle}</div>
           </div>
         </div>
@@ -3682,7 +3699,7 @@ function addBrandManually() {
   const imageUrl = document.getElementById('brandManualImg').value.trim();
   const size = document.getElementById('brandManualSize').value || 'md';
   const collectionHandle = document.getElementById('brandCollHandle').value.trim();
-  if (!name && !imageUrl) { showToast('يرجى إدخال اسم الماركة أو رابط الصورة على الأقل', true); return; }
+  if (!name && !imageUrl) { showToast(adminLang === 'en' ? 'Please enter a brand name or image URL' : 'يرجى إدخال اسم الماركة أو رابط الصورة على الأقل', true); return; }
   const label = name || imageUrl.split('/').pop() || 'براند';
   _brands.push({ name: label, imageUrl, size, collectionHandle });
   renderBrandsList();
@@ -3928,10 +3945,10 @@ function openCatModal(parentId) {
     const childLevel = parentDepth + 2;
     info.style.display = 'block';
     info.textContent = `إضافة قسم فرعي (المستوى ${childLevel}) تحت: ${parent ? getCatAncestorPath(parent) : ''}`;
-    document.getElementById('catModalTitle').textContent = 'إضافة قسم فرعي';
+    document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Add Sub-Category' : 'إضافة قسم فرعي';
   } else {
     info.style.display = 'none';
-    document.getElementById('catModalTitle').textContent = 'إضافة قسم رئيسي';
+    document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Add Main Category' : 'إضافة قسم رئيسي';
   }
   document.getElementById('catModal').classList.add('show');
 }
@@ -3946,7 +3963,7 @@ function editCat(id) {
   document.getElementById('catImageUrl').value = cat.imageUrl || '';
   document.getElementById('catSortOrder').value = cat.sortOrder || 0;
   document.getElementById('catVisible').checked = cat.visible;
-  document.getElementById('catModalTitle').textContent = 'تعديل قسم';
+  document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Edit Category' : 'تعديل قسم';
   document.getElementById('catLevelInfo').style.display = 'none';
 
   if (cat.collectionHandle) {
@@ -3990,7 +4007,7 @@ async function saveCat() {
   const titleAr = document.getElementById('catTitleAr').value.trim();
   const titleEn = document.getElementById('catTitleEn').value.trim();
   if (!titleAr || !titleEn) {
-    showToast('يرجى إدخال الاسم بالعربي والإنجليزي', true);
+    showToast(adminLang === 'en' ? 'Please enter the name in both Arabic and English' : 'يرجى إدخال الاسم بالعربي والإنجليزي', true);
     return;
   }
   const editId = document.getElementById('catEditId').value;
@@ -4020,16 +4037,17 @@ async function saveCat() {
 async function deleteCat(id) {
   const cat = catsList.find(c => c.id === id);
   const totalDesc = countDescendants(id);
+  const catName = adminLang === 'en' ? (cat?.titleEn || cat?.titleAr) : (cat?.titleAr || cat?.titleEn);
   const msg = totalDesc > 0
-    ? `هل أنت متأكد من حذف "${cat?.titleAr}"؟ سيتم حذف ${totalDesc} أقسام فرعية أيضاً.`
-    : `هل أنت متأكد من حذف "${cat?.titleAr}"؟`;
+    ? (adminLang === 'en' ? `Are you sure you want to delete "${catName}"? ${totalDesc} sub-categories will also be deleted.` : `هل أنت متأكد من حذف "${catName}"؟ سيتم حذف ${totalDesc} أقسام فرعية أيضاً.`)
+    : (adminLang === 'en' ? `Are you sure you want to delete "${catName}"?` : `هل أنت متأكد من حذف "${catName}"؟`);
   if (!confirm(msg)) return;
   try {
     await api('DELETE', '/api/admin/categories/' + id);
-    showToast('تم حذف القسم');
+    showToast(adminLang === 'en' ? 'Section deleted' : 'تم حذف القسم');
     loadCategories();
   } catch (e) {
-    showToast('حدث خطأ في حذف القسم', true);
+    showToast(adminLang === 'en' ? 'Failed to delete section' : 'حدث خطأ في حذف القسم', true);
   }
 }
 
@@ -4094,7 +4112,7 @@ function onNotifLinkSearch() {
       }
       resultsEl.innerHTML = '';
       results.forEach(item => {
-        const title = item.titleAr || item.titleEn || item.title || item.handle;
+        const title = adminLang === 'en' ? (item.titleEn || item.titleAr || item.title || item.handle) : (item.titleAr || item.titleEn || item.title || item.handle);
         const handle = item.handle;
         const img = item.imageUrl || '';
         const subtitle = type === 'product' ? (handle + (item.vendor ? ' • ' + item.vendor : '')) : handle;
@@ -4179,7 +4197,7 @@ async function sendNotification() {
   const titleAr = document.getElementById('notifTitleAr').value.trim();
   const titleEn = document.getElementById('notifTitleEn').value.trim();
   if (!titleAr || !titleEn) {
-    showToast('يرجى إدخال العنوان بالعربي والإنجليزي', true);
+    showToast(adminLang === 'en' ? 'Please enter the title in both Arabic and English' : 'يرجى إدخال العنوان بالعربي والإنجليزي', true);
     return;
   }
   const linkType = document.getElementById('notifLinkType').value;
@@ -4210,7 +4228,7 @@ async function sendNotification() {
 }
 
 async function deleteNotification(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
+  if (!confirm(adminLang === 'en' ? 'Are you sure you want to delete this notification?' : 'هل أنت متأكد من حذف هذا الإشعار؟')) return;
   try {
     await api('DELETE', '/api/admin/notifications/' + id);
     showToast('تم حذف الإشعار');
@@ -4382,7 +4400,7 @@ async function saveSuggested() {
     sortOrder: parseInt(document.getElementById('sugSortOrder').value) || 0,
     visible: document.getElementById('sugVisible').checked,
   };
-  if (!body.productHandle) { showToast('يرجى إدخال handle المنتج', true); return; }
+  if (!body.productHandle) { showToast(adminLang === 'en' ? 'Please enter the product handle' : 'يرجى إدخال handle المنتج', true); return; }
   try {
     if (id) {
       await api('PUT', `/api/admin/suggested-products/${id}`, body);
@@ -4390,7 +4408,7 @@ async function saveSuggested() {
       await api('POST', '/api/admin/suggested-products', body);
     }
     closeModal('suggestedModal');
-    showToast('تم الحفظ بنجاح');
+    showToast(adminLang === 'en' ? 'Saved successfully' : 'تم الحفظ بنجاح');
     loadSuggestedProducts();
   } catch (e) {
     showToast('حدث خطأ', true);
@@ -4398,10 +4416,10 @@ async function saveSuggested() {
 }
 
 async function deleteSuggested(id) {
-  if (!confirm('هل تريد حذف هذا المنتج المقترح؟')) return;
+  if (!confirm(adminLang === 'en' ? 'Delete this suggested product?' : 'هل تريد حذف هذا المنتج المقترح؟')) return;
   try {
     await api('DELETE', `/api/admin/suggested-products/${id}`);
-    showToast('تم الحذف');
+    showToast(adminLang === 'en' ? 'Deleted' : 'تم الحذف');
     loadSuggestedProducts();
   } catch (e) {
     showToast('حدث خطأ', true);
