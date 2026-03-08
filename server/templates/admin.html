@@ -747,16 +747,16 @@
 
   <div id="page-settings" style="display:none;">
     <div class="page-header">
-      <h1>الإعدادات العامة</h1>
+      <h1 data-i18n="الإعدادات العامة">الإعدادات العامة</h1>
       <button class="btn btn-primary" onclick="saveSettings()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        حفظ الإعدادات
+        <span data-i18n="حفظ الإعدادات">حفظ الإعدادات</span>
       </button>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3>شعار الوضع النهاري ☀️</h3>
+        <h3 data-i18n="شعار الوضع النهاري ☀️">شعار الوضع النهاري ☀️</h3>
       </div>
       <div
         class="logo-upload-zone"
@@ -769,8 +769,8 @@
         <div class="upload-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
-        <div class="upload-text">اسحب شعار الوضع النهاري هنا أو اضغط للاختيار</div>
-        <div class="upload-hint">PNG, JPG, SVG, WebP, AI — حد أقصى 5 ميغابايت</div>
+        <div class="upload-text" data-i18n="اسحب شعار الوضع النهاري هنا أو اضغط للاختيار">اسحب شعار الوضع النهاري هنا أو اضغط للاختيار</div>
+        <div class="upload-hint" data-i18n="حد أقصى 5 ميغابايت">PNG, JPG, SVG, WebP, AI — حد أقصى 5 ميغابايت</div>
         <input type="file" id="logoFileInput" accept=".png,.jpg,.jpeg,.svg,.webp,.gif,.ai" style="display:none" onchange="handleLogoSelect(event, 'light')">
       </div>
       <div id="logoUploadProgress" style="display:none" class="logo-upload-progress"><div class="bar" id="logoProgressBar" style="width:0%"></div></div>
@@ -783,23 +783,23 @@
           <div class="filesize" id="logoFileSize"></div>
           <button class="remove-logo" onclick="removeLogo('light')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            إزالة الشعار
+            <span data-i18n="إزالة الشعار">إزالة الشعار</span>
           </button>
         </div>
       </div>
       <div class="form-group" style="margin-top:12px;">
-        <label>أو أدخل رابط الشعار مباشرة</label>
+        <label data-i18n="أو أدخل رابط الشعار مباشرة">أو أدخل رابط الشعار مباشرة</label>
         <div style="display:flex;gap:8px;">
           <input type="text" id="settingLogoUrl" placeholder="https://example.com/logo.png" style="flex:1">
-          <button class="btn btn-secondary" onclick="previewLogoUrl('light')" style="white-space:nowrap">معاينة</button>
+          <button class="btn btn-secondary" onclick="previewLogoUrl('light')" style="white-space:nowrap" data-i18n="معاينة">معاينة</button>
         </div>
       </div>
-      <p style="font-size:12px;color:#888;margin-top:6px;">يظهر هذا الشعار في الوضع النهاري (خلفية بيضاء)</p>
+      <p style="font-size:12px;color:#888;margin-top:6px;" data-i18n="يظهر هذا الشعار في الوضع النهاري (خلفية بيضاء)">يظهر هذا الشعار في الوضع النهاري (خلفية بيضاء)</p>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3>شعار الوضع الليلي 🌙</h3>
+        <h3 data-i18n="شعار الوضع الليلي 🌙">شعار الوضع الليلي 🌙</h3>
       </div>
       <div
         class="logo-upload-zone"
@@ -812,8 +812,8 @@
         <div class="upload-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
-        <div class="upload-text">اسحب شعار الوضع الليلي هنا أو اضغط للاختيار</div>
-        <div class="upload-hint">PNG, JPG, SVG, WebP, AI — حد أقصى 5 ميغابايت</div>
+        <div class="upload-text" data-i18n="اسحب شعار الوضع الليلي هنا أو اضغط للاختيار">اسحب شعار الوضع الليلي هنا أو اضغط للاختيار</div>
+        <div class="upload-hint" data-i18n="حد أقصى 5 ميغابايت">PNG, JPG, SVG, WebP, AI — حد أقصى 5 ميغابايت</div>
         <input type="file" id="logoDarkFileInput" accept=".png,.jpg,.jpeg,.svg,.webp,.gif,.ai" style="display:none" onchange="handleLogoSelect(event, 'dark')">
       </div>
       <div id="logoDarkUploadProgress" style="display:none" class="logo-upload-progress"><div class="bar" id="logoDarkProgressBar" style="width:0%"></div></div>
@@ -826,23 +826,23 @@
           <div class="filesize" id="logoDarkFileSize"></div>
           <button class="remove-logo" onclick="removeLogo('dark')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            إزالة الشعار
+            <span data-i18n="إزالة الشعار">إزالة الشعار</span>
           </button>
         </div>
       </div>
       <div class="form-group" style="margin-top:12px;">
-        <label>أو أدخل رابط الشعار مباشرة</label>
+        <label data-i18n="أو أدخل رابط الشعار مباشرة">أو أدخل رابط الشعار مباشرة</label>
         <div style="display:flex;gap:8px;">
           <input type="text" id="settingLogoDarkUrl" placeholder="https://example.com/logo-dark.png" style="flex:1">
-          <button class="btn btn-secondary" onclick="previewLogoUrl('dark')" style="white-space:nowrap">معاينة</button>
+          <button class="btn btn-secondary" onclick="previewLogoUrl('dark')" style="white-space:nowrap" data-i18n="معاينة">معاينة</button>
         </div>
       </div>
-      <p style="font-size:12px;color:#888;margin-top:6px;">يظهر هذا الشعار في الوضع الليلي (خلفية داكنة). إذا لم يُحدد، سيُستخدم شعار الوضع النهاري</p>
+      <p style="font-size:12px;color:#888;margin-top:6px;" data-i18n="يظهر هذا الشعار في الوضع الليلي (خلفية داكنة). إذا لم يُحدد، سيُستخدم شعار الوضع النهاري">يظهر هذا الشعار في الوضع الليلي (خلفية داكنة). إذا لم يُحدد، سيُستخدم شعار الوضع النهاري</p>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3>أيقونة التطبيق 📱</h3>
+        <h3 data-i18n="أيقونة التطبيق 📱">أيقونة التطبيق 📱</h3>
       </div>
       <div
         class="logo-upload-zone"
@@ -855,8 +855,8 @@
         <div class="upload-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
         </div>
-        <div class="upload-text">اسحب أيقونة التطبيق هنا أو اضغط للاختيار</div>
-        <div class="upload-hint">PNG, JPG — يُنصح بـ 512×512 بكسل — حد أقصى 5 ميغابايت</div>
+        <div class="upload-text" data-i18n="اسحب أيقونة التطبيق هنا أو اضغط للاختيار">اسحب أيقونة التطبيق هنا أو اضغط للاختيار</div>
+        <div class="upload-hint" data-i18n="يُنصح بـ 512×512 بكسل — حد أقصى 5 ميغابايت">PNG, JPG — يُنصح بـ 512×512 بكسل — حد أقصى 5 ميغابايت</div>
         <input type="file" id="appIconFileInput" accept=".png,.jpg,.jpeg,.webp" style="display:none" onchange="handleLogoSelect(event, 'icon')">
       </div>
       <div id="appIconUploadProgress" style="display:none" class="logo-upload-progress"><div class="bar" id="appIconProgressBar" style="width:0%"></div></div>
@@ -869,47 +869,47 @@
           <div class="filesize" id="appIconFileSize"></div>
           <button class="remove-logo" onclick="removeLogo('icon')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            إزالة الأيقونة
+            <span data-i18n="إزالة الأيقونة">إزالة الأيقونة</span>
           </button>
         </div>
       </div>
       <div class="form-group" style="margin-top:12px;">
-        <label>أو أدخل رابط الأيقونة مباشرة</label>
+        <label data-i18n="أو أدخل رابط الأيقونة مباشرة">أو أدخل رابط الأيقونة مباشرة</label>
         <div style="display:flex;gap:8px;">
           <input type="text" id="settingAppIconUrl" placeholder="https://example.com/icon.png" style="flex:1">
-          <button class="btn btn-secondary" onclick="previewLogoUrl('icon')" style="white-space:nowrap">معاينة</button>
+          <button class="btn btn-secondary" onclick="previewLogoUrl('icon')" style="white-space:nowrap" data-i18n="معاينة">معاينة</button>
         </div>
       </div>
-      <p style="font-size:12px;color:#888;margin-top:6px;">أيقونة التطبيق تظهر في الإشعارات وصفحة "من نحن" داخل التطبيق</p>
+      <p style="font-size:12px;color:#888;margin-top:6px;" data-i18n='أيقونة التطبيق تظهر في الإشعارات وصفحة "من نحن" داخل التطبيق'>أيقونة التطبيق تظهر في الإشعارات وصفحة "من نحن" داخل التطبيق</p>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3>معلومات المتجر</h3>
+        <h3 data-i18n="معلومات المتجر">معلومات المتجر</h3>
       </div>
       <div class="settings-grid">
         <div class="form-group">
-          <label>اسم المتجر (عربي)</label>
+          <label data-i18n="اسم المتجر (عربي)">اسم المتجر (عربي)</label>
           <input type="text" id="settingStoreNameAr" placeholder="إكسمارت">
         </div>
         <div class="form-group">
-          <label>اسم المتجر (إنجليزي)</label>
+          <label data-i18n="اسم المتجر (إنجليزي)">اسم المتجر (إنجليزي)</label>
           <input type="text" id="settingStoreNameEn" placeholder="Xmart">
         </div>
         <div class="form-group">
-          <label>رقم الهاتف</label>
+          <label data-i18n="رقم الهاتف">رقم الهاتف</label>
           <input type="text" id="settingPhone" placeholder="+962...">
         </div>
         <div class="form-group">
-          <label>البريد الإلكتروني</label>
+          <label data-i18n="البريد الإلكتروني">البريد الإلكتروني</label>
           <input type="text" id="settingEmail" placeholder="info@xmart.jo">
         </div>
         <div class="form-group">
-          <label>رابط الواتساب</label>
+          <label data-i18n="رابط الواتساب">رابط الواتساب</label>
           <input type="text" id="settingWhatsapp" placeholder="https://wa.me/962...">
         </div>
         <div class="form-group">
-          <label>رابط الانستغرام</label>
+          <label data-i18n="رابط الانستغرام">رابط الانستغرام</label>
           <input type="text" id="settingInstagram" placeholder="https://instagram.com/...">
         </div>
       </div>
@@ -917,15 +917,15 @@
 
     <div class="card">
       <div class="card-header">
-        <h3>إعدادات الشريط الإعلاني</h3>
+        <h3 data-i18n="إعدادات الشريط الإعلاني">إعدادات الشريط الإعلاني</h3>
       </div>
       <div class="settings-grid">
         <div class="form-group">
-          <label>نص الشريط الإعلاني (عربي)</label>
+          <label data-i18n="نص الشريط الإعلاني (عربي)">نص الشريط الإعلاني (عربي)</label>
           <input type="text" id="settingAnnouncementAr" placeholder="شحن مجاني على الطلبات فوق 50 دينار">
         </div>
         <div class="form-group">
-          <label>نص الشريط الإعلاني (إنجليزي)</label>
+          <label data-i18n="نص الشريط الإعلاني (إنجليزي)">نص الشريط الإعلاني (إنجليزي)</label>
           <input type="text" id="settingAnnouncementEn" placeholder="Free shipping on orders over 50 JOD">
         </div>
       </div>
@@ -1345,32 +1345,32 @@
     <div class="modal-body">
       <input type="hidden" id="sugEditId">
       <div class="form-group">
-        <label>بحث عن منتج في Shopify</label>
+        <label data-i18n="بحث عن منتج في Shopify">بحث عن منتج في Shopify</label>
         <div style="display:flex;gap:8px;">
           <input type="text" id="sugSearchInput" placeholder="ابحث باسم المنتج..." style="flex:1;" onkeydown="if(event.key==='Enter')searchSugProducts()">
-          <button class="btn btn-outline" onclick="searchSugProducts()">بحث</button>
+          <button class="btn btn-outline" onclick="searchSugProducts()" data-i18n="بحث">بحث</button>
         </div>
       </div>
       <div id="sugSearchResults" style="max-height:200px;overflow-y:auto;margin-bottom:12px;display:none;border:1px solid #e0e0e0;border-radius:8px;"></div>
       <div class="form-group">
-        <label>Product Handle *</label>
+        <label data-i18n="معرّف المنتج">Product Handle *</label>
         <input type="text" id="sugProductHandle" placeholder="product-handle">
       </div>
       <div class="form-group">
-        <label>الاسم (عربي)</label>
+        <label data-i18n="الاسم (عربي)">الاسم (عربي)</label>
         <input type="text" id="sugTitleAr" placeholder="اسم المنتج بالعربي">
       </div>
       <div class="form-group">
-        <label>الاسم (إنجليزي)</label>
+        <label data-i18n="الاسم (إنجليزي)">الاسم (إنجليزي)</label>
         <input type="text" id="sugTitleEn" placeholder="Product name in English">
       </div>
       <div class="form-group">
-        <label>صورة المنتج</label>
+        <label data-i18n="صورة المنتج">صورة المنتج</label>
         <div class="img-upload-row">
           <input type="text" id="sugImageUrl" placeholder="https://..." style="flex:1;" oninput="onSugImageUrlChange()">
           <label class="img-upload-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            رفع من الجهاز
+            <span data-i18n="رفع من الجهاز">رفع من الجهاز</span>
             <input type="file" accept=".png,.jpg,.jpeg,.webp,.gif" style="display:none" onchange="handleSugImageSelect(event)">
           </label>
         </div>
@@ -1380,11 +1380,11 @@
         <img style="width:60px;height:60px;border-radius:8px;object-fit:cover;" id="sugPreviewImg">
       </div>
       <div class="form-group">
-        <label>الترتيب</label>
+        <label data-i18n="الترتيب">الترتيب</label>
         <input type="number" id="sugSortOrder" value="0" min="0">
       </div>
       <div class="form-group" style="display:flex;align-items:center;gap:8px;">
-        <label style="margin:0;">مرئي</label>
+        <label style="margin:0;" data-i18n="مرئي">مرئي</label>
         <label class="toggle-switch">
           <input type="checkbox" id="sugVisible" checked>
           <span class="toggle-slider"></span>
@@ -1392,8 +1392,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('suggestedModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveSuggested()">حفظ</button>
+      <button class="btn btn-outline" onclick="closeModal('suggestedModal')" data-i18n="إلغاء">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveSuggested()" data-i18n="حفظ">حفظ</button>
     </div>
   </div>
 </div>
@@ -1516,13 +1516,32 @@ const ADMIN_TRANS = {
   'شعار الوضع النهاري ☀️': 'Day Mode Logo ☀️',
   'شعار الوضع الليلي 🌙': 'Night Mode Logo 🌙',
   'أيقونة التطبيق 📱': 'App Icon 📱',
+  'اسحب شعار الوضع النهاري هنا أو اضغط للاختيار': 'Drag day mode logo here or click to choose',
+  'اسحب شعار الوضع الليلي هنا أو اضغط للاختيار': 'Drag night mode logo here or click to choose',
+  'اسحب أيقونة التطبيق هنا أو اضغط للاختيار': 'Drag app icon here or click to choose',
+  'حد أقصى 5 ميغابايت': 'PNG, JPG, SVG, WebP, AI — Max 5 MB',
+  'يُنصح بـ 512×512 بكسل — حد أقصى 5 ميغابايت': 'PNG, JPG — Recommended 512×512 px — Max 5 MB',
+  'إزالة الشعار': 'Remove Logo',
+  'إزالة الأيقونة': 'Remove Icon',
   'أو أدخل رابط الشعار مباشرة': 'Or enter logo URL directly',
+  'أو أدخل رابط الأيقونة مباشرة': 'Or enter icon URL directly',
+  'معاينة': 'Preview',
   'يظهر هذا الشعار في الوضع النهاري (خلفية بيضاء)': 'This logo appears in day mode (white background)',
   'يظهر هذا الشعار في الوضع الليلي (خلفية داكنة). إذا لم يُحدد، سيُستخدم شعار الوضع النهاري': 'This logo appears in night mode. If not set, day mode logo is used',
+  'معلومات المتجر': 'Store Information',
   'اسم المتجر': 'Store Name',
+  'اسم المتجر (عربي)': 'Store Name (Arabic)',
+  'اسم المتجر (إنجليزي)': 'Store Name (English)',
+  'رقم الهاتف': 'Phone Number',
+  'البريد الإلكتروني': 'Email',
+  'رابط الواتساب': 'WhatsApp Link',
+  'رابط الانستغرام': 'Instagram Link',
   'رقم الواتساب': 'WhatsApp Number',
   'بريد التواصل': 'Contact Email',
+  'إعدادات الشريط الإعلاني': 'Announcement Bar Settings',
   'شريط الإعلانات': 'Announcement Bar',
+  'نص الشريط الإعلاني (عربي)': 'Announcement Text (Arabic)',
+  'نص الشريط الإعلاني (إنجليزي)': 'Announcement Text (English)',
   'نص الشريط (عربي)': 'Bar Text (Arabic)',
   'نص الشريط (إنجليزي)': 'Bar Text (English)',
   'أيقونة التطبيق تظهر في الإشعارات وصفحة "من نحن" داخل التطبيق': 'App icon is shown in notifications and the About page inside the app',
@@ -1546,6 +1565,12 @@ const ADMIN_TRANS = {
   'تعديل منتج مقترح': 'Edit Suggested Product',
   'بحث عن منتج في Shopify': 'Search for a product in Shopify',
   'ابحث باسم المنتج...': 'Search by product name...',
+  'بحث': 'Search',
+  'معرّف المنتج': 'Product Handle *',
+  'الاسم (عربي)': 'Name (Arabic)',
+  'الاسم (إنجليزي)': 'Name (English)',
+  'صورة المنتج': 'Product Image',
+  'رفع من الجهاز': 'Upload from device',
   'العنوان بالعربي': 'Arabic Title',
   'العنوان بالإنجليزي': 'English Title',
   'رابط الصورة': 'Image URL',
@@ -4297,22 +4322,22 @@ async function loadSuggestedProducts() {
 function renderSuggestedList() {
   const container = document.getElementById('suggestedList');
   if (!suggestedList.length) {
-    container.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:#888;">لا توجد منتجات مقترحة بعد</div>';
+    container.innerHTML = `<div class="card" style="padding:24px;text-align:center;color:#888;">${adminLang === 'en' ? 'No suggested products yet' : 'لا توجد منتجات مقترحة بعد'}</div>`;
     return;
   }
   container.innerHTML = suggestedList.map(item => `
     <div class="card" style="padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
       ${item.imageUrl ? `<img src="${resolveImageUrl(item.imageUrl)}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;">` : '<div style="width:50px;height:50px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">📦</div>'}
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:14px;">${item.titleAr || item.productHandle}</div>
-        <div style="font-size:12px;color:#888;">${item.titleEn || ''} — <code>${item.productHandle}</code></div>
+        <div style="font-weight:600;font-size:14px;">${adminLang === 'en' ? (item.titleEn || item.titleAr || item.productHandle) : (item.titleAr || item.productHandle)}</div>
+        <div style="font-size:12px;color:#888;">${adminLang === 'en' ? (item.titleAr || '') : (item.titleEn || '')} — <code>${item.productHandle}</code></div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:#888;">ترتيب: ${item.sortOrder}</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:#888;">${adminLang === 'en' ? 'Order' : 'ترتيب'}: ${item.sortOrder}</div>
       <div style="display:flex;align-items:center;gap:4px;">
-        ${item.visible ? '<span style="color:#4caf50;font-size:12px;">مرئي</span>' : '<span style="color:#f44336;font-size:12px;">مخفي</span>'}
+        ${item.visible ? `<span style="color:#4caf50;font-size:12px;">${adminLang === 'en' ? 'Visible' : 'مرئي'}</span>` : `<span style="color:#f44336;font-size:12px;">${adminLang === 'en' ? 'Hidden' : 'مخفي'}</span>`}
       </div>
-      <button class="btn-icon" onclick="editSuggested('${item.id}')" title="تعديل">✏️</button>
-      <button class="btn-icon" onclick="deleteSuggested('${item.id}')" title="حذف" style="color:#f44336;">🗑️</button>
+      <button class="btn-icon" onclick="editSuggested('${item.id}')" title="${adminLang === 'en' ? 'Edit' : 'تعديل'}">✏️</button>
+      <button class="btn-icon" onclick="deleteSuggested('${item.id}')" title="${adminLang === 'en' ? 'Delete' : 'حذف'}" style="color:#f44336;">🗑️</button>
     </div>
   `).join('');
   if (adminLang === 'en') setTimeout(() => translateDOM(container), 20);
@@ -4329,7 +4354,7 @@ function openSuggestedModal() {
   document.getElementById('sugImagePreview').style.display = 'none';
   document.getElementById('sugSearchResults').style.display = 'none';
   document.getElementById('sugSearchInput').value = '';
-  document.getElementById('suggestedModalTitle').textContent = 'إضافة منتج مقترح';
+  document.getElementById('suggestedModalTitle').textContent = adminLang === 'en' ? 'Add Suggested Product' : 'إضافة منتج مقترح';
   openModal('suggestedModal');
 }
 
@@ -4345,7 +4370,7 @@ function editSuggested(id) {
   document.getElementById('sugVisible').checked = item.visible;
   document.getElementById('sugSearchResults').style.display = 'none';
   document.getElementById('sugSearchInput').value = '';
-  document.getElementById('suggestedModalTitle').textContent = 'تعديل منتج مقترح';
+  document.getElementById('suggestedModalTitle').textContent = adminLang === 'en' ? 'Edit Suggested Product' : 'تعديل منتج مقترح';
   if (item.imageUrl) {
     document.getElementById('sugPreviewImg').src = item.imageUrl;
     document.getElementById('sugImagePreview').style.display = 'block';
