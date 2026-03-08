@@ -9,7 +9,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "ecom-manager.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "dashboard.xmart.me"
       }
     },
     "production": {
@@ -21,7 +21,7 @@
         "credentialsSource": "remote"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "ecom-manager.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "dashboard.xmart.me"
       }
     }
   },
