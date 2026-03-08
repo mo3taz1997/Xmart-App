@@ -1,0 +1,107 @@
+Please implement the customer address system correctly from scratch.
+
+The previous address logic was removed because it was implemented incorrectly, so I want a clean and proper integration with Shopify customer addresses.
+
+Functional requirements:
+
+1. Add a new "Addresses" section inside the Profile page.
+   This section must only be visible for logged-in customers.
+
+2. In the Addresses section, the logged-in customer must be able to:
+   - view all saved addresses
+   - add a new address
+   - edit an existing address
+   - delete an address
+   - set one address as the default address
+
+3. Checkout behavior:
+
+If the customer is logged in and has a default address saved in Shopify:
+
+- The checkout form must automatically prefill the address fields using the customer's default address.
+- This must work for both payment methods:
+  - Visa / card payment
+  - Cash on Delivery
+
+4. On the checkout page add a button or toggle:
+
+"Make this my default address"
+
+If the customer selects this option, the checkout address should be saved as the customer's default address in Shopify.
+
+Technical architecture requirements:
+
+Shopify must be the single source of truth for customer addresses.
+
+Do NOT create a separate local address system that can go out of sync with Shopify.
+
+The app must always read and update addresses directly from Shopify customer data.
+
+API integration requirements:
+
+Use the Shopify Admin GraphQL API for customer address management.
+
+Required operations:
+
+1. Fetch customer addresses
+   - When the user opens the Profile > Addresses page
+   - Load all addresses from the Shopify customer object
+
+2. Create address
+   - When user adds a new address
+   - Send the address to Shopify and save it under the customer
+
+3. Update address
+   - When user edits an address
+   - Update the same address in Shopify
+
+4. Delete address
+   - When user deletes an address
+   - Remove the address from Shopify
+
+5. Set default address
+   - When user clicks "Make default"
+   - Update the customer's default address in Shopify
+
+Data flow:
+
+App (frontend)
+→ Backend API
+→ Shopify Admin GraphQL API
+→ Shopify customer addresses
+
+Never expose Shopify admin tokens to the frontend.
+
+Only the backend should communicate with Shopify.
+
+Frontend should call internal endpoints such as:
+
+GET /api/customer/addresses
+POST /api/customer/addresses
+PUT /api/customer/addresses/:id
+DELETE /api/customer/addresses/:id
+POST /api/customer/addresses/:id/default
+
+The backend will then call the Shopify GraphQL API.
+
+Important implementation rules:
+
+- Only logged-in customers can manage addresses
+- Guest users must still manually fill checkout fields
+- Checkout must prefill fields if a default address exists
+- Checkout edits must optionally update the default address
+
+UI behavior:
+
+Profile page
+→ "Addresses" section
+→ list of addresses
+→ edit / delete / set default
+
+Checkout page
+→ address auto-fill for logged-in customers
+→ option to save address as default
+
+Make sure the address logic is centralized and reused between Profile and Checkout, not duplicated.
+
+Please inspect the existing authentication system, Shopify customer integration, and checkout flow before implementing the new address system.

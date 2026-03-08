@@ -63,6 +63,24 @@ export default function CheckoutScreen() {
   const [step, setStep] = useState(1);
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+
+  React.useEffect(() => {
+    if (token) {
+      api.getCustomerAddresses(token).then((addrs: any[]) => {
+        const defaultAddr = addrs.find((a: any) => a.isDefault);
+        if (defaultAddr) {
+          if (!firstName) setFirstName(defaultAddr.firstName || '');
+          if (!lastName) setLastName(defaultAddr.lastName || '');
+          let displayPhone = defaultAddr.phone || '';
+          if (displayPhone.startsWith('+962')) displayPhone = '0' + displayPhone.substring(4);
+          if (!phone) setPhone(displayPhone);
+          if (!address) setAddress(defaultAddr.address1 || '');
+          if (!city) setCity(defaultAddr.city || '');
+        }
+      }).catch(() => {});
+    }
+  }, [token]);
 
   const detectLocation = async () => {
     setIsLocating(true);
@@ -153,6 +171,19 @@ export default function CheckoutScreen() {
       if (notes.trim()) {
         try {
           await api.updateCartNote(cartId, notes.trim());
+        } catch {}
+      }
+
+      if (saveAsDefault && token) {
+        try {
+          const created = await api.createCustomerAddress(token, {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            phone: phone.trim(),
+            address1: address.trim(),
+            city: city.trim(),
+          });
+          if (created?.id) await api.setDefaultAddress(token, created.id);
         } catch {}
       }
 
@@ -460,6 +491,25 @@ export default function CheckoutScreen() {
                   <ScrollableInput inputRef={notesRef} style={[styles.formInput, styles.formTextarea, { textAlign: isRTL ? 'right' : 'left' }]} value={notes} onChangeText={setNotes} placeholder={t('checkout.notesPlaceholder')} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
                 </View>
               </View>
+
+              {!!token && (
+                <Pressable
+                  onPress={() => setSaveAsDefault(v => !v)}
+                  style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, marginTop: 4, paddingVertical: 4 }}
+                >
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 6, borderWidth: 2,
+                    borderColor: saveAsDefault ? colors.primary : colors.border,
+                    backgroundColor: saveAsDefault ? colors.primary : 'transparent',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {saveAsDefault && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </View>
+                  <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 14, color: colors.text }}>
+                    {language === 'ar' ? 'حفظ كعنوان افتراضي' : 'Make this my default address'}
+                  </Text>
+                </Pressable>
+              )}
 
               <View style={styles.paymentInfoCard}>
                 <View style={[styles.paymentInfoRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>

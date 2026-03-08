@@ -146,6 +146,16 @@ export const api = {
   getDeliveryCodes: (orderNames: string[]) => request("POST", `/api/orders/delivery-codes`, { orderNames }),
 
 
+  getCustomerAddresses: (token: string) => request("GET", "/api/customer/addresses", undefined, token),
+  createCustomerAddress: (token: string, data: { firstName: string; lastName: string; phone: string; address1?: string; city?: string; company?: string }) =>
+    request("POST", "/api/customer/addresses", data, token),
+  updateCustomerAddress: (token: string, addressId: string, data: { firstName: string; lastName: string; phone: string; address1?: string; city?: string; company?: string }) =>
+    request("PUT", `/api/customer/addresses/${addressId}`, data, token),
+  deleteCustomerAddress: (token: string, addressId: string) =>
+    request("DELETE", `/api/customer/addresses/${addressId}`, undefined, token),
+  setDefaultAddress: (token: string, addressId: string) =>
+    request("POST", `/api/customer/addresses/${addressId}/default`, {}, token),
+
   getCartUpsell: (handles: string[], lang?: string) =>
     request("POST", addLang("/api/cart-upsell", lang), { handles }),
   getTrendingProducts: (lang?: string) =>

@@ -349,8 +349,58 @@ export default function CodOrderScreen() {
     setToastVisible(true);
   };
 
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+
   useEffect(() => {
-    if (customer) {
+    if (token) {
+      api.getCustomerAddresses(token).then((addrs: any[]) => {
+        const defaultAddr = addrs.find((a: any) => a.isDefault);
+        if (defaultAddr) {
+          formValues.current.firstName = defaultAddr.firstName || formValues.current.firstName;
+          formValues.current.lastName = defaultAddr.lastName || formValues.current.lastName;
+          let displayPhone = defaultAddr.phone || '';
+          if (displayPhone.startsWith('+962')) displayPhone = '0' + displayPhone.substring(4);
+          formValues.current.phone = displayPhone || formValues.current.phone;
+          formValues.current.address = defaultAddr.address1 || formValues.current.address;
+          formValues.current.city = defaultAddr.city || formValues.current.city;
+          setTimeout(() => {
+            firstNameInputRef.current?.setNativeProps({ text: formValues.current.firstName });
+            lastNameRef.current?.setNativeProps({ text: formValues.current.lastName });
+            phoneRef.current?.setNativeProps({ text: formValues.current.phone });
+            addressRef.current?.setNativeProps({ text: formValues.current.address });
+            cityRef.current?.setNativeProps({ text: formValues.current.city });
+          }, 200);
+        } else if (customer) {
+          if (customer.firstName && !formValues.current.firstName) {
+            formValues.current.firstName = customer.firstName;
+            firstNameInputRef.current?.setNativeProps({ text: customer.firstName });
+          }
+          if (customer.lastName && !formValues.current.lastName) {
+            formValues.current.lastName = customer.lastName;
+            lastNameRef.current?.setNativeProps({ text: customer.lastName });
+          }
+          if (customer.phone && !formValues.current.phone) {
+            formValues.current.phone = customer.phone;
+            phoneRef.current?.setNativeProps({ text: customer.phone });
+          }
+        }
+      }).catch(() => {
+        if (customer) {
+          if (customer.firstName && !formValues.current.firstName) {
+            formValues.current.firstName = customer.firstName;
+            firstNameInputRef.current?.setNativeProps({ text: customer.firstName });
+          }
+          if (customer.lastName && !formValues.current.lastName) {
+            formValues.current.lastName = customer.lastName;
+            lastNameRef.current?.setNativeProps({ text: customer.lastName });
+          }
+          if (customer.phone && !formValues.current.phone) {
+            formValues.current.phone = customer.phone;
+            phoneRef.current?.setNativeProps({ text: customer.phone });
+          }
+        }
+      });
+    } else if (customer) {
       if (customer.firstName && !formValues.current.firstName) {
         formValues.current.firstName = customer.firstName;
         firstNameInputRef.current?.setNativeProps({ text: customer.firstName });
@@ -364,7 +414,7 @@ export default function CodOrderScreen() {
         phoneRef.current?.setNativeProps({ text: customer.phone });
       }
     }
-  }, [customer]);
+  }, [token, customer]);
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState<{
     code: string;
@@ -644,6 +694,19 @@ export default function CodOrderScreen() {
     if (paymentMethod === 'cod' && !validateForm()) return;
     setIsProcessing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    if (saveAsDefault && token) {
+      try {
+        const created = await api.createCustomerAddress(token, {
+          firstName: formValues.current.firstName.trim(),
+          lastName: formValues.current.lastName.trim(),
+          phone: formValues.current.phone.trim(),
+          address1: formValues.current.address.trim(),
+          city: formValues.current.city.trim(),
+        });
+        if (created?.id) await api.setDefaultAddress(token, created.id);
+      } catch {}
+    }
 
     try {
       if (paymentMethod === 'card') {
@@ -1449,6 +1512,24 @@ export default function CodOrderScreen() {
             <ScrollableInput inputRef={notesRef} style={[s.input, s.textArea, { textAlign: isRTL ? 'right' : 'left', textAlignVertical: 'top' }]} defaultValue={formValues.current.notes} onChangeText={(v: string) => { formValues.current.notes = v; }} placeholder={t('checkout.notesPlaceholder')} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
             </View>
 
+            {!!token && (
+              <Pressable
+                onPress={() => setSaveAsDefault(v => !v)}
+                style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, marginTop: 4, paddingVertical: 4 }}
+              >
+                <View style={{
+                  width: 22, height: 22, borderRadius: 6, borderWidth: 2,
+                  borderColor: saveAsDefault ? colors.primary : colors.border,
+                  backgroundColor: saveAsDefault ? colors.primary : 'transparent',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {saveAsDefault && <Ionicons name="checkmark" size={14} color="#fff" />}
+                </View>
+                <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 14, color: colors.text }}>
+                  {language === 'ar' ? 'حفظ كعنوان افتراضي' : 'Make this my default address'}
+                </Text>
+              </Pressable>
+            )}
           </View>
           )}
 

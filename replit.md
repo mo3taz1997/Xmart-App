@@ -62,7 +62,7 @@ Preferred communication style: Simple, everyday language (Arabic).
   - `homepage_sections` - Homepage layout sections
   - `homepage_banners` - Banners within sections
   - `app_settings` - Key-value configuration store (12 settings)
-  - `customer_addresses` - Saved shipping addresses
+  - `customer_addresses` - Legacy table (no longer used, addresses now managed via Shopify Admin API)
   - `orders` - Customer orders
   - `order_items` - Individual order items
   - `categories` - 3-level category hierarchy (6 categories)

@@ -1118,6 +1118,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  async function getShopifyCustomerId(storeFrontToken: string): Promise<string> {
+    const data = await shopifyFetch(QUERIES.GET_CUSTOMER, {
+      customerAccessToken: storeFrontToken,
+      language: "EN",
+    });
+    if (!data.customer?.id) throw new Error("Customer not found");
+    const gid = data.customer.id;
+    const numericId = gid.replace(/.*\//, '');
+    return numericId;
+  }
+
+  app.get("/api/customer/addresses", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Authentication required" });
+
+      const lang = ((req.query.lang as string) || "EN").toUpperCase();
+      const data = await shopifyFetch(QUERIES.GET_CUSTOMER, {
+        customerAccessToken: token,
+        language: lang,
+      });
+      if (!data.customer) return res.status(401).json({ error: "Invalid token" });
+
+      const defaultAddrId = data.customer.defaultAddress?.id || null;
+      const addresses = (data.customer.addresses?.edges || []).map((edge: any) => {
+        const addr = edge.node;
+        const numericId = (addr.id || '').replace(/.*\//, '');
+        return {
+          id: numericId,
+          firstName: addr.firstName || '',
+          lastName: addr.lastName || '',
+          phone: addr.phone || '',
+          address1: addr.address1 || '',
+          address2: addr.address2 || '',
+          city: addr.city || '',
+          country: addr.country || '',
+          province: addr.province || '',
+          zip: addr.zip || '',
+          company: addr.company || '',
+          isDefault: addr.id === defaultAddrId,
+        };
+      });
+      res.json(addresses);
+    } catch (error: any) {
+      console.error("[Addresses] GET error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/customer/addresses", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Authentication required" });
+
+      const customerId = await getShopifyCustomerId(token);
+      const { firstName, lastName, phone, address1, city, company } = req.body;
+
+      let formattedPhone = phone || '';
+      if (formattedPhone) {
+        formattedPhone = formattedPhone.replace(/\s+/g, '');
+        if (formattedPhone.startsWith("07") && formattedPhone.length === 10) {
+          formattedPhone = "+962" + formattedPhone.substring(1);
+        } else if (!formattedPhone.startsWith("+")) {
+          formattedPhone = "+962" + formattedPhone;
+        }
+      }
+
+      const result = await shopifyAdminFetch(`customers/${customerId}/addresses.json`, 'POST', {
+        address: {
+          first_name: firstName || '',
+          last_name: lastName || '',
+          phone: formattedPhone,
+          address1: address1 || '',
+          city: city || '',
+          country: 'Jordan',
+          company: company || '',
+        },
+      });
+
+      const addr = result.customer_address;
+      res.json({
+        id: String(addr.id),
+        firstName: addr.first_name,
+        lastName: addr.last_name,
+        phone: addr.phone,
+        address1: addr.address1,
+        city: addr.city,
+        company: addr.company,
+        isDefault: addr.default || false,
+      });
+    } catch (error: any) {
+      console.error("[Addresses] POST error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/customer/addresses/:addressId", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Authentication required" });
+
+      const customerId = await getShopifyCustomerId(token);
+      const { addressId } = req.params;
+      const { firstName, lastName, phone, address1, city, company } = req.body;
+
+      let formattedPhone = phone || '';
+      if (formattedPhone) {
+        formattedPhone = formattedPhone.replace(/\s+/g, '');
+        if (formattedPhone.startsWith("07") && formattedPhone.length === 10) {
+          formattedPhone = "+962" + formattedPhone.substring(1);
+        } else if (!formattedPhone.startsWith("+")) {
+          formattedPhone = "+962" + formattedPhone;
+        }
+      }
+
+      const result = await shopifyAdminFetch(`customers/${customerId}/addresses/${addressId}.json`, 'PUT', {
+        address: {
+          first_name: firstName || '',
+          last_name: lastName || '',
+          phone: formattedPhone,
+          address1: address1 || '',
+          city: city || '',
+          country: 'Jordan',
+          company: company || '',
+        },
+      });
+
+      const addr = result.customer_address;
+      res.json({
+        id: String(addr.id),
+        firstName: addr.first_name,
+        lastName: addr.last_name,
+        phone: addr.phone,
+        address1: addr.address1,
+        city: addr.city,
+        company: addr.company,
+        isDefault: addr.default || false,
+      });
+    } catch (error: any) {
+      console.error("[Addresses] PUT error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/customer/addresses/:addressId", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Authentication required" });
+
+      const customerId = await getShopifyCustomerId(token);
+      const { addressId } = req.params;
+
+      await shopifyAdminFetch(`customers/${customerId}/addresses/${addressId}.json`, 'DELETE');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Addresses] DELETE error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/customer/addresses/:addressId/default", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Authentication required" });
+
+      const customerId = await getShopifyCustomerId(token);
+      const { addressId } = req.params;
+
+      await shopifyAdminFetch(`customers/${customerId}/addresses/${addressId}/default.json`, 'PUT');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Addresses] SET DEFAULT error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/checkout/auto-complete", async (req: Request, res: Response) => {
     try {
       const { checkoutUrl, email, firstName, lastName, phone, address, city, notes } = req.body;
