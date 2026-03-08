@@ -706,15 +706,15 @@
   <div id="page-categories" style="display:none;">
     <input type="file" id="quickCatImgInput" accept=".png,.jpg,.jpeg,.webp,.gif" style="display:none" onchange="handleQuickCatImageFile(event)">
     <div class="page-header">
-      <h1>الأقسام (التصنيفات)</h1>
+      <h1 data-i18n="الأقسام (التصنيفات)">الأقسام (التصنيفات)</h1>
       <div style="display:flex;gap:8px;">
         <button class="btn" style="background:#e8f4ff;color:#248CCC;border:1px solid #248CCC;" onclick="syncCatNames()" id="syncCatNamesBtn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-          مزامنة الأسماء من شوبيفاي
+          <span data-i18n="مزامنة الأسماء من شوبيفاي">مزامنة الأسماء من شوبيفاي</span>
         </button>
         <button class="btn btn-primary" onclick="openCatModal(null)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          إضافة قسم رئيسي
+          <span data-i18n="إضافة قسم رئيسي">إضافة قسم رئيسي</span>
         </button>
       </div>
     </div>
@@ -722,13 +722,13 @@
 
     <div style="margin-top:32px;">
       <div class="page-header">
-        <h2 style="margin:0;">المنتجات المقترحة</h2>
+        <h2 style="margin:0;" data-i18n="المنتجات المقترحة">المنتجات المقترحة</h2>
         <button class="btn btn-primary" onclick="openSuggestedModal()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          إضافة منتج
+          <span data-i18n="إضافة منتج">إضافة منتج</span>
         </button>
       </div>
-      <p style="color:#888;font-size:13px;margin-bottom:12px;">المنتجات التي تظهر في صفحة الأقسام (المستوى الأول) كاقتراحات مختارة</p>
+      <p style="color:#888;font-size:13px;margin-bottom:12px;" data-i18n="المنتجات التي تظهر في صفحة الأقسام">المنتجات التي تظهر في صفحة الأقسام (المستوى الأول) كاقتراحات مختارة</p>
       <div id="suggestedList"></div>
     </div>
   </div>
@@ -931,35 +931,35 @@
       </div>
     </div>
   </div>
-</div>
 
-<div id="page-admin-security" style="display:none;">
-  <div class="page-header">
-    <h1 data-i18n="الأمان وكلمة المرور">الأمان وكلمة المرور</h1>
-  </div>
-  <div class="card">
-    <h3 style="margin-bottom:20px;" data-i18n="تغيير بيانات تسجيل الدخول">تغيير بيانات تسجيل الدخول</h3>
-    <div class="form-group">
-      <label data-i18n="اسم المستخدم الجديد">اسم المستخدم الجديد</label>
-      <input type="text" id="secNewUsername" placeholder="admin">
+  <div id="page-admin-security" style="display:none;">
+    <div class="page-header">
+      <h1 data-i18n="الأمان وكلمة المرور">الأمان وكلمة المرور</h1>
     </div>
-    <div class="form-group">
-      <label data-i18n="كلمة المرور الحالية">كلمة المرور الحالية</label>
-      <input type="password" id="secCurrentPassword">
+    <div class="card">
+      <h3 style="margin-bottom:20px;" data-i18n="تغيير بيانات تسجيل الدخول">تغيير بيانات تسجيل الدخول</h3>
+      <div class="form-group">
+        <label data-i18n="اسم المستخدم الجديد">اسم المستخدم الجديد</label>
+        <input type="text" id="secNewUsername" placeholder="admin">
+      </div>
+      <div class="form-group">
+        <label data-i18n="كلمة المرور الحالية">كلمة المرور الحالية</label>
+        <input type="password" id="secCurrentPassword">
+      </div>
+      <div class="form-group">
+        <label data-i18n="كلمة المرور الجديدة">كلمة المرور الجديدة</label>
+        <input type="password" id="secNewPassword" placeholder="6 أحرف على الأقل">
+      </div>
+      <div class="form-group">
+        <label data-i18n="تأكيد كلمة المرور الجديدة">تأكيد كلمة المرور الجديدة</label>
+        <input type="password" id="secConfirmPassword">
+      </div>
+      <div id="securityMsg" style="margin-bottom:12px;padding:10px 14px;border-radius:10px;font-size:13px;display:none;"></div>
+      <button class="btn btn-primary" onclick="changeAdminPassword()" style="margin-top:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span data-i18n="حفظ التغييرات">حفظ التغييرات</span>
+      </button>
     </div>
-    <div class="form-group">
-      <label data-i18n="كلمة المرور الجديدة">كلمة المرور الجديدة</label>
-      <input type="password" id="secNewPassword" placeholder="6 أحرف على الأقل">
-    </div>
-    <div class="form-group">
-      <label data-i18n="تأكيد كلمة المرور الجديدة">تأكيد كلمة المرور الجديدة</label>
-      <input type="password" id="secConfirmPassword">
-    </div>
-    <div id="securityMsg" style="margin-bottom:12px;padding:10px 14px;border-radius:10px;font-size:13px;display:none;"></div>
-    <button class="btn btn-primary" onclick="changeAdminPassword()" style="margin-top:8px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span data-i18n="حفظ التغييرات">حفظ التغييرات</span>
-    </button>
   </div>
 </div>
 
@@ -1491,7 +1491,9 @@ const ADMIN_TRANS = {
   /* Buttons */
   'إضافة قسم': 'Add Section',
   'إضافة قسم رئيسي': 'Add Main Category',
+  'مزامنة الأسماء من شوبيفاي': 'Sync Names from Shopify',
   'إضافة منتج': 'Add Product',
+  'المنتجات التي تظهر في صفحة الأقسام': 'Products that appear on the categories page (level 1) as selected suggestions',
   'إرسال إشعار': 'Send Notification',
   'حفظ الإعدادات': 'Save Settings',
   'إضافة': 'Add',
@@ -2020,11 +2022,11 @@ function renderMultiColTabs() {
       <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;">
         <span style="background:#163259;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${i+1}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:600;color:#163259;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tab.titleAr || tab.handle}</div>
-          <div style="font-size:11px;color:#888;">${tab.titleEn ? tab.titleEn + ' — ' : ''}${tab.handle}</div>
+          <div style="font-size:13px;font-weight:600;color:#163259;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (tab.titleEn || tab.titleAr || tab.handle) : (tab.titleAr || tab.handle)}</div>
+          <div style="font-size:11px;color:#888;">${adminLang === 'en' ? (tab.titleAr || '') : (tab.titleEn ? tab.titleEn + ' — ' : '')}${tab.handle}</div>
         </div>
-        <button data-mc-edit="${i}" style="background:none;border:1px solid #248CCC;cursor:pointer;color:#248CCC;font-size:13px;padding:3px 8px;border-radius:6px;flex-shrink:0;font-family:inherit;" title="تعديل">✏ تعديل</button>
-        <button data-mc-del="${i}" style="background:none;border:1px solid #e53935;cursor:pointer;color:#e53935;font-size:13px;padding:3px 8px;border-radius:6px;flex-shrink:0;font-family:inherit;" title="حذف">🗑 حذف</button>
+        <button data-mc-edit="${i}" style="background:none;border:1px solid #248CCC;cursor:pointer;color:#248CCC;font-size:13px;padding:3px 8px;border-radius:6px;flex-shrink:0;font-family:inherit;" title="${adminLang === 'en' ? 'Edit' : 'تعديل'}">✏ ${adminLang === 'en' ? 'Edit' : 'تعديل'}</button>
+        <button data-mc-del="${i}" style="background:none;border:1px solid #e53935;cursor:pointer;color:#e53935;font-size:13px;padding:3px 8px;border-radius:6px;flex-shrink:0;font-family:inherit;" title="${adminLang === 'en' ? 'Delete' : 'حذف'}">🗑 ${adminLang === 'en' ? 'Delete' : 'حذف'}</button>
       </div>
       ${isEditing ? `
       <div style="padding:0 12px 12px;border-top:1px solid #c8e6ff;">
@@ -2096,7 +2098,7 @@ async function doMultiColSearch(query) {
     const items = await api('GET', `/api/admin/search-collections?q=${encodeURIComponent(q)}`);
     _multiColSearchResultsMap = new Map();
     items.forEach(c => _multiColSearchResultsMap.set(c.handle, c));
-    if (!items.length) { sr.innerHTML = '<div style="padding:8px;text-align:center;color:#999;font-size:12px;">لا توجد نتائج</div>'; return; }
+    if (!items.length) { sr.innerHTML = `<div style="padding:8px;text-align:center;color:#999;font-size:12px;">${adminLang === 'en' ? 'No results' : 'لا توجد نتائج'}</div>`; return; }
     sr.innerHTML = items.map(c => {
       const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;pointer-events:none;">` : `<div style="width:28px;height:28px;border-radius:50%;background:#e8f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;pointer-events:none;font-size:13px;">📂</div>`;
       return `<div data-mc-pick="${c.handle}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-bottom:1px solid #f5f5f5;direction:rtl;">
@@ -2112,7 +2114,7 @@ async function doMultiColSearch(query) {
       if (row) selectMultiColCollection(row.getAttribute('data-mc-pick'));
     };
   } catch(e) {
-    sr.innerHTML = '<div style="padding:8px;text-align:center;color:#f44336;font-size:12px;">خطأ في البحث</div>';
+    sr.innerHTML = `<div style="padding:8px;text-align:center;color:#f44336;font-size:12px;">${adminLang === 'en' ? 'Search error' : 'خطأ في البحث'}</div>`;
   }
 }
 
@@ -2236,15 +2238,15 @@ function renderShowcaseCols() {
     <div style="display:flex;align-items:center;gap:8px;background:#f8fffe;border:1px solid #b2dfdb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
       ${col.imageUrl ? `<img src="${resolveImageUrl(col.imageUrl)}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:40px;height:40px;border-radius:8px;background:#e0f2f1;"></div>'}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:#163259;direction:rtl;text-align:right;">${col.titleAr || col.handle}</div>
-        <div style="font-size:11px;color:#888;">${col.titleEn || ''} — <code style="font-size:10px;">${col.handle}</code></div>
-        ${col.descAr ? `<div style="font-size:11px;color:#0A7B5C;direction:rtl;text-align:right;margin-top:2px;">📝 ${col.descAr}</div>` : ''}
+        <div style="font-size:13px;font-weight:600;color:#163259;direction:rtl;text-align:right;">${adminLang === 'en' ? (col.titleEn || col.titleAr || col.handle) : (col.titleAr || col.handle)}</div>
+        <div style="font-size:11px;color:#888;">${adminLang === 'en' ? (col.titleAr || '') : (col.titleEn || '')} — <code style="font-size:10px;">${col.handle}</code></div>
+        ${col.descAr ? `<div style="font-size:11px;color:#0A7B5C;direction:rtl;text-align:right;margin-top:2px;">📝 ${adminLang === 'en' ? (col.descEn || col.descAr) : col.descAr}</div>` : ''}
       </div>
       <div style="display:flex;gap:4px;align-items:center;">
-        ${i > 0 ? `<button onclick="moveShowcaseCol(${i},-1)" style="background:none;border:none;cursor:pointer;font-size:16px;" title="أعلى">↑</button>` : ''}
-        ${i < _showcaseCols.length-1 ? `<button onclick="moveShowcaseCol(${i},1)" style="background:none;border:none;cursor:pointer;font-size:16px;" title="أسفل">↓</button>` : ''}
-        <button onclick="editShowcaseCol(${i})" style="background:none;border:none;cursor:pointer;font-size:15px;color:#1565C0;" title="تعديل">✏️</button>
-        <button onclick="deleteShowcaseCol(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;" title="حذف">🗑</button>
+        ${i > 0 ? `<button onclick="moveShowcaseCol(${i},-1)" style="background:none;border:none;cursor:pointer;font-size:16px;" title="${adminLang === 'en' ? 'Up' : 'أعلى'}">↑</button>` : ''}
+        ${i < _showcaseCols.length-1 ? `<button onclick="moveShowcaseCol(${i},1)" style="background:none;border:none;cursor:pointer;font-size:16px;" title="${adminLang === 'en' ? 'Down' : 'أسفل'}">↓</button>` : ''}
+        <button onclick="editShowcaseCol(${i})" style="background:none;border:none;cursor:pointer;font-size:15px;color:#1565C0;" title="${adminLang === 'en' ? 'Edit' : 'تعديل'}">✏️</button>
+        <button onclick="deleteShowcaseCol(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;" title="${adminLang === 'en' ? 'Delete' : 'حذف'}">🗑</button>
       </div>
     </div>
   `).join('');
@@ -2378,14 +2380,14 @@ function loadFeaturedProducts(products) {
 function renderFeaturedProducts() {
   const el = document.getElementById('featuredProductsList');
   if (!el) return;
-  if (_featuredProducts.length === 0) { el.innerHTML = '<div style="font-size:12px;color:#999;text-align:center;padding:8px;">لا توجد منتجات مضافة بعد</div>'; return; }
+  if (_featuredProducts.length === 0) { el.innerHTML = `<div style="font-size:12px;color:#999;text-align:center;padding:8px;">${adminLang === 'en' ? 'No products added yet' : 'لا توجد منتجات مضافة بعد'}</div>`; return; }
   el.innerHTML = _featuredProducts.map((p, i) => `
     <div style="background:#fff5f7;border:1px solid #f8bbd0;border-radius:10px;padding:10px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
         ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:44px;height:44px;border-radius:8px;background:#fce4ec;flex-shrink:0;"></div>'}
         <div style="flex:1;min-width:0;">
           ${p.vendor ? `<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;">${p.vendor}</div>` : ''}
-          <div style="font-size:13px;font-weight:600;color:#163259;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.titleAr || p.handle}</div>
+          <div style="font-size:13px;font-weight:600;color:#163259;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (p.titleEn || p.titleAr || p.handle) : (p.titleAr || p.handle)}</div>
           <div style="font-size:11px;color:#E91E63;">${parseFloat(p.price||0).toFixed(2)} ${p.currency||'JOD'}${p.compareAtPrice ? ` <s style="color:#bbb;">${parseFloat(p.compareAtPrice).toFixed(2)}</s>` : ''}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:2px;align-items:center;flex-shrink:0;">
@@ -2513,7 +2515,7 @@ function selectFeaturedProduct(handle) {
 function confirmAddFeaturedProduct() {
   if (!_featuredSelectedProduct) { alert('اختر منتجاً أولاً'); return; }
   if (_featuredProducts.length >= 10) { alert('الحد الأقصى 10 منتجات'); return; }
-  if (_featuredProducts.find(p => p.handle === _featuredSelectedProduct.handle)) { alert('هذا المنتج مضاف مسبقاً'); return; }
+  if (_featuredProducts.find(p => p.handle === _featuredSelectedProduct.handle)) { alert(adminLang === 'en' ? 'This product is already added' : 'هذا المنتج مضاف مسبقاً'); return; }
   _featuredProducts.push({ ..._featuredSelectedProduct });
   renderFeaturedProducts();
   cancelFeaturedProduct();
@@ -3726,16 +3728,16 @@ async function loadCategories() {
 async function syncCatNames() {
   const btn = document.getElementById('syncCatNamesBtn');
   btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg> جاري المزامنة...';
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg> ${adminLang === 'en' ? 'Syncing...' : 'جاري المزامنة...'}`;
   try {
     const result = await api('POST', '/api/admin/categories/sync-names');
-    showToast(`تم تحديث ${result.updated} قسم من أصل ${result.total}`, false);
+    showToast(adminLang === 'en' ? `Updated ${result.updated} of ${result.total} categories` : `تم تحديث ${result.updated} قسم من أصل ${result.total}`, false);
     await loadCategories();
   } catch(e) {
-    showToast('خطأ في المزامنة: ' + e.message, true);
+    showToast((adminLang === 'en' ? 'Sync error: ' : 'خطأ في المزامنة: ') + e.message, true);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg> مزامنة الأسماء من شوبيفاي';
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg> <span data-i18n="مزامنة الأسماء من شوبيفاي">${adminLang === 'en' ? 'Sync Names from Shopify' : 'مزامنة الأسماء من شوبيفاي'}</span>`;
   }
 }
 
@@ -3798,28 +3800,28 @@ function renderCatNode(cat, depth) {
                </div>`}
         </div>
         <div style="flex:1;min-width:0;overflow:hidden;">
-          <div style="font-size:${titleSize}px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat.titleAr}</div>
+          <div style="font-size:${titleSize}px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${adminLang === 'en' ? (cat.titleEn || cat.titleAr) : cat.titleAr}</div>
           <div style="font-size:${titleSize-1}px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            ${cat.titleEn}
+            ${adminLang === 'en' ? cat.titleAr : cat.titleEn}
             ${cat.collectionHandle ? `<span style="background:#e8f5e9;color:#2e7d32;padding:0 5px;border-radius:4px;font-size:10px;margin-right:4px;">${cat.collectionHandle}</span>` : ''}
-            ${children.length ? `<span style="background:#e3f2fd;color:#1565c0;padding:0 4px;border-radius:3px;font-size:10px;">${children.length} فرعي</span>` : ''}
+            ${children.length ? `<span style="background:#e3f2fd;color:#1565c0;padding:0 4px;border-radius:3px;font-size:10px;">${children.length} ${adminLang === 'en' ? 'sub' : 'فرعي'}</span>` : ''}
           </div>
         </div>
         <span style="font-size:10px;padding:1px 6px;border-radius:4px;white-space:nowrap;background:${cat.visible ? '#e8f5e9' : '#fce4ec'};color:${cat.visible ? '#2e7d32' : '#c62828'};">
-          ${cat.visible ? 'مرئي' : 'مخفي'}
+          ${cat.visible ? (adminLang === 'en' ? 'Visible' : 'مرئي') : (adminLang === 'en' ? 'Hidden' : 'مخفي')}
         </span>
-        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};cursor:grab;" title="اسحب لإعادة الترتيب" onmousedown="startCatDrag(event, '${cat.id}', '${cat.parentId || ''}')">
+        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};cursor:grab;" title="${adminLang === 'en' ? 'Drag to reorder' : 'اسحب لإعادة الترتيب'}" onmousedown="startCatDrag(event, '${cat.id}', '${cat.parentId || ''}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
         </button>
-        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="moveCat('${cat.id}', '${cat.parentId || ''}', -1)" title="تحريك لأعلى">
+        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="moveCat('${cat.id}', '${cat.parentId || ''}', -1)" title="${adminLang === 'en' ? 'Move up' : 'تحريك لأعلى'}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
-        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="moveCat('${cat.id}', '${cat.parentId || ''}', 1)" title="تحريك لأسفل">
+        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="moveCat('${cat.id}', '${cat.parentId || ''}', 1)" title="${adminLang === 'en' ? 'Move down' : 'تحريك لأسفل'}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
-        <button class="btn btn-secondary" style="font-size:${btnFs};padding:${btnPd};white-space:nowrap;" onclick="openCatModal('${cat.id}')">+ فرعي</button>
-        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="editCat('${cat.id}')">تعديل</button>
-        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};color:#e53935;border-color:#e53935;" onclick="deleteCat('${cat.id}')">حذف</button>
+        <button class="btn btn-secondary" style="font-size:${btnFs};padding:${btnPd};white-space:nowrap;" onclick="openCatModal('${cat.id}')">${adminLang === 'en' ? '+ Sub' : '+ فرعي'}</button>
+        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="editCat('${cat.id}')">${adminLang === 'en' ? 'Edit' : 'تعديل'}</button>
+        <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};color:#e53935;border-color:#e53935;" onclick="deleteCat('${cat.id}')">${adminLang === 'en' ? 'Delete' : 'حذف'}</button>
       </div>
       ${children.length && !collapsed
         ? `<div>${children.map(ch => renderCatNode(ch, depth + 1)).join('')}</div>`
@@ -3832,7 +3834,7 @@ function renderCatTree() {
   const list = document.getElementById('catList');
   const roots = catsList.filter(c => !c.parentId).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0));
   if (!roots.length) {
-    list.innerHTML = '<div class="card" style="text-align:center;padding:48px 24px;color:#888;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin-bottom:12px"><circle cx="12" cy="12" r="10"/></svg><br>لا توجد أقسام بعد<br><span style="font-size:13px">أضف أقساماً رئيسية ثم أضف أقساماً فرعية لكل منها</span></div>';
+    list.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px;color:#888;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin-bottom:12px"><circle cx="12" cy="12" r="10"/></svg><br>${adminLang === 'en' ? 'No categories yet' : 'لا توجد أقسام بعد'}<br><span style="font-size:13px">${adminLang === 'en' ? 'Add main categories then add sub-categories to each' : 'أضف أقساماً رئيسية ثم أضف أقساماً فرعية لكل منها'}</span></div>`;
     return;
   }
   list.innerHTML = roots.map(root => `<div class="card cat-sortable-root" data-cat-id="${root.id}" style="margin-bottom:16px;transition:transform 0.15s,box-shadow 0.15s;">${renderCatNode(root, 0)}</div>`).join('');
