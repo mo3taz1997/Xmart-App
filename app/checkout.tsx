@@ -62,30 +62,7 @@ export default function CheckoutScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState(1);
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-
-  React.useEffect(() => {
-    if (customer?.email) {
-      api.getAddresses(customer.email, token || undefined).then((addrs: any[]) => {
-        setSavedAddresses(addrs);
-        const defaultAddr = addrs.find((a: any) => a.isDefault);
-        if (defaultAddr) {
-          applyAddress(defaultAddr);
-          setSelectedAddressId(defaultAddr.id);
-        }
-      }).catch(() => {});
-    }
-  }, [customer?.email, token]);
-
-  const applyAddress = (addr: any) => {
-    setFirstName(addr.firstName || '');
-    setLastName(addr.lastName || '');
-    setPhone(addr.phone || '');
-    setAddress(addr.address || '');
-    setCity(addr.city || '');
-  };
 
   const detectLocation = async () => {
     setIsLocating(true);
@@ -439,48 +416,6 @@ export default function CheckoutScreen() {
             <Animated.View entering={FadeInDown.duration(300)}>
               <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.shippingDetails')}</Text>
 
-              {savedAddresses.length > 0 && (
-                <View style={styles.savedAddressSection}>
-                  <Text style={[styles.savedAddressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('addresses.selectAddress')}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}>
-                    {savedAddresses.map((addr: any) => (
-                      <Pressable
-                        key={addr.id}
-                        style={[styles.savedAddressChip, selectedAddressId === addr.id && styles.savedAddressChipActive]}
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          setSelectedAddressId(addr.id);
-                          applyAddress(addr);
-                        }}
-                      >
-                        <Ionicons name="location" size={14} color={selectedAddressId === addr.id ? colors.primary : colors.textMuted} />
-                        <Text style={[styles.savedAddressChipText, selectedAddressId === addr.id && styles.savedAddressChipTextActive]}>
-                          {addr.label || `${addr.firstName} ${addr.lastName}`}
-                        </Text>
-                        {addr.isDefault && (
-                          <View style={styles.chipDefaultDot} />
-                        )}
-                      </Pressable>
-                    ))}
-                    <Pressable
-                      style={[styles.savedAddressChip, !selectedAddressId && styles.savedAddressChipActive]}
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        setSelectedAddressId(null);
-                        setFirstName(customer?.firstName || '');
-                        setLastName(customer?.lastName || '');
-                        setPhone(customer?.phone || '');
-                        setAddress('');
-                        setCity('');
-                      }}
-                    >
-                      <Ionicons name="create-outline" size={14} color={!selectedAddressId ? colors.primary : colors.textMuted} />
-                      <Text style={[styles.savedAddressChipText, !selectedAddressId && styles.savedAddressChipTextActive]}>{t('addresses.add')}</Text>
-                    </Pressable>
-                  </ScrollView>
-                </View>
-              )}
-
               <View style={styles.formCard}>
                 <View style={[styles.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View style={styles.formField}>
@@ -632,13 +567,7 @@ function getStyles(colors: typeof Colors.dark, isDark: boolean) {
     divider: { height: 1, backgroundColor: colors.border, marginVertical: 8 },
     totalLabel: { fontFamily: 'Cairo_700Bold', fontSize: 16, color: colors.text },
     totalValue: { fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.primary },
-    savedAddressSection: { marginBottom: 4 },
-    savedAddressLabel: { fontFamily: 'Cairo_600SemiBold', fontSize: 13, color: colors.textSecondary, marginBottom: 8 },
-    savedAddressChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: colors.border },
-    savedAddressChipActive: { borderColor: colors.primary, backgroundColor: isDark ? colors.primary + '20' : '#f0f4ff' },
-    savedAddressChipText: { fontFamily: 'Cairo_600SemiBold', fontSize: 12, color: colors.textSecondary },
-    savedAddressChipTextActive: { color: colors.primary },
-    chipDefaultDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
+
     locationBtn: { alignItems: 'center', gap: 8, backgroundColor: colors.primary + '12', borderRadius: 10, borderWidth: 1, borderColor: colors.primary + '40', paddingVertical: 12, paddingHorizontal: 16 },
     locationBtnText: { fontFamily: 'Cairo_600SemiBold', fontSize: 13, color: colors.primary },
     formCard: { backgroundColor: colors.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 14 },

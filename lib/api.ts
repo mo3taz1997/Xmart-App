@@ -145,28 +145,6 @@ export const api = {
   getOrders: (email: string, token?: string) => request("GET", `/api/orders?email=${encodeURIComponent(email)}`, undefined, token),
   getDeliveryCodes: (orderNames: string[]) => request("POST", `/api/orders/delivery-codes`, { orderNames }),
 
-  getAddresses: (email: string, token?: string) => request("GET", `/api/addresses?email=${encodeURIComponent(email)}`, undefined, token),
-  addAddress: (data: {
-    email: string;
-    label?: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    address?: string;
-    city?: string;
-    isDefault?: boolean;
-  }, token?: string) => request("POST", "/api/addresses", data, token),
-  updateAddress: (id: string, data: {
-    email?: string;
-    label?: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    address?: string;
-    city?: string;
-    isDefault?: boolean;
-  }, token?: string) => request("PUT", `/api/addresses/${encodeURIComponent(id)}`, data, token),
-  deleteAddress: (id: string, token?: string) => request("DELETE", `/api/addresses/${encodeURIComponent(id)}`, undefined, token),
 
   getCartUpsell: (handles: string[], lang?: string) =>
     request("POST", addLang("/api/cart-upsell", lang), { handles }),

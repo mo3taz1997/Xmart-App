@@ -339,7 +339,7 @@ export default function CodOrderScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
   const [isProcessing, setIsProcessing] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
-  const [saveAddressForNext, setSaveAddressForNext] = useState(false);
+
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('error');
   const [toastVisible, setToastVisible] = useState(false);
@@ -379,10 +379,6 @@ export default function CodOrderScreen() {
   const [fetchingOrderDetails, setFetchingOrderDetails] = useState(false);
   const [checkoutWebViewUrl, setCheckoutWebViewUrl] = useState<string | null>(null);
   const webViewHandledRef = useRef(false);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [isAddressModified, setIsAddressModified] = useState(false);
-  const [addressLoaded, setAddressLoaded] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [productQty, setProductQty] = useState(parseInt(params.qty || '1'));
   const [upsellItems, setUpsellItems] = useState<Array<{ variantId: string; productTitle: string; variantTitle?: string; quantity: number; price: string; currency: string; imageUrl?: string }>>([]);
@@ -428,46 +424,6 @@ export default function CodOrderScreen() {
     queryFn: () => api.getShippingRates(),
     staleTime: 10 * 60 * 1000,
   });
-
-  useEffect(() => {
-    if (customer?.email) {
-      api.getAddresses(customer.email, token || undefined).then((addrs: any[]) => {
-        setSavedAddresses(addrs);
-        const defaultAddr = addrs.find((a: any) => a.isDefault);
-        if (defaultAddr) {
-          formValues.current.firstName = defaultAddr.firstName || '';
-          formValues.current.lastName = defaultAddr.lastName || '';
-          formValues.current.phone = defaultAddr.phone || '';
-          formValues.current.address = defaultAddr.address || '';
-          formValues.current.city = defaultAddr.city || '';
-          setSelectedAddressId(defaultAddr.id);
-          setAddressLoaded(prev => !prev);
-          setTimeout(() => {
-            firstNameInputRef.current?.setNativeProps({ text: defaultAddr.firstName || '' });
-            lastNameRef.current?.setNativeProps({ text: defaultAddr.lastName || '' });
-            phoneRef.current?.setNativeProps({ text: defaultAddr.phone || '' });
-            addressRef.current?.setNativeProps({ text: defaultAddr.address || '' });
-            cityRef.current?.setNativeProps({ text: defaultAddr.city || '' });
-          }, 200);
-        }
-      }).catch(() => {});
-    }
-  }, [customer?.email, token]);
-
-  const applyAddress = (addr: any) => {
-    formValues.current.firstName = addr.firstName || '';
-    formValues.current.lastName = addr.lastName || '';
-    formValues.current.phone = addr.phone || '';
-    formValues.current.address = addr.address || '';
-    formValues.current.city = addr.city || '';
-    firstNameInputRef.current?.setNativeProps({ text: addr.firstName || '' });
-    lastNameRef.current?.setNativeProps({ text: addr.lastName || '' });
-    phoneRef.current?.setNativeProps({ text: addr.phone || '' });
-    addressRef.current?.setNativeProps({ text: addr.address || '' });
-    cityRef.current?.setNativeProps({ text: addr.city || '' });
-    setAddressLoaded(prev => !prev);
-    setIsAddressModified(false);
-  };
 
   const detectLocation = async () => {
     setIsLocating(true);
@@ -866,18 +822,6 @@ export default function CodOrderScreen() {
             discountAmount: discountAmount > 0 ? discountAmount.toFixed(3) : null,
             isFreeShipping: discountApplied?.isFreeShipping || false,
           });
-          if (saveAddressForNext && customer?.email) {
-            try {
-              await api.addAddress({
-                email: customer.email,
-                firstName: formValues.current.firstName.trim(),
-                lastName: formValues.current.lastName.trim(),
-                phone: formValues.current.phone.trim(),
-                address: formValues.current.address.trim() || undefined,
-                city: formValues.current.city.trim() || undefined,
-              });
-            } catch {}
-          }
           clearCart();
         }
       } else {
@@ -957,18 +901,6 @@ export default function CodOrderScreen() {
           discountAmount: discountAmount > 0 ? discountAmount.toFixed(3) : null,
           isFreeShipping: discountApplied?.isFreeShipping || false,
         });
-        if (saveAddressForNext && customer?.email) {
-          try {
-            await api.addAddress({
-              email: customer.email,
-              firstName: formValues.current.firstName.trim(),
-              lastName: formValues.current.lastName.trim(),
-              phone: formValues.current.phone.trim(),
-              address: formValues.current.address.trim() || undefined,
-              city: formValues.current.city.trim() || undefined,
-            });
-          } catch {}
-        }
         clearCart();
       }
     } catch (err: any) {
@@ -1474,41 +1406,20 @@ export default function CodOrderScreen() {
               </Text>
             </View>
 
-            {savedAddresses.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}>
-                {savedAddresses.map((addr: any) => (
-                  <Pressable
-                    key={addr.id}
-                    style={[s.addrChip, selectedAddressId === addr.id && s.addrChipActive]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setSelectedAddressId(addr.id);
-                      applyAddress(addr);
-                    }}
-                  >
-                    <Ionicons name="location" size={14} color={selectedAddressId === addr.id ? colors.primary : colors.textMuted} />
-                    <Text style={[s.addrChipText, selectedAddressId === addr.id && { color: colors.primary }]}>
-                      {addr.label || `${addr.firstName} ${addr.lastName}`}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            )}
-
-            <View key={String(addressLoaded)}>
+            <View>
             <View style={[s.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={s.formField}>
                 <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.firstName')} *</Text>
-                <ScrollableInput inputRef={firstNameInputRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.firstName && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.firstName} onChangeText={(v: string) => { formValues.current.firstName = v; setIsAddressModified(true); if (fieldErrors.firstName) setFieldErrors(e => ({ ...e, firstName: false })); }} placeholder={t('auth.firstName')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => lastNameRef.current?.focus()} />
+                <ScrollableInput inputRef={firstNameInputRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.firstName && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.firstName} onChangeText={(v: string) => { formValues.current.firstName = v; if (fieldErrors.firstName) setFieldErrors(e => ({ ...e, firstName: false })); }} placeholder={t('auth.firstName')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => lastNameRef.current?.focus()} />
               </View>
               <View style={s.formField}>
                 <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('auth.lastName')} *</Text>
-                <ScrollableInput inputRef={lastNameRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.lastName && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.lastName} onChangeText={(v: string) => { formValues.current.lastName = v; setIsAddressModified(true); if (fieldErrors.lastName) setFieldErrors(e => ({ ...e, lastName: false })); }} placeholder={t('auth.lastName')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => phoneRef.current?.focus()} />
+                <ScrollableInput inputRef={lastNameRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.lastName && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.lastName} onChangeText={(v: string) => { formValues.current.lastName = v; if (fieldErrors.lastName) setFieldErrors(e => ({ ...e, lastName: false })); }} placeholder={t('auth.lastName')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => phoneRef.current?.focus()} />
               </View>
             </View>
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.phone')} *</Text>
-            <ScrollableInput inputRef={phoneRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.phone && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.phone} onChangeText={(v: string) => { formValues.current.phone = v; setIsAddressModified(true); if (fieldErrors.phone) setFieldErrors(e => ({ ...e, phone: false })); }} placeholder="07XXXXXXXX" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" returnKeyType="next" onSubmitEditing={() => addressRef.current?.focus()} maxLength={10} />
+            <ScrollableInput inputRef={phoneRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.phone && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.phone} onChangeText={(v: string) => { formValues.current.phone = v; if (fieldErrors.phone) setFieldErrors(e => ({ ...e, phone: false })); }} placeholder="07XXXXXXXX" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" returnKeyType="next" onSubmitEditing={() => addressRef.current?.focus()} maxLength={10} />
             {fieldErrors.phone && (
               <Text style={{ color: '#E53935', fontSize: 12, fontFamily: 'Cairo_400Regular', textAlign: isRTL ? 'right' : 'left', marginTop: 4 }}>
                 {language === 'ar' ? 'رقم الهاتف يجب أن يكون 10 أرقام ويبدأ بـ 07' : 'Phone must be 10 digits and start with 07'}
@@ -1517,7 +1428,7 @@ export default function CodOrderScreen() {
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.address')} *</Text>
             <View style={[s.addressRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <ScrollableInput inputRef={addressRef} style={[s.input, s.addressInput, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.address && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.address} onChangeText={(v: string) => { formValues.current.address = v; setIsAddressModified(true); if (fieldErrors.address) setFieldErrors(e => ({ ...e, address: false })); }} placeholder={t('checkout.addressPlaceholder')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
+              <ScrollableInput inputRef={addressRef} style={[s.input, s.addressInput, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.address && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.address} onChangeText={(v: string) => { formValues.current.address = v; if (fieldErrors.address) setFieldErrors(e => ({ ...e, address: false })); }} placeholder={t('checkout.addressPlaceholder')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
               <Pressable
                 style={({ pressed }) => [s.locationIconBtn, { opacity: pressed ? 0.7 : 1 }]}
                 onPress={detectLocation}
@@ -1532,30 +1443,12 @@ export default function CodOrderScreen() {
             </View>
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.city')} *</Text>
-            <ScrollableInput inputRef={cityRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.city && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.city} onChangeText={(v: string) => { formValues.current.city = v; setIsAddressModified(true); if (fieldErrors.city) setFieldErrors(e => ({ ...e, city: false })); }} placeholder={language === 'ar' ? 'المدينة' : 'City'} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
+            <ScrollableInput inputRef={cityRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.city && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.city} onChangeText={(v: string) => { formValues.current.city = v; if (fieldErrors.city) setFieldErrors(e => ({ ...e, city: false })); }} placeholder={language === 'ar' ? 'المدينة' : 'City'} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.notes')}</Text>
             <ScrollableInput inputRef={notesRef} style={[s.input, s.textArea, { textAlign: isRTL ? 'right' : 'left', textAlignVertical: 'top' }]} defaultValue={formValues.current.notes} onChangeText={(v: string) => { formValues.current.notes = v; }} placeholder={t('checkout.notesPlaceholder')} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
             </View>
 
-            {!!customer && (!selectedAddressId || isAddressModified) && (
-              <Pressable
-                onPress={() => setSaveAddressForNext(v => !v)}
-                style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, marginTop: 14, paddingVertical: 4 }}
-              >
-                <View style={{
-                  width: 22, height: 22, borderRadius: 6, borderWidth: 2,
-                  borderColor: saveAddressForNext ? colors.primary : colors.border,
-                  backgroundColor: saveAddressForNext ? colors.primary : 'transparent',
-                  alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {saveAddressForNext && <Ionicons name="checkmark" size={14} color="#fff" />}
-                </View>
-                <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 14, color: colors.text }}>
-                  {language === 'ar' ? 'حفظ العنوان للمرات القادمة' : 'Save address for next time'}
-                </Text>
-              </Pressable>
-            )}
           </View>
           )}
 
@@ -1974,26 +1867,7 @@ function getStyles(colors: typeof Colors.dark, isDark: boolean, isRTL: boolean) 
       alignItems: 'center',
       justifyContent: 'center',
     },
-    addrChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: colors.surfaceLight,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    addrChipActive: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '10',
-    },
-    addrChipText: {
-      fontFamily: 'Cairo_600SemiBold',
-      fontSize: 12,
-      color: colors.textSecondary,
-    },
+
     cityPickerWrap: {
       marginTop: 4,
       flexWrap: 'wrap',
