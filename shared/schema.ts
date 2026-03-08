@@ -93,6 +93,7 @@ export const customerAddresses = pgTable("customer_addresses", {
   city: text("city"),
   country: text("country").default("JO"),
   isDefault: boolean("is_default").notNull().default(false),
+  shopifyAddressId: text("shopify_address_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -1014,6 +1014,9 @@ export const QUERIES = {
         firstName
         lastName
         phone
+        defaultAddress {
+          id
+        }
         addresses(first: 20) {
           edges {
             node {

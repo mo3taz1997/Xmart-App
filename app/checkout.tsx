@@ -50,7 +50,7 @@ export default function CheckoutScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL, formatCurrency, language } = useLanguage();
   const { cart, getCheckoutUrl, clearCart } = useCart();
-  const { customer } = useAuth();
+  const { customer, token } = useAuth();
 
   const [firstName, setFirstName] = useState(customer?.firstName || '');
   const [lastName, setLastName] = useState(customer?.lastName || '');
@@ -68,7 +68,7 @@ export default function CheckoutScreen() {
 
   React.useEffect(() => {
     if (customer?.email) {
-      api.getAddresses(customer.email).then((addrs: any[]) => {
+      api.getAddresses(customer.email, token || undefined).then((addrs: any[]) => {
         setSavedAddresses(addrs);
         const defaultAddr = addrs.find((a: any) => a.isDefault);
         if (defaultAddr) {
@@ -77,7 +77,7 @@ export default function CheckoutScreen() {
         }
       }).catch(() => {});
     }
-  }, [customer?.email]);
+  }, [customer?.email, token]);
 
   const applyAddress = (addr: any) => {
     setFirstName(addr.firstName || '');

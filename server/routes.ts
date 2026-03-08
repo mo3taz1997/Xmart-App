@@ -1138,6 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customerAccessToken: token,
             language: lang,
           });
+          const defaultAddrId = data.customer?.defaultAddress?.id || null;
           if (data.customer?.addresses?.edges) {
             shopifyAddresses = data.customer.addresses.edges.map((edge: any) => {
               const addr = edge.node;
@@ -1156,7 +1157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 country: addr.country || null,
                 province: addr.province || null,
                 zip: addr.zip || null,
-                isDefault: false,
+                isDefault: addr.id === defaultAddrId,
                 source: 'shopify',
               };
             });
@@ -1168,9 +1169,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const localWithSource = localAddresses.map(a => ({ ...a, source: 'local' }));
 
+      const linkedShopifyGids = new Set(localAddresses.filter(a => a.shopifyAddressId).map(a => a.shopifyAddressId));
       const existingPhones = new Set(localAddresses.map(a => a.phone?.replace(/\s/g, '')));
       const existingNames = new Set(localAddresses.map(a => `${a.firstName}_${a.lastName}_${a.city || ''}`));
       const filteredShopify = shopifyAddresses.filter(sa => {
+        if (linkedShopifyGids.has(sa.shopifyGid)) return false;
         const phoneClean = sa.phone?.replace(/\s/g, '') || '';
         const nameKey = `${sa.firstName}_${sa.lastName}_${sa.city || ''}`;
         return !existingPhones.has(phoneClean) && !existingNames.has(nameKey);
@@ -1239,9 +1242,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           address: address || null,
           city: city || null,
           isDefault: isDefault || false,
+          shopifyAddressId: shopifyAddressId || null,
         })
         .returning();
-      res.json({ ...newAddress, shopifyAddressId });
+      res.json(newAddress);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1311,6 +1315,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .returning();
       if (!updated) return res.status(404).json({ error: "Address not found" });
 
+      if (customerToken && updated.shopifyAddressId) {
+        try {
+          const shopifyAddr: any = {
+            firstName,
+            lastName,
+            phone,
+            address1: address || "",
+            city: city || "",
+            country: "JO",
+          };
+          if (label) shopifyAddr.company = label;
+          console.log("[Addresses] Syncing local update to Shopify:", updated.shopifyAddressId);
+          await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_UPDATE, {
+            customerAccessToken: customerToken,
+            id: updated.shopifyAddressId,
+            address: shopifyAddr,
+          });
+        } catch (e: any) {
+          console.error("[Addresses] Shopify sync on local update failed:", e.message);
+        }
+      }
+
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1353,6 +1379,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(customerAddresses.id, id))
         .returning();
       if (!deleted) return res.status(404).json({ error: "Address not found" });
+
+      if (customerToken && deleted.shopifyAddressId) {
+        try {
+          console.log("[Addresses] Syncing local delete to Shopify:", deleted.shopifyAddressId);
+          await shopifyFetch(QUERIES.CUSTOMER_ADDRESS_DELETE, {
+            customerAccessToken: customerToken,
+            id: deleted.shopifyAddressId,
+          });
+        } catch (e: any) {
+          console.error("[Addresses] Shopify sync on local delete failed:", e.message);
+        }
+      }
+
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

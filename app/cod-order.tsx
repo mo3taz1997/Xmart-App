@@ -452,7 +452,7 @@ export default function CodOrderScreen() {
         }
       }).catch(() => {});
     }
-  }, [customer?.email]);
+  }, [customer?.email, token]);
 
   const applyAddress = (addr: any) => {
     formValues.current.firstName = addr.firstName || '';
