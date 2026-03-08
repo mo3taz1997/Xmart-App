@@ -290,7 +290,7 @@ export default function AddressesScreen() {
         </ScrollView>
       )}
 
-      <Modal visible={showForm} animationType="slide" transparent={false}>
+      <Modal visible={showForm} animationType="slide" transparent={false} onRequestClose={() => setShowForm(false)}>
         <View style={[styles.fullScreenModal, { paddingTop: insets.top + webTopInset }]}>
           <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Pressable onPress={() => setShowForm(false)} style={styles.closeBtn}>
