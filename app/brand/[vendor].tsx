@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
@@ -15,7 +15,6 @@ import { api } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
-import { useStockStatus } from '@/lib/useStockStatus';
 
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 50;
@@ -63,7 +62,6 @@ export default function BrandScreen() {
         sortKey: sort.key,
         reverse: String(sort.reverse),
         query: `vendor:${vendor}`,
-        available: 'true',
         pageInfo: 'true',
       };
       if (pageParam) params.after = pageParam as string;
@@ -74,12 +72,6 @@ export default function BrandScreen() {
       if (lastPage?.pageInfo?.hasNextPage) return lastPage.pageInfo.endCursor;
       return undefined;
     },
-    enabled: !!vendor,
-  });
-
-  const { data: oosData } = useQuery({
-    queryKey: ['brand-oos', vendor, language],
-    queryFn: () => api.getProducts({ first: '100', query: `vendor:${vendor}`, available: 'false' }, language),
     enabled: !!vendor,
   });
 
@@ -116,20 +108,19 @@ export default function BrandScreen() {
   const getTypeLabel = (type: string) =>
     language === 'ar' && typeTranslations[type] ? typeTranslations[type] : type;
 
-  const outOfStockProducts = useMemo(() => {
-    let all = (Array.isArray(oosData) ? oosData : (oosData?.products || [])).filter((p: any) => p.availableForSale === false);
-    if (selectedType) all = all.filter((p: any) => p.productType === selectedType);
-    return all;
-  }, [oosData, selectedType]);
-
   const products = useMemo(() => {
     let list = allProducts;
     if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
-    return list;
-  }, [allProducts, selectedType]);
-
-  const allVisibleProducts = useMemo(() => [...products, ...outOfStockProducts], [products, outOfStockProducts]);
-  const { getAvailability } = useStockStatus(allVisibleProducts);
+    const available = list.filter((p: any) => p.availableForSale !== false);
+    const oos = list.filter((p: any) => p.availableForSale === false);
+    if (sortIdx === 0) {
+      for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+      }
+    }
+    return [...available, ...oos];
+  }, [allProducts, selectedType, sortIdx, randomSeed]);
 
   function extractProductData(product: any) {
     return {
@@ -139,7 +130,7 @@ export default function BrandScreen() {
       currencyCode: product.priceRange.minVariantPrice.currencyCode,
       compareAtPrice: product.compareAtPriceRange?.minVariantPrice?.amount,
       imageUrl: product.images?.edges?.[0]?.node?.url,
-      availableForSale: getAvailability(product.handle, product.availableForSale),
+      availableForSale: product.availableForSale,
     };
   }
 
@@ -219,7 +210,7 @@ export default function BrandScreen() {
         </View>
       ) : (
         <FlatList
-          data={allVisibleProducts}
+          data={products}
           keyExtractor={(item, i) => item.handle + i}
           numColumns={PRODUCT_COLUMNS}
           columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
@@ -231,7 +222,7 @@ export default function BrandScreen() {
           ListHeaderComponent={listHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!allVisibleProducts.length}
+          scrollEnabled={!!products.length}
           onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
           onEndReachedThreshold={0.5}
           initialNumToRender={6}
