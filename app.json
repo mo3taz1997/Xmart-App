@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "XMART",
-    "slug": "xmart",
+    "slug": "xmart-smart-online-shopping",
     "version": "2.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "updates": {
-      "url": "https://u.expo.dev/3e6b6783-234b-4908-9292-c1396a2444f9"
+      "url": "https://u.expo.dev/c83aec3c-614b-402a-89fa-6371f3ce984f"
     },
     "runtimeVersion": {
       "policy": "appVersion"
@@ -78,7 +78,7 @@
         "origin": "https://replit.com/"
       },
       "eas": {
-        "projectId": "3e6b6783-234b-4908-9292-c1396a2444f9"
+        "projectId": "c83aec3c-614b-402a-89fa-6371f3ce984f"
       }
     }
   }
