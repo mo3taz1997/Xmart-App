@@ -314,6 +314,7 @@ var QUERIES = {
               title
               sku
               availableForSale
+              quantityAvailable
               price {
                 amount
                 currencyCode

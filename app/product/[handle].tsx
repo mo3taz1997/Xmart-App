@@ -583,6 +583,7 @@ export default function ProductDetailScreen() {
   }
 
   const selectedVariant = variants[selectedVariantIdx] || variants[0];
+  const maxQuantity = selectedVariant?.quantityAvailable != null ? selectedVariant.quantityAvailable : 99;
   const price = selectedVariant?.price?.amount || product.priceRange.minVariantPrice.amount;
   const currency = selectedVariant?.price?.currencyCode || product.priceRange.minVariantPrice.currencyCode;
   const buildCartInfo = () => ({
@@ -592,6 +593,7 @@ export default function ProductDetailScreen() {
     price: price,
     currencyCode: currency,
     imageUrl: selectedVariant?.image?.url || (product.images?.edges?.[0]?.node?.url ?? null),
+    maxQuantity: maxQuantity,
   });
   const compareAtPrice = selectedVariant?.compareAtPrice?.amount || product.compareAtPriceRange?.minVariantPrice?.amount;
   const hasDiscount = compareAtPrice && parseFloat(compareAtPrice) > parseFloat(price);
@@ -1035,9 +1037,9 @@ export default function ProductDetailScreen() {
                 <Text style={[styles.qtySelectorText, { color: colors.text }]}>{quantity}</Text>
                 <Pressable
                   style={styles.qtySelectorBtn}
-                  onPress={() => { setQuantity(q => q + 1); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  onPress={() => { if (quantity < maxQuantity) { setQuantity(q => q + 1); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
                 >
-                  <Ionicons name="add" size={16} color={colors.text} />
+                  <Ionicons name="add" size={16} color={quantity < maxQuantity ? colors.text : colors.textMuted} />
                 </Pressable>
               </View>
             </View>

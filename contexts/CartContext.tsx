@@ -37,6 +37,7 @@ export interface CartItemInfo {
   price: string;
   currencyCode: string;
   imageUrl?: string | null;
+  maxQuantity?: number;
 }
 
 interface CartContextValue {
@@ -64,6 +65,7 @@ type StoredLine = {
   price: string;
   currencyCode: string;
   imageUrl: string | null;
+  maxQuantity?: number;
 };
 
 const CART_KEY = 'local_cart_v2';
@@ -195,20 +197,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const existing = prev.find(l => l.variantId === variantId);
         let next: StoredLine[];
         if (existing) {
+          const max = info?.maxQuantity ?? existing.maxQuantity;
+          let newQty = existing.quantity + quantity;
+          if (max != null && max > 0 && newQty > max) newQty = max;
           next = prev.map(l =>
-            l.variantId === variantId ? { ...l, quantity: l.quantity + quantity } : l
+            l.variantId === variantId ? { ...l, quantity: newQty, ...(max != null ? { maxQuantity: max } : {}) } : l
           );
         } else {
+          const max = info?.maxQuantity;
+          let finalQty = quantity;
+          if (max != null && max > 0 && finalQty > max) finalQty = max;
           const newLine: StoredLine = {
             lineId: genId(),
             variantId,
-            quantity,
+            quantity: finalQty,
             productTitle: info?.productTitle || '',
             productHandle: info?.productHandle || '',
             variantTitle: info?.variantTitle || 'Default Title',
             price: info?.price || '0',
             currencyCode: info?.currencyCode || 'JOD',
             imageUrl: info?.imageUrl ?? null,
+            maxQuantity: max,
             ...(language === 'ar'
               ? { productTitleAr: info?.productTitle || '' }
               : { productTitleEn: info?.productTitle || '' }),
@@ -229,7 +238,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       setLines(prev => {
         if (quantity <= 0) return prev.filter(l => l.lineId !== lineId);
-        return prev.map(l => l.lineId === lineId ? { ...l, quantity } : l);
+        return prev.map(l => {
+          if (l.lineId !== lineId) return l;
+          let finalQty = quantity;
+          if (l.maxQuantity != null && l.maxQuantity > 0 && finalQty > l.maxQuantity) finalQty = l.maxQuantity;
+          return { ...l, quantity: finalQty };
+        });
       });
     } finally {
       setIsLoading(false);
@@ -259,16 +273,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     let resultCart!: Cart;
     try {
+      const max = info?.maxQuantity;
+      let finalQty = quantity;
+      if (max != null && max > 0 && finalQty > max) finalQty = max;
       const newLine: StoredLine = {
         lineId: genId(),
         variantId,
-        quantity,
+        quantity: finalQty,
         productTitle: info?.productTitle || '',
         productHandle: info?.productHandle || '',
         variantTitle: info?.variantTitle || 'Default Title',
         price: info?.price || '0',
         currencyCode: info?.currencyCode || 'JOD',
         imageUrl: info?.imageUrl ?? null,
+        maxQuantity: max,
         ...(language === 'ar'
           ? { productTitleAr: info?.productTitle || '' }
           : { productTitleEn: info?.productTitle || '' }),
