@@ -29,7 +29,9 @@ function UpsellMiniCard({ item, onAdded }: { item: any; onAdded?: (handle: strin
   const imgUrl = item.images?.edges?.[0]?.node?.url || item.featuredImage?.url;
   const price = item.priceRange?.minVariantPrice?.amount || '0';
   const curr = item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
-  const variantId = item.variants?.edges?.[0]?.node?.id;
+  const variant = item.variants?.edges?.[0]?.node;
+  const variantId = variant?.id;
+  const maxQty = variant?.quantityAvailable ?? undefined;
 
   const handleAdd = async () => {
     if (!variantId || adding) return;
@@ -41,7 +43,8 @@ function UpsellMiniCard({ item, onAdded }: { item: any; onAdded?: (handle: strin
         price,
         currencyCode: curr,
         imageUrl: imgUrl || null,
-        variantTitle: item.variants?.edges?.[0]?.node?.title,
+        variantTitle: variant?.title,
+        maxQuantity: maxQty,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAdded(true);

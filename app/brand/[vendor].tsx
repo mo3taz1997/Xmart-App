@@ -62,6 +62,7 @@ export default function BrandScreen() {
         sortKey: sort.key,
         reverse: String(sort.reverse),
         query: `vendor:${vendor}`,
+        available: 'true',
         pageInfo: 'true',
       };
       if (pageParam) params.after = pageParam as string;
@@ -109,17 +110,15 @@ export default function BrandScreen() {
     language === 'ar' && typeTranslations[type] ? typeTranslations[type] : type;
 
   const products = useMemo(() => {
-    let list = allProducts;
+    let list = [...allProducts];
     if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
-    const available = list.filter((p: any) => p.availableForSale !== false);
-    const oos = list.filter((p: any) => p.availableForSale === false);
     if (sortIdx === 0) {
-      for (let i = available.length - 1; i > 0; i--) {
+      for (let i = list.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [available[i], available[j]] = [available[j], available[i]];
+        [list[i], list[j]] = [list[j], list[i]];
       }
     }
-    return [...available, ...oos];
+    return list;
   }, [allProducts, selectedType, sortIdx, randomSeed]);
 
   function extractProductData(product: any) {
