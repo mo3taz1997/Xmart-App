@@ -244,16 +244,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isRandom2 = rawSortKey2 === "RANDOM";
       const sortKey = isRandom2 ? "BEST_SELLING" : rawSortKey2;
       const reverse = req.query.reverse === "true";
-      let query = (req.query.query as string) || '';
+      const query = (req.query.query as string) || '';
       const withPageInfo = req.query.pageInfo === "true";
       const lang = ((req.query.lang as string) || "AR").toUpperCase();
       const language = lang === 'EN' ? 'EN' : 'AR';
-
-      if (req.query.available === 'true') {
-        query = query ? `${query} AND available_for_sale:true` : 'available_for_sale:true';
-      } else if (req.query.available === 'false') {
-        query = query ? `${query} AND available_for_sale:false` : 'available_for_sale:false';
-      }
+      const availableFilter = req.query.available as string | undefined;
 
       const data = await shopifyFetch(QUERIES.PRODUCTS, {
         first,
@@ -265,6 +260,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       let products = data.products.edges.map((edge: any) => edge.node);
+
+      if (availableFilter === 'true') {
+        products = products.filter((p: any) => p.availableForSale !== false);
+      } else if (availableFilter === 'false') {
+        products = products.filter((p: any) => p.availableForSale === false);
+      }
+
       if (isRandom2) {
         for (let i = products.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));

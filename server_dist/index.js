@@ -2981,15 +2981,11 @@ async function registerRoutes(app2) {
       const isRandom2 = rawSortKey2 === "RANDOM";
       const sortKey = isRandom2 ? "BEST_SELLING" : rawSortKey2;
       const reverse = req.query.reverse === "true";
-      let query = req.query.query || "";
+      const query = req.query.query || "";
       const withPageInfo = req.query.pageInfo === "true";
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
-      if (req.query.available === "true") {
-        query = query ? `${query} AND available_for_sale:true` : "available_for_sale:true";
-      } else if (req.query.available === "false") {
-        query = query ? `${query} AND available_for_sale:false` : "available_for_sale:false";
-      }
+      const availableFilter = req.query.available;
       const data = await shopifyFetch(QUERIES.PRODUCTS, {
         first,
         after,
@@ -2999,6 +2995,11 @@ async function registerRoutes(app2) {
         language
       });
       let products = data.products.edges.map((edge) => edge.node);
+      if (availableFilter === "true") {
+        products = products.filter((p) => p.availableForSale !== false);
+      } else if (availableFilter === "false") {
+        products = products.filter((p) => p.availableForSale === false);
+      }
       if (isRandom2) {
         for (let i = products.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
