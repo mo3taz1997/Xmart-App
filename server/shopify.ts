@@ -1170,9 +1170,14 @@ export const QUERIES = {
               id
               title
               availableForSale
+              quantityAvailable
               price {
                 amount
                 currencyCode
+              }
+              image {
+                url
+                altText
               }
             }
           }
