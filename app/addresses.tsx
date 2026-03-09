@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, Pressable, StyleSheet, Platform, ScrollView,
-  TextInput, ActivityIndicator, Alert, Modal, RefreshControl,
+  TextInput, ActivityIndicator, Alert, Modal, RefreshControl, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import PageBackground from '@/components/PageBackground';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import Toast from '@/components/Toast';
 
 interface Address {
   id: string;
@@ -43,6 +44,8 @@ export default function AddressesScreen() {
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [saving, setSaving] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [settingDefault, setSettingDefault] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -50,6 +53,15 @@ export default function AddressesScreen() {
   const [address1, setAddress1] = useState('');
   const [city, setCity] = useState('');
   const [company, setCompany] = useState('');
+
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('error');
+  const [toastVisible, setToastVisible] = useState(false);
+  const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setToastMsg(msg);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   const loadAddresses = useCallback(async () => {
     if (!token) {
@@ -105,7 +117,10 @@ export default function AddressesScreen() {
   const handleSave = async () => {
     if (!token) return;
     if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
-      Alert.alert(t('addresses.error'), t('addresses.fillRequired'));
+      showToast(
+        language === 'ar' ? 'يرجى تعبئة الحقول المطلوبة' : 'Please fill required fields',
+        'error'
+      );
       return;
     }
     setSaving(true);
@@ -124,32 +139,60 @@ export default function AddressesScreen() {
         await api.createCustomerAddress(token, payload);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast(
+        editingAddress
+          ? (language === 'ar' ? 'تم تحديث العنوان بنجاح' : 'Address updated successfully')
+          : (language === 'ar' ? 'تم إضافة العنوان بنجاح' : 'Address added successfully'),
+        'success'
+      );
       setShowForm(false);
       loadAddresses();
     } catch (e: any) {
-      Alert.alert(t('addresses.error'), t('addresses.saveError'));
+      showToast(
+        language === 'ar' ? 'حدث خطأ في حفظ العنوان' : 'Failed to save address',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = (addr: Address) => {
+    if (addr.isDefault) {
+      showToast(
+        language === 'ar'
+          ? 'لا يمكن حذف العنوان الافتراضي. قم بتعيين عنوان آخر كافتراضي أولاً'
+          : 'Cannot delete default address. Set another address as default first',
+        'info'
+      );
+      return;
+    }
     Alert.alert(
-      t('addresses.deleteTitle'),
-      t('addresses.deleteConfirm'),
+      language === 'ar' ? 'حذف العنوان' : 'Delete Address',
+      language === 'ar' ? 'هل أنت متأكد من حذف هذا العنوان؟' : 'Are you sure you want to delete this address?',
       [
-        { text: t('addresses.cancel'), style: 'cancel' },
+        { text: language === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' },
         {
-          text: t('addresses.delete'),
+          text: language === 'ar' ? 'حذف' : 'Delete',
           style: 'destructive',
           onPress: async () => {
             if (!token) return;
+            setDeletingId(addr.id);
             try {
               await api.deleteCustomerAddress(token, addr.id);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              showToast(
+                language === 'ar' ? 'تم حذف العنوان' : 'Address deleted',
+                'success'
+              );
               loadAddresses();
             } catch (e: any) {
-              Alert.alert(t('addresses.error'), e.message);
+              showToast(
+                language === 'ar' ? 'حدث خطأ في حذف العنوان' : 'Failed to delete address',
+                'error'
+              );
+            } finally {
+              setDeletingId(null);
             }
           },
         },
@@ -159,12 +202,22 @@ export default function AddressesScreen() {
 
   const handleSetDefault = async (addr: Address) => {
     if (!token || addr.isDefault) return;
+    setSettingDefault(addr.id);
     try {
       await api.setDefaultAddress(token, addr.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast(
+        language === 'ar' ? 'تم تعيين العنوان كافتراضي' : 'Default address updated',
+        'success'
+      );
       loadAddresses();
     } catch (e: any) {
-      Alert.alert(t('addresses.error'), e.message);
+      showToast(
+        language === 'ar' ? 'حدث خطأ في تعيين العنوان الافتراضي' : 'Failed to set default address',
+        'error'
+      );
+    } finally {
+      setSettingDefault(null);
     }
   };
 
@@ -173,7 +226,10 @@ export default function AddressesScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('addresses.error'), t('addresses.locationDenied'));
+        showToast(
+          language === 'ar' ? 'لم يتم السماح بالوصول للموقع' : 'Location permission denied',
+          'error'
+        );
         setIsLocating(false);
         return;
       }
@@ -187,8 +243,15 @@ export default function AddressesScreen() {
         if (parts.length) setAddress1(parts.join(', '));
         if (geo.city) setCity(geo.city);
       }
+      showToast(
+        language === 'ar' ? 'تم تحديد الموقع' : 'Location detected',
+        'success'
+      );
     } catch {
-      Alert.alert(t('addresses.error'), t('addresses.locationError'));
+      showToast(
+        language === 'ar' ? 'حدث خطأ في تحديد الموقع' : 'Failed to detect location',
+        'error'
+      );
     } finally {
       setIsLocating(false);
     }
@@ -199,13 +262,19 @@ export default function AddressesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + webTopInset }]}>
       <PageBackground isDark={isDark} />
+      <Toast
+        message={toastMsg}
+        type={toastType}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
       <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('addresses.title')}</Text>
-        <Pressable onPress={openAddForm} style={styles.addBtn}>
-          <Ionicons name="add" size={24} color={colors.primary} />
+        <Pressable onPress={openAddForm} style={[styles.addHeaderBtn, { backgroundColor: colors.primary }]}>
+          <Ionicons name="add" size={20} color="#fff" />
         </Pressable>
       </View>
 
@@ -215,11 +284,17 @@ export default function AddressesScreen() {
         </View>
       ) : addresses.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="location-outline" size={64} color={colors.textMuted} />
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('addresses.empty')}</Text>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name="location-outline" size={48} color={colors.primary} />
+          </View>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+            {language === 'ar' ? 'لا توجد عناوين محفوظة' : 'No saved addresses'}
+          </Text>
           <Pressable onPress={openAddForm} style={[styles.addFirstBtn, { backgroundColor: colors.primary }]}>
             <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.addFirstBtnText}>{t('addresses.addFirst')}</Text>
+            <Text style={styles.addFirstBtnText}>
+              {language === 'ar' ? 'إضافة عنوان' : 'Add Address'}
+            </Text>
           </Pressable>
         </View>
       ) : (
@@ -229,45 +304,70 @@ export default function AddressesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         >
           {addresses.map((addr) => (
-            <View key={addr.id} style={[styles.card, { backgroundColor: colors.card, borderColor: addr.isDefault ? colors.primary : colors.border }]}>
+            <View key={addr.id} style={[styles.card, {
+              backgroundColor: colors.card,
+              borderColor: addr.isDefault ? colors.primary : colors.border,
+              borderWidth: addr.isDefault ? 2 : 1,
+            }]}>
               <View style={[styles.cardTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.cardIcon, { backgroundColor: addr.isDefault ? colors.primary + '15' : (isDark ? 'rgba(255,255,255,0.08)' : '#f5f5f5') }]}>
+                  <Ionicons name={addr.isDefault ? "location" : "location-outline"} size={22} color={addr.isDefault ? colors.primary : colors.textMuted} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <View style={[{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }]}>
-                    <Text style={[styles.cardName, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[styles.cardName, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                       {addr.firstName} {addr.lastName}
                     </Text>
                     {addr.isDefault && (
-                      <View style={[styles.defaultBadge, { backgroundColor: colors.primary + '20' }]}>
-                        <Text style={[styles.defaultBadgeText, { color: colors.primary }]}>{t('addresses.default')}</Text>
+                      <View style={[styles.defaultBadge, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.defaultBadgeText}>
+                          {language === 'ar' ? 'افتراضي' : 'Default'}
+                        </Text>
                       </View>
                     )}
                   </View>
                   {addr.company ? (
-                    <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{addr.company}</Text>
+                    <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{addr.company}</Text>
                   ) : null}
                   <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{addr.phone}</Text>
                   {addr.address1 ? (
-                    <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{addr.address1}</Text>
-                  ) : null}
-                  {addr.city ? (
+                    <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{addr.address1}{addr.city ? `, ${addr.city}` : ''}</Text>
+                  ) : addr.city ? (
                     <Text style={[styles.cardDetail, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{addr.city}</Text>
                   ) : null}
                 </View>
               </View>
-              <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+
+              <View style={[styles.cardActions, { flexDirection: isRTL ? 'row-reverse' : 'row', borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#f0f0f0' }]}>
                 {!addr.isDefault && (
-                  <Pressable onPress={() => handleSetDefault(addr)} style={[styles.actionBtn, { borderColor: colors.border }]}>
-                    <Ionicons name="star-outline" size={16} color={colors.primary} />
-                    <Text style={[styles.actionText, { color: colors.primary }]}>{t('addresses.setDefault')}</Text>
+                  <Pressable
+                    onPress={() => handleSetDefault(addr)}
+                    style={[styles.iconAction, { backgroundColor: colors.primary + '12' }]}
+                    disabled={settingDefault === addr.id}
+                  >
+                    {settingDefault === addr.id ? (
+                      <ActivityIndicator size={16} color={colors.primary} />
+                    ) : (
+                      <Ionicons name="star-outline" size={18} color={colors.primary} />
+                    )}
                   </Pressable>
                 )}
-                <Pressable onPress={() => openEditForm(addr)} style={[styles.actionBtn, { borderColor: colors.border }]}>
-                  <Ionicons name="create-outline" size={16} color={colors.text} />
-                  <Text style={[styles.actionText, { color: colors.text }]}>{t('addresses.edit')}</Text>
+                <Pressable
+                  onPress={() => openEditForm(addr)}
+                  style={[styles.iconAction, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#f5f5f5' }]}
+                >
+                  <Ionicons name="create-outline" size={18} color={colors.text} />
                 </Pressable>
-                <Pressable onPress={() => handleDelete(addr)} style={[styles.actionBtn, { borderColor: colors.border }]}>
-                  <Ionicons name="trash-outline" size={16} color="#E53935" />
-                  <Text style={[styles.actionText, { color: '#E53935' }]}>{t('addresses.delete')}</Text>
+                <Pressable
+                  onPress={() => handleDelete(addr)}
+                  style={[styles.iconAction, { backgroundColor: addr.isDefault ? (isDark ? 'rgba(255,255,255,0.04)' : '#fafafa') : '#FFEBEE' }]}
+                  disabled={deletingId === addr.id}
+                >
+                  {deletingId === addr.id ? (
+                    <ActivityIndicator size={16} color="#E53935" />
+                  ) : (
+                    <Ionicons name="trash-outline" size={18} color={addr.isDefault ? colors.textMuted : '#E53935'} />
+                  )}
                 </Pressable>
               </View>
             </View>
@@ -283,48 +383,58 @@ export default function AddressesScreen() {
               <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color={colors.text} />
             </Pressable>
             <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>
-              {editingAddress ? t('addresses.edit') : t('addresses.add')}
+              {editingAddress
+                ? (language === 'ar' ? 'تعديل العنوان' : 'Edit Address')
+                : (language === 'ar' ? 'إضافة عنوان' : 'Add Address')}
             </Text>
             <View style={{ width: 40 }} />
           </View>
 
           <ScrollView style={styles.formScroll} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
             <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('addresses.label')}</Text>
+              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                {language === 'ar' ? 'التسمية (اختياري)' : 'Label (optional)'}
+              </Text>
               <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                 value={company}
                 onChangeText={setCompany}
-                placeholder={t('addresses.labelPlaceholder')}
+                placeholder={language === 'ar' ? 'مثال: المنزل، العمل' : 'e.g. Home, Work'}
                 placeholderTextColor={colors.textMuted}
               />
 
               <View style={[styles.formRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('auth.firstName')} *</Text>
+                  <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                    {language === 'ar' ? 'الاسم الأول' : 'First Name'} *
+                  </Text>
                   <TextInput
-                    style={[styles.input, { color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                    style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                     value={firstName}
                     onChangeText={setFirstName}
-                    placeholder={t('auth.firstName')}
+                    placeholder={language === 'ar' ? 'الاسم الأول' : 'First Name'}
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('auth.lastName')} *</Text>
+                  <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                    {language === 'ar' ? 'الاسم الأخير' : 'Last Name'} *
+                  </Text>
                   <TextInput
-                    style={[styles.input, { color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                    style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                     value={lastName}
                     onChangeText={setLastName}
-                    placeholder={t('auth.lastName')}
+                    placeholder={language === 'ar' ? 'الاسم الأخير' : 'Last Name'}
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
               </View>
 
-              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('checkout.phone')} *</Text>
+              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                {language === 'ar' ? 'رقم الهاتف' : 'Phone'} *
+              </Text>
               <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="07XXXXXXXX"
@@ -333,13 +443,15 @@ export default function AddressesScreen() {
                 maxLength={10}
               />
 
-              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('checkout.address')}</Text>
+              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                {language === 'ar' ? 'العنوان' : 'Address'}
+              </Text>
               <View style={[{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: 8 }]}>
                 <TextInput
-                  style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                  style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                   value={address1}
                   onChangeText={setAddress1}
-                  placeholder={t('checkout.addressPlaceholder')}
+                  placeholder={language === 'ar' ? 'الشارع، الحي' : 'Street, Area'}
                   placeholderTextColor={colors.textMuted}
                 />
                 <Pressable onPress={detectLocation} style={[styles.locationBtn, { backgroundColor: colors.primary }]} disabled={isLocating}>
@@ -347,9 +459,11 @@ export default function AddressesScreen() {
                 </Pressable>
               </View>
 
-              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.text }]}>{t('checkout.city')}</Text>
+              <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left', color: colors.textSecondary }]}>
+                {language === 'ar' ? 'المدينة' : 'City'}
+              </Text>
               <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
+                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fafafa', textAlign: isRTL ? 'right' : 'left' }]}
                 value={city}
                 onChangeText={setCity}
                 placeholder={language === 'ar' ? 'المدينة' : 'City'}
@@ -365,7 +479,11 @@ export default function AddressesScreen() {
               {saving ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveBtnText}>{t('addresses.save')}</Text>
+                <Text style={styles.saveBtnText}>
+                  {editingAddress
+                    ? (language === 'ar' ? 'حفظ التعديلات' : 'Save Changes')
+                    : (language === 'ar' ? 'إضافة العنوان' : 'Add Address')}
+                </Text>
               )}
             </Pressable>
           </ScrollView>
@@ -380,29 +498,30 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   header: { alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, fontFamily: 'Cairo_700Bold', fontSize: 18 },
-  addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  addHeaderBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  emptyIcon: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   emptyText: { fontFamily: 'Cairo_600SemiBold', fontSize: 16, textAlign: 'center' },
-  addFirstBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  addFirstBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
   addFirstBtnText: { fontFamily: 'Cairo_700Bold', fontSize: 15, color: '#fff' },
   list: { flex: 1, paddingHorizontal: 16 },
-  card: { borderRadius: 14, borderWidth: 1.5, padding: 16, marginBottom: 12 },
-  cardTop: { gap: 12 },
-  cardName: { fontFamily: 'Cairo_700Bold', fontSize: 16 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 12 },
+  cardTop: { gap: 12, alignItems: 'flex-start' },
+  cardIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cardName: { fontFamily: 'Cairo_700Bold', fontSize: 15, flexShrink: 1 },
   cardDetail: { fontFamily: 'Cairo_400Regular', fontSize: 13, marginTop: 2 },
-  defaultBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  defaultBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 11 },
-  cardActions: { marginTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
-  actionText: { fontFamily: 'Cairo_600SemiBold', fontSize: 12 },
+  defaultBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  defaultBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 10, color: '#fff' },
+  cardActions: { marginTop: 14, gap: 10, borderTopWidth: 1, paddingTop: 12 },
+  iconAction: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   modalContainer: { flex: 1 },
   modalHeader: { alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   formScroll: { flex: 1 },
-  formCard: { borderRadius: 14, borderWidth: 1, padding: 16, gap: 10 },
+  formCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
   formRow: { gap: 12 },
   label: { fontFamily: 'Cairo_600SemiBold', fontSize: 13 },
-  input: { fontFamily: 'Cairo_400Regular', fontSize: 14, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
-  locationBtn: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  saveBtn: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  input: { fontFamily: 'Cairo_400Regular', fontSize: 14, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
+  locationBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  saveBtn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   saveBtnText: { fontFamily: 'Cairo_700Bold', fontSize: 16, color: '#fff' },
 });
