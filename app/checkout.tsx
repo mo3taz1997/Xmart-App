@@ -84,6 +84,26 @@ export default function CheckoutScreen() {
     }).catch(() => {});
   }, [cart]);
 
+  const buyerUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => {
+    if (!shopifyCartId) return;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    if (!emailValid || !firstName.trim()) return;
+    if (buyerUpdateTimer.current) clearTimeout(buyerUpdateTimer.current);
+    buyerUpdateTimer.current = setTimeout(() => {
+      api.updateBuyerIdentity({
+        cartId: shopifyCartId,
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        firstName: firstName.trim(),
+        lastName: lastName.trim() || undefined,
+        address: address.trim() || undefined,
+        city: city.trim() || undefined,
+      }).catch(() => {});
+    }, 1500);
+    return () => { if (buyerUpdateTimer.current) clearTimeout(buyerUpdateTimer.current); };
+  }, [shopifyCartId, firstName, lastName, email, phone, address, city]);
+
   React.useEffect(() => {
     if (token) {
       api.getCustomerAddresses(token).then((addrs: any[]) => {
