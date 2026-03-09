@@ -931,31 +931,27 @@ export default function ProductDetailScreen() {
         {filteredRelated.length > 0 ? (
           <View style={styles.relatedSection}>
             <Text style={[styles.sectionTitle, styles.relatedTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('product.relatedProducts')}</Text>
-            <FlatList
-              data={filteredRelated}
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
               style={{ direction: isRTL ? 'rtl' : 'ltr' }}
-              renderItem={({ item }: { item: any }) => (
-                <View style={{ width: isTablet ? Math.round((width - 80) / 5) : (width - 48) / 2 }}>
+              nestedScrollEnabled
+            >
+              {filteredRelated.map((item: any) => (
+                <View key={item.handle} style={{ width: isTablet ? Math.round((width - 80) / 5) : (width - 48) / 2 }}>
                   <ProductCard
                     handle={item.handle}
                     title={item.title}
-                    price={item.priceRange.minVariantPrice.amount}
-                    currencyCode={item.priceRange.minVariantPrice.currencyCode}
+                    price={item.priceRange?.minVariantPrice?.amount || '0'}
+                    currencyCode={item.priceRange?.minVariantPrice?.currencyCode || 'JOD'}
                     compareAtPrice={item.compareAtPriceRange?.minVariantPrice?.amount}
-                    imageUrl={item.images?.edges?.[0]?.node?.url}
+                    imageUrl={item.images?.edges?.[0]?.node?.url || ''}
                     availableForSale={item.availableForSale}
                   />
                 </View>
-              )}
-              keyExtractor={(item: any) => item.handle}
-              scrollEnabled={!!filteredRelated.length}
-              initialNumToRender={3}
-              maxToRenderPerBatch={3}
-              windowSize={3}
-            />
+              ))}
+            </ScrollView>
           </View>
         ) : null}
 
@@ -964,32 +960,28 @@ export default function ProductDetailScreen() {
             <Text style={[styles.sectionTitle, styles.relatedTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {language === 'ar' ? 'شاهدتها مؤخراً' : 'Recently Viewed'}
             </Text>
-            <FlatList
-              data={recentlyViewedFiltered}
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
               style={{ direction: isRTL ? 'rtl' : 'ltr' }}
-              initialNumToRender={3}
-              maxToRenderPerBatch={3}
-              windowSize={3}
-              renderItem={({ item }: { item: any }) => (
-                <View style={{ width: isTablet ? Math.round((width - 80) / 5) : (width - 48) / 2 }}>
+              nestedScrollEnabled
+            >
+              {recentlyViewedFiltered.map((item: any) => (
+                <View key={item.handle} style={{ width: isTablet ? Math.round((width - 80) / 5) : (width - 48) / 2 }}>
                   <ProductCard
                     handle={item.handle}
                     title={item.title}
                     price={item.price}
                     currencyCode={item.currencyCode}
                     compareAtPrice={item.compareAtPrice}
-                    imageUrl={item.imageUrl}
+                    imageUrl={item.imageUrl || ''}
                     availableForSale={item.availableForSale}
                     vendor={item.vendor}
                   />
                 </View>
-              )}
-              keyExtractor={(item: any) => item.handle}
-              scrollEnabled={!!recentlyViewedFiltered.length}
-            />
+              ))}
+            </ScrollView>
           </View>
         ) : null}
       </ScrollView>
