@@ -5,6 +5,7 @@ const REFRESH_INTERVAL = 60 * 1000;
 
 export function useStockStatus(products: Array<{ handle: string; availableForSale?: boolean }>) {
   const [stockMap, setStockMap] = useState<Record<string, boolean>>({});
+  const [stockLoaded, setStockLoaded] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handlesKey = useMemo(() => {
@@ -13,7 +14,7 @@ export function useStockStatus(products: Array<{ handle: string; availableForSal
     return unique.join(',');
   }, [products.map(p => p.handle).join(',')]);
 
-  const fetchStock = useCallback(async () => {
+  const fetchStock = useCallback(async (isInitial = false) => {
     if (!handlesKey) return;
     const handles = handlesKey.split(',');
     try {
@@ -32,15 +33,17 @@ export function useStockStatus(products: Array<{ handle: string; availableForSal
         });
       }
     } catch {}
+    if (isInitial) setStockLoaded(true);
   }, [handlesKey]);
 
   useEffect(() => {
     if (!handlesKey) return;
+    setStockLoaded(false);
 
-    fetchStock();
+    fetchStock(true);
 
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(fetchStock, REFRESH_INTERVAL);
+    intervalRef.current = setInterval(() => fetchStock(false), REFRESH_INTERVAL);
 
     return () => {
       if (intervalRef.current) {
@@ -55,5 +58,5 @@ export function useStockStatus(products: Array<{ handle: string; availableForSal
     return fallback ?? true;
   }, [stockMap]);
 
-  return { stockMap, getAvailability };
+  return { stockMap, getAvailability, stockLoaded };
 }

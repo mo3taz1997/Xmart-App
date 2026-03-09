@@ -109,18 +109,21 @@ export default function BrandScreen() {
   const getTypeLabel = (type: string) =>
     language === 'ar' && typeTranslations[type] ? typeTranslations[type] : type;
 
-  const { getAvailability } = useStockStatus(allProducts);
+  const { getAvailability, stockLoaded } = useStockStatus(allProducts);
 
   const products = useMemo(() => {
     const filtered = selectedType
       ? allProducts.filter((p: any) => p.productType === selectedType)
       : allProducts;
-    return [...filtered]
-      .map((p: any) => ({ ...p, availableForSale: getAvailability(p.handle, p.availableForSale) }))
-      .sort((a: any, b: any) =>
-        (a.availableForSale === false ? 1 : 0) - (b.availableForSale === false ? 1 : 0)
-      );
-  }, [allProducts, selectedType, getAvailability]);
+    const withStock = filtered.map((p: any) => ({
+      ...p,
+      availableForSale: getAvailability(p.handle, p.availableForSale),
+    }));
+    if (!stockLoaded) return withStock;
+    const inStock = withStock.filter((p: any) => p.availableForSale !== false);
+    const outOfStock = withStock.filter((p: any) => p.availableForSale === false);
+    return [...inStock, ...outOfStock];
+  }, [allProducts, selectedType, getAvailability, stockLoaded]);
 
   function extractProductData(product: any) {
     return {

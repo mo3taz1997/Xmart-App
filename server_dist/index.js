@@ -2141,14 +2141,27 @@ async function syncProductIndex() {
   let allProducts = [];
   let hasNext = true;
   let cursor = null;
+  let mainRetries = 0;
   while (hasNext) {
-    const vars = { first: 50 };
-    if (cursor) vars.after = cursor;
-    const data = await shopifyAdminGraphQL(SHOPIFY_SYNC_QUERY, vars);
-    const edges = data.products.edges;
-    allProducts.push(...edges.map((e) => e.node));
-    hasNext = data.products.pageInfo.hasNextPage;
-    cursor = data.products.pageInfo.endCursor;
+    try {
+      const vars = { first: 250 };
+      if (cursor) vars.after = cursor;
+      const data = await shopifyAdminGraphQL(SHOPIFY_SYNC_QUERY, vars);
+      const edges = data.products.edges;
+      allProducts.push(...edges.map((e) => e.node));
+      hasNext = data.products.pageInfo.hasNextPage;
+      cursor = data.products.pageInfo.endCursor;
+      mainRetries = 0;
+    } catch (err) {
+      const msg = typeof err === "string" ? err : err?.message || JSON.stringify(err);
+      if (mainRetries < 5 && (msg.includes("Throttled") || msg.includes("throttl") || msg.includes("THROTTLED"))) {
+        mainRetries++;
+        console.log(`[SearchEngine] Product fetch throttled, retry ${mainRetries}/5 in 5s... (${allProducts.length} products so far)`);
+        await new Promise((r) => setTimeout(r, 5e3));
+      } else {
+        throw err;
+      }
+    }
   }
   const arMap = /* @__PURE__ */ new Map();
   const AR_QUERY = `
@@ -2168,19 +2181,32 @@ async function syncProductIndex() {
   try {
     let arHasNext = true;
     let arCursor = null;
+    let arRetries = 0;
     while (arHasNext) {
-      const arVars = { first: 50, language: "AR" };
-      if (arCursor) arVars.after = arCursor;
-      const arData = await shopifyFetch(AR_QUERY, arVars);
-      const arEdges = arData.products?.edges || [];
-      for (const edge of arEdges) {
-        const node = edge.node;
-        if (node.id && node.title) {
-          arMap.set(node.id, { title: node.title, description: node.description || "" });
+      try {
+        const arVars = { first: 250, language: "AR" };
+        if (arCursor) arVars.after = arCursor;
+        const arData = await shopifyFetch(AR_QUERY, arVars);
+        const arEdges = arData.products?.edges || [];
+        for (const edge of arEdges) {
+          const node = edge.node;
+          if (node.id && node.title) {
+            arMap.set(node.id, { title: node.title, description: node.description || "" });
+          }
+        }
+        arHasNext = arData.products?.pageInfo?.hasNextPage || false;
+        arCursor = arData.products?.pageInfo?.endCursor || null;
+        arRetries = 0;
+      } catch (pageErr) {
+        const msg = typeof pageErr === "string" ? pageErr : pageErr?.message || JSON.stringify(pageErr);
+        if (arRetries < 5 && (msg.includes("Throttled") || msg.includes("throttl") || msg.includes("THROTTLED"))) {
+          arRetries++;
+          console.log(`[SearchEngine] Arabic fetch throttled, retry ${arRetries}/5 in 5s... (${arMap.size} translations so far)`);
+          await new Promise((r) => setTimeout(r, 5e3));
+        } else {
+          throw pageErr;
         }
       }
-      arHasNext = arData.products?.pageInfo?.hasNextPage || false;
-      arCursor = arData.products?.pageInfo?.endCursor || null;
     }
     console.log(`[SearchEngine] Fetched ${arMap.size} Arabic translations`);
   } catch (err) {
