@@ -3763,7 +3763,7 @@ async function registerRoutes(app2) {
       const defaultAddrId = data.customer.defaultAddress?.id || null;
       const addresses = (data.customer.addresses?.edges || []).map((edge) => {
         const addr = edge.node;
-        const numericId = (addr.id || "").replace(/.*\//, "");
+        const numericId = (addr.id || "").replace(/.*\//, "").replace(/\?.*/, "");
         return {
           id: numericId,
           firstName: addr.firstName || "",

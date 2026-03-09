@@ -1144,7 +1144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defaultAddrId = data.customer.defaultAddress?.id || null;
       const addresses = (data.customer.addresses?.edges || []).map((edge: any) => {
         const addr = edge.node;
-        const numericId = (addr.id || '').replace(/.*\//, '');
+        const numericId = (addr.id || '').replace(/.*\//, '').replace(/\?.*/, '');
         return {
           id: numericId,
           firstName: addr.firstName || '',
