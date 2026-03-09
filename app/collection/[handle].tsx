@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
+import { useStockStatus } from '@/lib/useStockStatus';
 
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 50;
