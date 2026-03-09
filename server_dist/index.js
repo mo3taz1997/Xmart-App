@@ -2981,10 +2981,15 @@ async function registerRoutes(app2) {
       const isRandom2 = rawSortKey2 === "RANDOM";
       const sortKey = isRandom2 ? "BEST_SELLING" : rawSortKey2;
       const reverse = req.query.reverse === "true";
-      const query = req.query.query;
+      let query = req.query.query || "";
       const withPageInfo = req.query.pageInfo === "true";
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
+      if (req.query.available === "true") {
+        query = query ? `${query} AND available_for_sale:true` : "available_for_sale:true";
+      } else if (req.query.available === "false") {
+        query = query ? `${query} AND available_for_sale:false` : "available_for_sale:false";
+      }
       const data = await shopifyFetch(QUERIES.PRODUCTS, {
         first,
         after,

@@ -15,7 +15,6 @@ import { api } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
-import { useStockStatus } from '@/lib/useStockStatus';
 
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 50;
@@ -109,21 +108,13 @@ export default function BrandScreen() {
   const getTypeLabel = (type: string) =>
     language === 'ar' && typeTranslations[type] ? typeTranslations[type] : type;
 
-  const { getAvailability, stockLoaded } = useStockStatus(allProducts);
-
   const products = useMemo(() => {
-    const filtered = selectedType
-      ? allProducts.filter((p: any) => p.productType === selectedType)
-      : allProducts;
-    const withStock = filtered.map((p: any) => ({
-      ...p,
-      availableForSale: getAvailability(p.handle, p.availableForSale),
-    }));
-    if (!stockLoaded) return withStock;
-    const inStock = withStock.filter((p: any) => p.availableForSale !== false);
-    const outOfStock = withStock.filter((p: any) => p.availableForSale === false);
+    let list = allProducts;
+    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
+    const inStock = list.filter((p: any) => p.availableForSale !== false);
+    const outOfStock = list.filter((p: any) => p.availableForSale === false);
     return [...inStock, ...outOfStock];
-  }, [allProducts, selectedType, getAvailability, stockLoaded]);
+  }, [allProducts, selectedType]);
 
   function extractProductData(product: any) {
     return {
