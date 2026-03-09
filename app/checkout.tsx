@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Platform,
   TextInput, ActivityIndicator, KeyboardAvoidingView, Alert, Keyboard,
@@ -64,6 +64,25 @@ export default function CheckoutScreen() {
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
+  const [shopifyCartId, setShopifyCartId] = useState<string | null>(null);
+  const [shopifyCheckoutUrl, setShopifyCheckoutUrl] = useState<string | null>(null);
+  const shopifyCartCreated = useRef(false);
+
+  React.useEffect(() => {
+    if (shopifyCartCreated.current || !cart || cart.id === 'local-cart' && !cart.lines?.edges?.length) return;
+    shopifyCartCreated.current = true;
+    const cartLines = cart.lines?.edges?.map((e: any) => ({
+      merchandiseId: e.node.merchandise.id,
+      quantity: e.node.quantity,
+    })) || [];
+    if (cartLines.length === 0) return;
+    api.createCart(cartLines).then((shopifyCart: any) => {
+      if (shopifyCart?.id) {
+        setShopifyCartId(shopifyCart.id);
+        setShopifyCheckoutUrl(shopifyCart.checkoutUrl || null);
+      }
+    }).catch(() => {});
+  }, [cart]);
 
   React.useEffect(() => {
     if (token) {
@@ -147,8 +166,28 @@ export default function CheckoutScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
-      const cartId = cart?.id;
-      if (!cartId) {
+      let activeCartId = shopifyCartId;
+      let activeCheckoutUrl = shopifyCheckoutUrl;
+
+      if (!activeCartId) {
+        const cartLines = cart?.lines?.edges?.map((e: any) => ({
+          merchandiseId: e.node.merchandise.id,
+          quantity: e.node.quantity,
+        })) || [];
+        if (cartLines.length > 0) {
+          try {
+            const shopifyCart = await api.createCart(cartLines);
+            if (shopifyCart?.id) {
+              activeCartId = shopifyCart.id;
+              activeCheckoutUrl = shopifyCart.checkoutUrl || null;
+              setShopifyCartId(shopifyCart.id);
+              setShopifyCheckoutUrl(shopifyCart.checkoutUrl || null);
+            }
+          } catch {}
+        }
+      }
+
+      if (!activeCartId) {
         Alert.alert(t('checkout.error'), t('checkout.noCart'));
         setIsProcessing(false);
         return;
@@ -156,7 +195,7 @@ export default function CheckoutScreen() {
 
       try {
         await api.updateBuyerIdentity({
-          cartId,
+          cartId: activeCartId,
           email: email.trim(),
           phone: phone.trim(),
           firstName: firstName.trim(),
@@ -170,7 +209,7 @@ export default function CheckoutScreen() {
 
       if (notes.trim()) {
         try {
-          await api.updateCartNote(cartId, notes.trim());
+          await api.updateCartNote(activeCartId, notes.trim());
         } catch {}
       }
 
@@ -187,7 +226,7 @@ export default function CheckoutScreen() {
         } catch {}
       }
 
-      let checkoutUrl = getCheckoutUrl();
+      let checkoutUrl = activeCheckoutUrl || getCheckoutUrl();
       if (!checkoutUrl) {
         Alert.alert(t('checkout.error'), t('checkout.noCart'));
         setIsProcessing(false);
