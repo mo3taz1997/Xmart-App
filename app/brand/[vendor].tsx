@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
@@ -76,6 +76,12 @@ export default function BrandScreen() {
     enabled: !!vendor,
   });
 
+  const { data: oosData } = useQuery({
+    queryKey: ['brand-oos', vendor, language],
+    queryFn: () => api.getProducts({ first: '250', query: `vendor:${vendor}`, available: 'false' }, language),
+    enabled: !!vendor && !hasNextPage && !isLoading,
+  });
+
   const allProducts = useMemo(() => {
     return data?.pages?.flatMap((page: any) =>
       Array.isArray(page) ? page : (page?.products || [])
@@ -109,6 +115,14 @@ export default function BrandScreen() {
   const getTypeLabel = (type: string) =>
     language === 'ar' && typeTranslations[type] ? typeTranslations[type] : type;
 
+  const oosProducts = useMemo(() => {
+    if (hasNextPage) return [];
+    const all = Array.isArray(oosData) ? oosData : (oosData?.products || []);
+    let list = all.filter((p: any) => p.availableForSale === false);
+    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
+    return list;
+  }, [oosData, hasNextPage, selectedType]);
+
   const products = useMemo(() => {
     let list = [...allProducts];
     if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
@@ -118,8 +132,8 @@ export default function BrandScreen() {
         [list[i], list[j]] = [list[j], list[i]];
       }
     }
-    return list;
-  }, [allProducts, selectedType, sortIdx, randomSeed]);
+    return [...list, ...oosProducts];
+  }, [allProducts, selectedType, sortIdx, randomSeed, oosProducts]);
 
   function extractProductData(product: any) {
     return {
