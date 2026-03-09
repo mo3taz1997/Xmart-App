@@ -342,13 +342,18 @@ export default function AddressesScreen() {
                 {!addr.isDefault && (
                   <Pressable
                     onPress={() => handleSetDefault(addr)}
-                    style={[styles.iconAction, { backgroundColor: colors.primary + '12' }]}
+                    style={[styles.defaultAction, { backgroundColor: colors.primary + '12', flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                     disabled={settingDefault === addr.id}
                   >
                     {settingDefault === addr.id ? (
-                      <ActivityIndicator size={16} color={colors.primary} />
+                      <ActivityIndicator size={14} color={colors.primary} />
                     ) : (
-                      <Ionicons name="star-outline" size={18} color={colors.primary} />
+                      <>
+                        <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.defaultActionText, { color: colors.primary }]}>
+                          {language === 'ar' ? 'تعيين افتراضي' : 'Set Default'}
+                        </Text>
+                      </>
                     )}
                   </Pressable>
                 )}
@@ -514,6 +519,8 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   defaultBadgeText: { fontFamily: 'Cairo_600SemiBold', fontSize: 10, color: '#fff' },
   cardActions: { marginTop: 14, gap: 10, borderTopWidth: 1, paddingTop: 12 },
   iconAction: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  defaultAction: { height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, gap: 5 },
+  defaultActionText: { fontFamily: 'Cairo_600SemiBold', fontSize: 12 },
   modalContainer: { flex: 1 },
   modalHeader: { alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   formScroll: { flex: 1 },
