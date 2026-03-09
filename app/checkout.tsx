@@ -87,14 +87,13 @@ export default function CheckoutScreen() {
   const buyerUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => {
     if (!shopifyCartId) return;
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-    if (!emailValid || !firstName.trim()) return;
+    if (!firstName.trim() || !phone.trim()) return;
     if (buyerUpdateTimer.current) clearTimeout(buyerUpdateTimer.current);
     buyerUpdateTimer.current = setTimeout(() => {
       api.updateBuyerIdentity({
         cartId: shopifyCartId,
-        email: email.trim(),
-        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim(),
         firstName: firstName.trim(),
         lastName: lastName.trim() || undefined,
         address: address.trim() || undefined,
