@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, Pressable, StyleSheet, Platform, ScrollView,
-  TextInput, ActivityIndicator, Alert, Modal, RefreshControl, Animated,
+  TextInput, ActivityIndicator, Modal, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +46,7 @@ export default function AddressesScreen() {
   const [isLocating, setIsLocating] = useState(false);
   const [settingDefault, setSettingDefault] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmAddr, setDeleteConfirmAddr] = useState<Address | null>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -167,37 +168,29 @@ export default function AddressesScreen() {
       );
       return;
     }
-    Alert.alert(
-      language === 'ar' ? 'حذف العنوان' : 'Delete Address',
-      language === 'ar' ? 'هل أنت متأكد من حذف هذا العنوان؟' : 'Are you sure you want to delete this address?',
-      [
-        { text: language === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        {
-          text: language === 'ar' ? 'حذف' : 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            if (!token) return;
-            setDeletingId(addr.id);
-            try {
-              await api.deleteCustomerAddress(token, addr.id);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              showToast(
-                language === 'ar' ? 'تم حذف العنوان' : 'Address deleted',
-                'success'
-              );
-              loadAddresses();
-            } catch (e: any) {
-              showToast(
-                language === 'ar' ? 'حدث خطأ في حذف العنوان' : 'Failed to delete address',
-                'error'
-              );
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ],
-    );
+    setDeleteConfirmAddr(addr);
+  };
+
+  const confirmDelete = async () => {
+    if (!token || !deleteConfirmAddr) return;
+    setDeletingId(deleteConfirmAddr.id);
+    setDeleteConfirmAddr(null);
+    try {
+      await api.deleteCustomerAddress(token, deleteConfirmAddr.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast(
+        language === 'ar' ? 'تم حذف العنوان' : 'Address deleted',
+        'success'
+      );
+      loadAddresses();
+    } catch (e: any) {
+      showToast(
+        language === 'ar' ? 'حدث خطأ في حذف العنوان' : 'Failed to delete address',
+        'error'
+      );
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleSetDefault = async (addr: Address) => {
@@ -494,6 +487,45 @@ export default function AddressesScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      <Modal visible={!!deleteConfirmAddr} transparent animationType="fade" onRequestClose={() => setDeleteConfirmAddr(null)}>
+        <Pressable style={styles.overlay} onPress={() => setDeleteConfirmAddr(null)}>
+          <Pressable style={[styles.confirmSheet, { backgroundColor: colors.card }]} onPress={() => {}}>
+            <View style={[styles.confirmIconWrap, { backgroundColor: '#FFF1F0' }]}>
+              <Ionicons name="trash-outline" size={32} color="#E53935" />
+            </View>
+            <Text style={[styles.confirmTitle, { color: colors.text }]}>
+              {language === 'ar' ? 'حذف العنوان' : 'Delete Address'}
+            </Text>
+            <Text style={[styles.confirmDesc, { color: colors.textSecondary }]}>
+              {deleteConfirmAddr ? (
+                language === 'ar'
+                  ? `هل أنت متأكد من حذف عنوان "${deleteConfirmAddr.firstName} ${deleteConfirmAddr.lastName}"؟ لا يمكن التراجع عن هذا الإجراء.`
+                  : `Are you sure you want to delete "${deleteConfirmAddr.firstName} ${deleteConfirmAddr.lastName}"? This action cannot be undone.`
+              ) : ''}
+            </Text>
+            <View style={styles.confirmBtns}>
+              <Pressable
+                onPress={() => setDeleteConfirmAddr(null)}
+                style={[styles.confirmCancelBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#f5f5f5' }]}
+              >
+                <Text style={[styles.confirmCancelText, { color: colors.text }]}>
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmDelete}
+                style={styles.confirmDeleteBtn}
+              >
+                <Ionicons name="trash-outline" size={18} color="#fff" />
+                <Text style={styles.confirmDeleteText}>
+                  {language === 'ar' ? 'حذف' : 'Delete'}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -531,4 +563,14 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   locationBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   saveBtn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   saveBtnText: { fontFamily: 'Cairo_700Bold', fontSize: 16, color: '#fff' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 32 },
+  confirmSheet: { width: '100%', maxWidth: 340, borderRadius: 20, padding: 24, alignItems: 'center' },
+  confirmIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  confirmTitle: { fontFamily: 'Cairo_700Bold', fontSize: 18, marginBottom: 8, textAlign: 'center' },
+  confirmDesc: { fontFamily: 'Cairo_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  confirmBtns: { flexDirection: 'row', gap: 12, width: '100%' },
+  confirmCancelBtn: { flex: 1, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  confirmCancelText: { fontFamily: 'Cairo_600SemiBold', fontSize: 15 },
+  confirmDeleteBtn: { flex: 1, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E53935', flexDirection: 'row', gap: 6 },
+  confirmDeleteText: { fontFamily: 'Cairo_700Bold', fontSize: 15, color: '#fff' },
 });
