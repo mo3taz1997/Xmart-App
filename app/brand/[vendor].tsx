@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
+import { useStockStatus } from '@/lib/useStockStatus';
 
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 50;
@@ -128,6 +129,7 @@ export default function BrandScreen() {
   }, [allProducts, selectedType]);
 
   const allVisibleProducts = useMemo(() => [...products, ...outOfStockProducts], [products, outOfStockProducts]);
+  const { getAvailability } = useStockStatus(allVisibleProducts);
 
   function extractProductData(product: any) {
     return {
@@ -137,7 +139,7 @@ export default function BrandScreen() {
       currencyCode: product.priceRange.minVariantPrice.currencyCode,
       compareAtPrice: product.compareAtPriceRange?.minVariantPrice?.amount,
       imageUrl: product.images?.edges?.[0]?.node?.url,
-      availableForSale: product.availableForSale,
+      availableForSale: getAvailability(product.handle, product.availableForSale),
     };
   }
 
