@@ -26,11 +26,12 @@ function UpsellMiniCard({ item, onAdded }: { item: any; onAdded?: (handle: strin
   const { colors } = useTheme();
   const [adding, setAdding] = React.useState(false);
   const [added, setAdded] = React.useState(false);
-  const imgUrl = item.images?.edges?.[0]?.node?.url || item.featuredImage?.url;
-  const price = item.priceRange?.minVariantPrice?.amount || '0';
-  const curr = item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
   const variant = item.variants?.edges?.[0]?.node;
   const variantId = variant?.id;
+  const variantImg = variant?.image?.url;
+  const imgUrl = variantImg || item.images?.edges?.[0]?.node?.url || item.featuredImage?.url;
+  const price = variant?.price?.amount || item.priceRange?.minVariantPrice?.amount || '0';
+  const curr = variant?.price?.currencyCode || item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
   const maxQty = variant?.quantityAvailable ?? undefined;
 
   const handleAdd = async () => {
@@ -42,7 +43,7 @@ function UpsellMiniCard({ item, onAdded }: { item: any; onAdded?: (handle: strin
         productHandle: item.handle || '',
         price,
         currencyCode: curr,
-        imageUrl: imgUrl || null,
+        imageUrl: variantImg || imgUrl || null,
         variantTitle: variant?.title,
         maxQuantity: maxQty,
       });

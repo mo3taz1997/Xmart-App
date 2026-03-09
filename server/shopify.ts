@@ -279,6 +279,7 @@ export const QUERIES = {
                   id
                   title
                   availableForSale
+                  quantityAvailable
                   price {
                     amount
                     currencyCode
@@ -286,6 +287,10 @@ export const QUERIES = {
                   compareAtPrice {
                     amount
                     currencyCode
+                  }
+                  image {
+                    url
+                    altText
                   }
                 }
               }

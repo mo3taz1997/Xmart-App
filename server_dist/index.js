@@ -249,6 +249,7 @@ var QUERIES = {
                   id
                   title
                   availableForSale
+                  quantityAvailable
                   price {
                     amount
                     currencyCode
@@ -256,6 +257,10 @@ var QUERIES = {
                   compareAtPrice {
                     amount
                     currencyCode
+                  }
+                  image {
+                    url
+                    altText
                   }
                 }
               }
