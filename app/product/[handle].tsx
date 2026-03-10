@@ -740,7 +740,7 @@ export default function ProductDetailScreen() {
   };
 
   const isWhatsappOnly = product?.tags?.some((tag: string) => tag.toLowerCase() === 'whatsapp') ?? false;
-  const whatsappNumber = homepage?.settings?.whatsapp || '';
+  const whatsappNumber = homepage?.settings?.whatsapp || '962797161111';
 
   const handleWhatsApp = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
