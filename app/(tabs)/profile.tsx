@@ -509,6 +509,22 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
           {language === 'ar' ? 'تواصل معنا عبر واتساب' : 'Contact us on WhatsApp'}
         </Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.settingsCard, { backgroundColor: colors.primary, flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, gap: 10 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const url = language === 'ar'
+            ? 'https://www.xmart.jo/pages/become-a-supplier'
+            : 'https://www.xmart.jo/en/pages/become-a-supplier';
+          Linking.openURL(url);
+        }}
+      >
+        <Ionicons name="storefront-outline" size={22} color="#fff" />
+        <Text style={{ color: '#fff', fontSize: 15, fontFamily: 'Cairo_600SemiBold' }}>
+          {language === 'ar' ? 'انضم لشبكة الموردين' : 'Become a Supplier'}
+        </Text>
+      </Pressable>
     </>
   );
 }
