@@ -34,56 +34,60 @@ function resolveAssetUrl(url: string | null | undefined): string | null {
 
 
 function JordanFlagBadge() {
-  const [showText, setShowText] = useState(false);
-  const opacity = useRef(new RNAnimated.Value(1)).current;
+  const expandAnim = useRef(new RNAnimated.Value(0)).current;
+  const isOpen = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const open = () => {
+    isOpen.current = true;
+    RNAnimated.spring(expandAnim, { toValue: 1, useNativeDriver: false, tension: 80, friction: 10 }).start();
+  };
+
+  const close = () => {
+    RNAnimated.spring(expandAnim, { toValue: 0, useNativeDriver: false, tension: 80, friction: 10 }).start(() => {
+      isOpen.current = false;
+    });
+  };
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    RNAnimated.timing(opacity, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
-      setShowText(true);
-      RNAnimated.timing(opacity, { toValue: 1, duration: 120, useNativeDriver: true }).start();
-    });
-
-    timerRef.current = setTimeout(() => {
-      RNAnimated.timing(opacity, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
-        setShowText(false);
-        RNAnimated.timing(opacity, { toValue: 1, duration: 120, useNativeDriver: true }).start();
-      });
-    }, 2000);
+    if (isOpen.current) {
+      close();
+    } else {
+      open();
+      timerRef.current = setTimeout(close, 2000);
+    }
   };
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      opacity.setValue(1);
     };
   }, []);
 
+  const animatedWidth = expandAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 75] });
+  const textOpacity = expandAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
+
   return (
     <Pressable onPress={handlePress}>
-      <RNAnimated.View style={{ opacity, width: 30, height: 22 }}>
-        <View style={{ width: 30, height: 22, borderRadius: 4, overflow: 'hidden', position: 'absolute' }}
-          pointerEvents="none">
+      <RNAnimated.View style={{
+        width: animatedWidth, height: 22, borderRadius: 4, overflow: 'hidden',
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#163259',
+        borderWidth: 1, borderColor: expandAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', 'rgba(36,140,204,0.45)'] }),
+      }}>
+        <View style={{ width: 30, height: 22, borderRadius: 4, overflow: 'hidden' }} pointerEvents="none">
           <Image
             source={{ uri: 'https://flagcdn.com/w80/jo.png' }}
             style={{ width: 30, height: 22 }}
             contentFit="cover"
           />
         </View>
-        {showText && (
-          <View style={{
-            width: 30, height: 22, borderRadius: 4,
-            backgroundColor: '#163259',
-            justifyContent: 'center', alignItems: 'center',
-            borderWidth: 1, borderColor: 'rgba(36,140,204,0.45)',
-            position: 'absolute',
-          }}>
-            <Text style={{ color: '#248CCC', fontFamily: 'Cairo_700Bold', fontSize: 8 }}>#محلي</Text>
-          </View>
-        )}
+        <RNAnimated.View style={{ opacity: textOpacity, paddingRight: 6 }}>
+          <Text style={{ color: '#248CCC', fontFamily: 'Cairo_700Bold', fontSize: 8 }}>#محلي</Text>
+        </RNAnimated.View>
       </RNAnimated.View>
     </Pressable>
   );
