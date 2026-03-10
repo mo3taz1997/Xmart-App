@@ -1084,8 +1084,15 @@
 
       <!-- Static Banner -->
       <div class="form-group" id="secStaticBannerWrap" style="display:none;">
-        <label>رابط صورة البانر</label>
-        <input type="text" id="staticBannerImageUrl" placeholder="https://example.com/banner.jpg" style="width:100%;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        <label>صورة البانر</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="staticBannerImageUrl" placeholder="رابط الصورة أو ارفع من جهازك" style="flex:1;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;">
+          <label for="staticBannerFileInput" style="padding:8px 16px;background:linear-gradient(135deg,#248ccc,#1a6fa0);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            <span style="font-size:16px;">📁</span> رفع صورة
+          </label>
+          <input type="file" id="staticBannerFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onStaticBannerFileUpload(this)">
+        </div>
+        <div id="staticBannerUploadProgress" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:12px;color:#248ccc;text-align:center;">جاري رفع الصورة...</div>
         <div id="staticBannerPreview" style="margin-top:8px;display:none;text-align:center;">
           <img id="staticBannerPreviewImg" src="" style="max-width:100%;max-height:200px;border-radius:10px;border:1px solid #eee;">
         </div>
@@ -2761,6 +2768,49 @@ function loadStaticBanner(meta) {
     display.appendChild(btn);
     document.getElementById('staticBannerSelectedWrap').style.display = '';
   }
+}
+
+async function onStaticBannerFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert('حجم الصورة كبير جداً (الحد الأقصى 10 ميغا)');
+    input.value = '';
+    return;
+  }
+  const progressEl = document.getElementById('staticBannerUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.textContent = 'جاري رفع الصورة...';
+  try {
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch('/api/admin/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: base64, filename: file.name })
+    });
+    const result = await resp.json();
+    if (result.url) {
+      document.getElementById('staticBannerImageUrl').value = result.url;
+      const previewEl = document.getElementById('staticBannerPreview');
+      const previewImg = document.getElementById('staticBannerPreviewImg');
+      previewImg.src = result.url;
+      previewEl.style.display = 'block';
+      progressEl.textContent = '✅ تم رفع الصورة بنجاح';
+      setTimeout(() => { progressEl.style.display = 'none'; }, 2000);
+    } else {
+      throw new Error(result.error || 'فشل الرفع');
+    }
+  } catch (e) {
+    progressEl.textContent = '❌ فشل رفع الصورة: ' + e.message;
+    setTimeout(() => { progressEl.style.display = 'none'; }, 3000);
+  }
+  input.value = '';
 }
 
 function getStaticBannerMetadata() {
