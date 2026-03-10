@@ -85,8 +85,8 @@ function JordanFlagBadge() {
             contentFit="cover"
           />
         </View>
-        <RNAnimated.View style={{ opacity: textOpacity, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#fff', fontFamily: 'Cairo_700Bold', fontSize: 9 }}>#محلي</Text>
+        <RNAnimated.View style={{ opacity: textOpacity, flex: 1, alignItems: 'center', justifyContent: 'center', height: 22 }}>
+          <Text style={{ color: '#fff', fontFamily: 'Cairo_700Bold', fontSize: 9, lineHeight: 22, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false }}>#محلي</Text>
         </RNAnimated.View>
       </RNAnimated.View>
     </Pressable>
