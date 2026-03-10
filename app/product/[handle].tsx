@@ -994,23 +994,25 @@ export default function ProductDetailScreen() {
             position: 'absolute',
             bottom: insets.bottom + webBottomInset + 130,
             [isRTL ? 'left' : 'right']: 16,
-            width: 48,
-            height: 48,
-            borderRadius: 24,
+            width: 52,
+            height: 52,
+            borderRadius: 16,
             backgroundColor: '#25D366',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
             opacity: pressed ? 0.85 : 1,
-            transform: [{ scale: pressed ? 0.92 : 1 }],
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.25,
-            shadowRadius: 5,
-            elevation: 6,
+            transform: [{ scale: pressed ? 0.9 : 1 }],
+            shadowColor: '#25D366',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.35,
+            shadowRadius: 8,
+            elevation: 8,
+            borderWidth: 2,
+            borderColor: 'rgba(255,255,255,0.2)',
           })}
         >
-          <Ionicons name="logo-whatsapp" size={26} color="#fff" />
+          <Ionicons name="logo-whatsapp" size={28} color="#fff" />
         </Pressable>
       ) : null}
 
