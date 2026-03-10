@@ -43,7 +43,6 @@
     "expo-linking": "~8.0.10",
     "expo-localization": "^17.0.8",
     "expo-location": "~19.0.8",
-    "expo-notifications": "^0.32.16",
     "expo-router": "~6.0.17",
     "expo-screen-orientation": "^55.0.8",
     "expo-secure-store": "^15.0.8",
