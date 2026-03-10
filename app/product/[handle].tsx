@@ -36,6 +36,59 @@ function goBack() {
   }
 }
 
+function WhatsAppFloatingButton({ onPress, bottom, isRTL }: { onPress: () => void; bottom: number; isRTL: boolean }) {
+  const shakeAnim = useRef(new RNAnimated.Value(0)).current;
+  const scaleAnim = useRef(new RNAnimated.Value(1)).current;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const triggerAttention = () => {
+      RNAnimated.sequence([
+        RNAnimated.timing(scaleAnim, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+        RNAnimated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+        RNAnimated.sequence([
+          RNAnimated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+          RNAnimated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+          RNAnimated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
+          RNAnimated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
+          RNAnimated.timing(shakeAnim, { toValue: 3, duration: 40, useNativeDriver: true }),
+          RNAnimated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+        ]),
+      ]).start();
+    };
+
+    timerRef.current = setTimeout(triggerAttention, 30000);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  return (
+    <Pressable onPress={onPress}>
+      <RNAnimated.View style={{
+        position: 'absolute',
+        bottom,
+        [isRTL ? 'left' : 'right']: 16,
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: '#25D366',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        shadowColor: '#25D366',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 8,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.2)',
+        transform: [{ translateX: shakeAnim }, { scale: scaleAnim }],
+      }}>
+        <Ionicons name="logo-whatsapp" size={28} color="#fff" />
+      </RNAnimated.View>
+    </Pressable>
+  );
+}
+
 const COLOR_MAP: Record<string, string> = {
   black: '#000000', white: '#FFFFFF', red: '#E53935', blue: '#1E88E5',
   green: '#43A047', yellow: '#FDD835', orange: '#FB8C00', purple: '#8E24AA',
@@ -988,32 +1041,11 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {!isWhatsappOnly && whatsappNumber ? (
-        <Pressable
+        <WhatsAppFloatingButton
           onPress={handleWhatsApp}
-          style={({ pressed }) => ({
-            position: 'absolute',
-            bottom: insets.bottom + webBottomInset + 130,
-            [isRTL ? 'left' : 'right']: 16,
-            width: 52,
-            height: 52,
-            borderRadius: 16,
-            backgroundColor: '#25D366',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            opacity: pressed ? 0.85 : 1,
-            transform: [{ scale: pressed ? 0.9 : 1 }],
-            shadowColor: '#25D366',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.35,
-            shadowRadius: 8,
-            elevation: 8,
-            borderWidth: 2,
-            borderColor: 'rgba(255,255,255,0.2)',
-          })}
-        >
-          <Ionicons name="logo-whatsapp" size={28} color="#fff" />
-        </Pressable>
+          bottom={insets.bottom + webBottomInset + 130}
+          isRTL={isRTL}
+        />
       ) : null}
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + webBottomInset + 8 }]}>
