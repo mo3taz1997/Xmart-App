@@ -24,6 +24,9 @@
       "bundleIdentifier": "com.xmart.jo",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "aps-environment": "production"
       }
     },
     "android": {
