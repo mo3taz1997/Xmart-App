@@ -549,12 +549,6 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
           >
             <Ionicons name="logo-linkedin" size={22} color={colors.text} />
           </Pressable>
-          <Pressable
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL('tel:+962797161111'); }}
-            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}
-          >
-            <Ionicons name="call-outline" size={22} color={colors.text} />
-          </Pressable>
         </View>
       </View>
     </>
