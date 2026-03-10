@@ -67,8 +67,8 @@ function JordanFlagBadge() {
     };
   }, []);
 
-  const animatedWidth = expandAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 75] });
-  const textOpacity = expandAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
+  const animatedWidth = expandAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 80] });
+  const textOpacity = expandAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0, 1] });
 
   return (
     <Pressable onPress={handlePress}>
@@ -78,15 +78,15 @@ function JordanFlagBadge() {
         backgroundColor: '#163259',
         borderWidth: 1, borderColor: expandAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', 'rgba(36,140,204,0.45)'] }),
       }}>
-        <View style={{ width: 30, height: 22, borderRadius: 4, overflow: 'hidden' }} pointerEvents="none">
+        <View style={{ width: 30, height: 22, borderRadius: 4, overflow: 'hidden', flexShrink: 0 }} pointerEvents="none">
           <Image
             source={{ uri: 'https://flagcdn.com/w80/jo.png' }}
             style={{ width: 30, height: 22 }}
             contentFit="cover"
           />
         </View>
-        <RNAnimated.View style={{ opacity: textOpacity, paddingRight: 6 }}>
-          <Text style={{ color: '#248CCC', fontFamily: 'Cairo_700Bold', fontSize: 8 }}>#محلي</Text>
+        <RNAnimated.View style={{ opacity: textOpacity, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#fff', fontFamily: 'Cairo_700Bold', fontSize: 9 }}>#محلي</Text>
         </RNAnimated.View>
       </RNAnimated.View>
     </Pressable>
