@@ -12,7 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import * as Notifications from 'expo-notifications';
 import { WebView } from 'react-native-webview';
 import Toast from '@/components/Toast';
 import Colors from '@/constants/colors';
