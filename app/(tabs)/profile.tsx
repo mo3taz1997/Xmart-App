@@ -245,6 +245,7 @@ export default function ProfileScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, gap: 12 }}>
           <SettingsSection colors={colors} isDark={isDark} isRTL={isRTL} language={language} setLanguage={setLanguage} setMode={setMode} t={t} />
         </View>
+        <Text style={{ textAlign: 'center', fontFamily: 'Cairo_400Regular', fontSize: 10, color: colors.textMuted, marginBottom: 20, opacity: 0.5 }}>Build: OTA-1003</Text>
       </ScrollView>
     </View>
   );
@@ -314,6 +315,7 @@ return (
           <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 15, color: colors.error }}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
+      <Text style={{ textAlign: 'center', fontFamily: 'Cairo_400Regular', fontSize: 10, color: colors.textMuted, marginBottom: 20, opacity: 0.5 }}>Build: OTA-1003</Text>
     </ScrollView>
 
 

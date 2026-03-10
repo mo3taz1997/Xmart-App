@@ -421,7 +421,9 @@ export default function RootLayout() {
           await Updates.fetchUpdateAsync();
           await Updates.reloadAsync();
         }
-      } catch (_) {}
+      } catch (e) {
+        console.log('[OTA] Update check error:', e);
+      }
     }
     checkForUpdates();
   }, []);
