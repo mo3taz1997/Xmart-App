@@ -524,8 +524,8 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
         </Text>
       </Pressable>
 
-      <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 8 }}>
-        <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 14, color: colors.textMuted, marginBottom: 12 }}>
+      <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
+        <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 14, color: colors.textMuted, marginBottom: 8 }}>
           {language === 'ar' ? 'تابعنا' : 'Follow Us'}
         </Text>
         <View style={{ flexDirection: 'row', gap: 20 }}>
@@ -550,7 +550,7 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
         </View>
       </View>
 
-      <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 16, gap: 4 }}>
+      <View style={{ alignItems: 'center', marginTop: 6, marginBottom: 10, gap: 2 }}>
         <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.6 }}>
           {language === 'ar' ? 'الإصدار 2.0.3' : 'Version 2.0.3'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(5)</Text>
         </Text>
