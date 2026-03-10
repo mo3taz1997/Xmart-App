@@ -18,7 +18,7 @@ import PageBackground from '@/components/PageBackground';
 import { useStockStatus } from '@/lib/useStockStatus';
 
 const { width } = Dimensions.get('window');
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 const IS_TABLET_COL = Dimensions.get('window').width >= 768;
 const PRODUCT_COLUMNS = IS_TABLET_COL ? 4 : 2;
 
@@ -431,7 +431,7 @@ export default function CollectionScreen() {
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item) => item.handle}
+          keyExtractor={(item, index) => item.handle + index}
           numColumns={PRODUCT_COLUMNS}
           columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
           renderItem={({ item }) => (
@@ -446,10 +446,11 @@ export default function CollectionScreen() {
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) fetchNextPage();
           }}
-          onEndReachedThreshold={0.3}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={7}
+          onEndReachedThreshold={0.5}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={true}
           ListFooterComponent={() => (
             <>
               {isFetchingNextPage && (
