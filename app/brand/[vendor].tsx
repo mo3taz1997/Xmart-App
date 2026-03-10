@@ -17,7 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
 
 const { width } = Dimensions.get('window');
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 const IS_TABLET_BRAND = Dimensions.get('window').width >= 768;
 const PRODUCT_COLUMNS = IS_TABLET_BRAND ? 4 : 2;
 
@@ -123,17 +123,25 @@ export default function BrandScreen() {
     return list;
   }, [oosData, hasNextPage, selectedType]);
 
-  const products = useMemo(() => {
-    let list = [...allProducts];
-    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
-    if (sortIdx === 0) {
-      for (let i = list.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [list[i], list[j]] = [list[j], list[i]];
-      }
+  const shuffledProducts = useMemo(() => {
+    if (sortIdx !== 0) return allProducts;
+    const list = [...allProducts];
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom(randomSeed * 1000 + i) * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
     }
+    return list;
+  }, [allProducts, sortIdx, randomSeed]);
+
+  const products = useMemo(() => {
+    let list = [...shuffledProducts];
+    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
     return [...list, ...oosProducts];
-  }, [allProducts, selectedType, sortIdx, randomSeed, oosProducts]);
+  }, [shuffledProducts, selectedType, oosProducts]);
 
   function extractProductData(product: any) {
     return {
@@ -224,7 +232,7 @@ export default function BrandScreen() {
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item, i) => item.handle + i}
+          keyExtractor={(item) => item.handle}
           numColumns={PRODUCT_COLUMNS}
           columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
           renderItem={({ item }) => (
@@ -237,11 +245,10 @@ export default function BrandScreen() {
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!products.length}
           onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
-          onEndReachedThreshold={0.5}
-          initialNumToRender={6}
-          maxToRenderPerBatch={6}
-          windowSize={5}
-          removeClippedSubviews={true}
+          onEndReachedThreshold={0.3}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={{ paddingVertical: 20, alignItems: 'center' }}>
