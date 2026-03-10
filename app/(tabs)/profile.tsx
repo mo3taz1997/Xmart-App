@@ -525,6 +525,32 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
           {language === 'ar' ? 'انضم لشبكة الموردين' : 'Become a Supplier'}
         </Text>
       </Pressable>
+
+      <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 8 }}>
+        <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 14, color: colors.textMuted, marginBottom: 12 }}>
+          {language === 'ar' ? 'تابعنا' : 'Follow Us'}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 20 }}>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL('https://www.instagram.com/xmart.jo'); }}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}
+          >
+            <Ionicons name="logo-instagram" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL('https://web.facebook.com/Xmart.jo'); }}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}
+          >
+            <Ionicons name="logo-facebook" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL('https://www.linkedin.com/company/xmart-jo'); }}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}
+          >
+            <Ionicons name="logo-linkedin" size={22} color={colors.text} />
+          </Pressable>
+        </View>
+      </View>
     </>
   );
 }
