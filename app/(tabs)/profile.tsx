@@ -245,7 +245,6 @@ export default function ProfileScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, gap: 12 }}>
           <SettingsSection colors={colors} isDark={isDark} isRTL={isRTL} language={language} setLanguage={setLanguage} setMode={setMode} t={t} />
         </View>
-        <Text style={{ textAlign: 'center', fontSize: 7, color: colors.textMuted, opacity: 0.25 }}>4</Text>
       </ScrollView>
     </View>
   );
@@ -315,7 +314,6 @@ return (
           <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 15, color: colors.error }}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
-      <Text style={{ textAlign: 'center', fontSize: 7, color: colors.textMuted, opacity: 0.25 }}>4</Text>
     </ScrollView>
 
 
@@ -550,6 +548,15 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
             <Ionicons name="logo-linkedin" size={22} color={colors.text} />
           </Pressable>
         </View>
+      </View>
+
+      <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 16, gap: 4 }}>
+        <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.6 }}>
+          {language === 'ar' ? 'الإصدار 2.0.3' : 'Version 2.0.3'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(5)</Text>
+        </Text>
+        <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.5 }}>
+          {language === 'ar' ? '© 2026 XMART. جميع الحقوق محفوظة' : '© 2026 XMART. All rights reserved'}
+        </Text>
       </View>
     </>
   );
