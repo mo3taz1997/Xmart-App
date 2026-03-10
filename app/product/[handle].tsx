@@ -57,8 +57,9 @@ function WhatsAppFloatingButton({ onPress, bottom, isRTL }: { onPress: () => voi
       ]).start();
     };
 
-    timerRef.current = setTimeout(triggerAttention, 30000);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    timerRef.current = setTimeout(triggerAttention, 20000);
+    const interval = setInterval(triggerAttention, 20000);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); clearInterval(interval); };
   }, []);
 
   return (
