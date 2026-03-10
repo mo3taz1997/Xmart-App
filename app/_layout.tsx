@@ -449,7 +449,7 @@ export default function RootLayout() {
                   <RecentlyViewedProvider>
                     <NotificationProvider>
                       <SalesCountProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }}>
+                        <GestureHandlerRootView style={{ flex: 1, direction: 'ltr' as any }}>
                           <KeyboardProvider>
                             <RootLayoutNav />
                           </KeyboardProvider>
