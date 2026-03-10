@@ -987,6 +987,33 @@ export default function ProductDetailScreen() {
         ) : null}
       </ScrollView>
 
+      {!isWhatsappOnly && whatsappNumber ? (
+        <Pressable
+          onPress={handleWhatsApp}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            bottom: insets.bottom + webBottomInset + 130,
+            [isRTL ? 'left' : 'right']: 16,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: '#25D366',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.25,
+            shadowRadius: 5,
+            elevation: 6,
+          })}
+        >
+          <Ionicons name="logo-whatsapp" size={26} color="#fff" />
+        </Pressable>
+      ) : null}
+
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + webBottomInset + 8 }]}>
         {isWhatsappOnly ? (
           <View style={[styles.bottomButtons, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
