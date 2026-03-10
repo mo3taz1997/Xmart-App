@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { I18nManager } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import { getTranslation, Language, LANGUAGES } from '@/lib/i18n';
+
+I18nManager.allowRTL(false);
+I18nManager.forceRTL(false);
 
 interface LanguageContextValue {
   language: Language;

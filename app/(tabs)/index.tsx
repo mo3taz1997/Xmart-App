@@ -69,7 +69,7 @@ function JordanFlagBadge() {
           pointerEvents="none">
           <Image
             source={{ uri: 'https://flagcdn.com/w80/jo.png' }}
-            style={{ width: 44, height: 22, marginLeft: -3 }}
+            style={{ width: 30, height: 22 }}
             contentFit="cover"
           />
         </View>
