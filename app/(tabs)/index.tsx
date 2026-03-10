@@ -82,7 +82,7 @@ function JordanFlagBadge() {
           <Image
             source={{ uri: 'https://flagcdn.com/w80/jo.png' }}
             style={{ width: 30, height: 22 }}
-            contentFit="cover"
+            contentFit="contain"
           />
         </View>
         <RNAnimated.View style={{ opacity: textOpacity, flex: 1, alignItems: 'center', justifyContent: 'center', height: 22 }}>
