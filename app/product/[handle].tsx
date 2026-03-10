@@ -63,30 +63,30 @@ function WhatsAppFloatingButton({ onPress, bottom, isRTL }: { onPress: () => voi
   }, []);
 
   return (
-    <Pressable onPress={onPress}>
-      <RNAnimated.View style={{
-        position: 'absolute',
-        bottom,
-        [isRTL ? 'left' : 'right']: 16,
-        width: 52,
-        height: 52,
-        borderRadius: 16,
-        backgroundColor: '#25D366',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        shadowColor: '#25D366',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-        elevation: 8,
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.2)',
-        transform: [{ translateX: shakeAnim }, { scale: scaleAnim }],
-      }}>
+    <RNAnimated.View style={{
+      position: 'absolute',
+      bottom,
+      [isRTL ? 'left' : 'right']: 16,
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: '#25D366',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999,
+      shadowColor: '#25D366',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.2)',
+      transform: [{ translateX: shakeAnim }, { scale: scaleAnim }],
+    }}>
+      <Pressable onPress={onPress} style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name="logo-whatsapp" size={28} color="#fff" />
-      </RNAnimated.View>
-    </Pressable>
+      </Pressable>
+    </RNAnimated.View>
   );
 }
 
