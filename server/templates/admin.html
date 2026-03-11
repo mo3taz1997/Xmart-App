@@ -1263,9 +1263,11 @@
         </label>
       </div>
     </div>
+    <div id="bannerBulkCounter" style="display:none;padding:6px 14px;background:#e8f5e9;color:#2e7d32;border-radius:8px;font-size:13px;font-weight:600;text-align:center;margin-bottom:0;"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('bannerModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveBanner()">حفظ</button>
+      <button class="btn btn-secondary" id="bannerSaveAddMore" style="display:none;" onclick="saveBanner(true)">حفظ وإضافة آخر</button>
+      <button class="btn btn-primary" onclick="saveBanner(false)">حفظ</button>
     </div>
   </div>
 </div>
@@ -3354,8 +3356,10 @@ function handleSugImageSelect(event) {
   event.target.value = '';
 }
 
+let bannerBulkAddCount = 0;
+
 function openAddBannerModal(sectionId) {
-  document.getElementById('bannerModalTitle').textContent = 'إضافة بانر';
+  document.getElementById('bannerModalTitle').textContent = adminLang === 'en' ? 'Add Banner' : 'إضافة بانر';
   document.getElementById('bannerEditId').value = '';
   document.getElementById('bannerSectionId').value = sectionId;
   document.getElementById('bannerImageUrl').value = '';
@@ -3372,6 +3376,11 @@ function openAddBannerModal(sectionId) {
   document.getElementById('bannerVisible').checked = true;
   document.getElementById('bannerImagePreview').style.display = 'none';
   document.getElementById('bannerUploadProgress').style.display = 'none';
+  bannerBulkAddCount = 0;
+  document.getElementById('bannerBulkCounter').style.display = 'none';
+  const saveMoreBtn = document.getElementById('bannerSaveAddMore');
+  saveMoreBtn.style.display = '';
+  saveMoreBtn.textContent = adminLang === 'en' ? 'Save & Add Another' : 'حفظ وإضافة آخر';
   document.getElementById('bannerModal').classList.add('show');
 }
 
@@ -3379,7 +3388,7 @@ function editBanner(sectionId, bannerId) {
   const s = sections.find(x => x.id === sectionId);
   const b = s?.banners?.find(x => x.id === bannerId);
   if (!b) return;
-  document.getElementById('bannerModalTitle').textContent = 'تعديل البانر';
+  document.getElementById('bannerModalTitle').textContent = adminLang === 'en' ? 'Edit Banner' : 'تعديل البانر';
   document.getElementById('bannerEditId').value = bannerId;
   document.getElementById('bannerSectionId').value = sectionId;
   document.getElementById('bannerImageUrl').value = b.imageUrl;
@@ -3393,6 +3402,8 @@ function editBanner(sectionId, bannerId) {
   document.getElementById('bannerLanguage').value = b.language || 'both';
   document.getElementById('bannerVisible').checked = b.visible;
   document.getElementById('bannerUploadProgress').style.display = 'none';
+  document.getElementById('bannerSaveAddMore').style.display = 'none';
+  document.getElementById('bannerBulkCounter').style.display = 'none';
   if (b.imageUrl) {
     document.getElementById('bannerPreviewImg').src = b.imageUrl;
     document.getElementById('bannerImagePreview').style.display = 'block';
@@ -3402,13 +3413,13 @@ function editBanner(sectionId, bannerId) {
   document.getElementById('bannerModal').classList.add('show');
 }
 
-async function saveBanner() {
+async function saveBanner(addMore) {
   const editId = document.getElementById('bannerEditId').value;
   let imageUrl = document.getElementById('bannerImageUrl').value.trim();
-  if (!imageUrl) { showToast('الرجاء إدخال رابط الصورة', true); return; }
+  if (!imageUrl) { showToast(adminLang === 'en' ? 'Please enter image URL' : 'الرجاء إدخال رابط الصورة', true); return; }
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     try {
-      showToast('جاري حفظ الصورة على السيرفر...');
+      showToast(adminLang === 'en' ? 'Saving image to server...' : 'جاري حفظ الصورة على السيرفر...');
       const dlResp = await fetch('/api/admin/download-external-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3423,27 +3434,48 @@ async function saveBanner() {
       console.warn('Could not download external image, saving original URL', e);
     }
   }
+  const currentSortOrder = parseInt(document.getElementById('bannerSortOrder').value) || 0;
   const body = {
     sectionId: document.getElementById('bannerSectionId').value,
     imageUrl,
     linkType: document.getElementById('bannerLinkType').value,
     linkValue: document.getElementById('bannerLinkValue').value,
-    sortOrder: parseInt(document.getElementById('bannerSortOrder').value) || 0,
+    sortOrder: currentSortOrder,
     visible: document.getElementById('bannerVisible').checked,
     language: document.getElementById('bannerLanguage').value || 'both',
   };
   try {
     if (editId) {
       await api('PUT', '/api/admin/banners/' + editId, body);
-      showToast('تم تحديث البانر');
+      showToast(adminLang === 'en' ? 'Banner updated' : 'تم تحديث البانر');
     } else {
       await api('POST', '/api/admin/banners', body);
-      showToast('تم إضافة البانر');
     }
-    closeModal('bannerModal');
-    loadSections();
+    if (addMore && !editId) {
+      bannerBulkAddCount++;
+      const counter = document.getElementById('bannerBulkCounter');
+      counter.style.display = 'block';
+      counter.textContent = adminLang === 'en'
+        ? `✓ ${bannerBulkAddCount} banner${bannerBulkAddCount === 1 ? '' : 's'} added — add another`
+        : `✓ تم إضافة ${bannerBulkAddCount} بانر — أضف آخر`;
+      showToast(adminLang === 'en' ? 'Saved! Add the next one' : 'تم الحفظ! أضف التالي');
+      document.getElementById('bannerImageUrl').value = '';
+      document.getElementById('bannerLinkValue').value = '';
+      document.getElementById('bannerSearchInput').value = '';
+      document.getElementById('bannerSearchResults').style.display = 'none';
+      document.getElementById('bannerImagePreview').style.display = 'none';
+      document.getElementById('bannerUploadProgress').style.display = 'none';
+      document.getElementById('bannerSortOrder').value = String(currentSortOrder + 1);
+      await loadSections();
+    } else {
+      closeModal('bannerModal');
+      showToast(editId
+        ? (adminLang === 'en' ? 'Banner updated' : 'تم تحديث البانر')
+        : (adminLang === 'en' ? `${bannerBulkAddCount + 1} banner${bannerBulkAddCount + 1 === 1 ? '' : 's'} added` : `تم إضافة ${bannerBulkAddCount + 1} بانر بنجاح`));
+      loadSections();
+    }
   } catch (e) {
-    showToast('حدث خطأ', true);
+    showToast(adminLang === 'en' ? 'Error occurred' : 'حدث خطأ', true);
   }
 }
 
