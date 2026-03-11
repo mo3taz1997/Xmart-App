@@ -12,7 +12,7 @@ function toAbsoluteUrl(url: string | null | undefined, req: Request): string | n
 }
 import express from "express";
 import { db } from "./db";
-import { homepageSections, homepageBanners, appSettings, notifications, categories, suggestedProducts, pushTokens } from "../shared/schema";
+import { homepageSections, homepageBanners, appSettings, notifications, categories, suggestedProducts, pushTokens, uploadedImages } from "../shared/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
@@ -82,7 +82,27 @@ export function registerAdminRoutes(app: Express) {
   const uploadsDir = path.resolve(process.cwd(), "server", "uploads");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-  app.use("/uploads", express.static(uploadsDir));
+  const MIME_MAP: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml' };
+
+  async function saveImageToDb(filename: string, buffer: Buffer, ext: string): Promise<string> {
+    const mime = MIME_MAP[ext] || 'image/png';
+    await db.insert(uploadedImages).values({ filename, data: buffer, mimeType: mime }).onConflictDoUpdate({ target: uploadedImages.filename, set: { data: buffer, mimeType: mime, createdAt: new Date() } });
+    return `/uploads/${filename}`;
+  }
+
+  app.get("/uploads/:filename", async (req: Request, res: Response) => {
+    try {
+      const row = await db.select().from(uploadedImages).where(eq(uploadedImages.filename, req.params.filename)).limit(1);
+      if (row.length === 0) {
+        const filePath = path.join(uploadsDir, req.params.filename);
+        if (fs.existsSync(filePath)) return res.sendFile(filePath);
+        return res.status(404).send('Not found');
+      }
+      res.setHeader('Content-Type', row[0].mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.send(row[0].data);
+    } catch { res.status(500).send('Error'); }
+  });
 
   app.post("/api/admin/upload-image", async (req: Request, res: Response) => {
     try {
@@ -94,8 +114,8 @@ export function registerAdminRoutes(app: Express) {
       const base64Data = data.replace(/^data:[^;]+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
       const savedFilename = `img-${Date.now()}${ext}`;
-      fs.writeFileSync(path.join(uploadsDir, savedFilename), buffer);
-      res.json({ url: `/uploads/${savedFilename}` });
+      const url = await saveImageToDb(savedFilename, buffer, ext);
+      res.json({ url });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
@@ -105,7 +125,13 @@ export function registerAdminRoutes(app: Express) {
     try {
       const { url } = req.body;
       if (!url || typeof url !== 'string') return res.status(400).json({ error: "Missing url" });
-      if (url.startsWith('/uploads/')) return res.json({ url });
+      if (url.startsWith('/uploads/')) {
+        const fname = url.split('/uploads/')[1]?.split('?')[0];
+        if (fname) {
+          const exists = await db.select({ filename: uploadedImages.filename }).from(uploadedImages).where(eq(uploadedImages.filename, fname)).limit(1);
+          if (exists.length > 0) return res.json({ url });
+        }
+      }
       const https = require('https');
       const http = require('http');
       const client = url.startsWith('https') ? https : http;
@@ -135,8 +161,8 @@ export function registerAdminRoutes(app: Express) {
       if (contentType) ext = '.' + contentType[1].toLowerCase();
       if (ext === '.jpeg') ext = '.jpg';
       const savedFilename = `img-${Date.now()}${ext}`;
-      fs.writeFileSync(path.join(uploadsDir, savedFilename), imageData);
-      res.json({ url: `/uploads/${savedFilename}` });
+      const savedUrl = await saveImageToDb(savedFilename, imageData, ext);
+      res.json({ url: savedUrl });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
@@ -185,8 +211,8 @@ export function registerAdminRoutes(app: Express) {
         finalBuffer = buffer;
       }
 
-      const filePath = path.join(uploadsDir, savedFilename);
-      fs.writeFileSync(filePath, finalBuffer);
+      const finalExt = (ext === '.svg' || ext === '.ai') ? '.png' : ext;
+      await saveImageToDb(savedFilename, finalBuffer, finalExt);
 
       const logoUrl = `/uploads/${savedFilename}?t=${Date.now()}`;
 

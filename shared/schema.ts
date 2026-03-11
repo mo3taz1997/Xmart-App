@@ -1,7 +1,20 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() { return 'bytea'; },
+  toDriver(value: Buffer): Buffer { return value; },
+  fromDriver(value: Buffer): Buffer { return Buffer.from(value); },
+});
+
+export const uploadedImages = pgTable("uploaded_images", {
+  filename: varchar("filename").primaryKey(),
+  data: bytea("data").notNull(),
+  mimeType: text("mime_type").notNull().default("image/png"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 export const users = pgTable("users", {
   id: varchar("id")
