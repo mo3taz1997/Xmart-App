@@ -363,6 +363,7 @@ function BrandsStripSection({ section, isDark }: {
                   style={{ width: sz.w - 20, height: sz.h }}
                   contentFit="contain"
                   transition={0}
+                  cachePolicy="memory-disk"
                 />
               ) : (
                 <Text style={{
@@ -750,9 +751,9 @@ function PromoBannerSlider({ banners }: { banners: { imageUrl: string; linkType?
     setMaxBannerHeight(fallbackH);
     banners.forEach((b) => {
       if (!b.imageUrl) return;
-      Image.prefetch(b.imageUrl);
+      Image.prefetch(b.imageUrl).catch(() => {});
     });
-  }, [banners.length]);
+  }, [JSON.stringify(banners.map(b => b.imageUrl))]);
 
   const onImageLoad = useCallback((url: string, e: any) => {
     const { width: imgW, height: imgH } = e.source || {};
@@ -855,6 +856,9 @@ function PromoBannerSlider({ banners }: { banners: { imageUrl: string; linkType?
                 style={[bannerStyles.image, { width: bannerImageWidth, height: imgH }]}
                 contentFit="contain"
                 transition={300}
+                cachePolicy="memory-disk"
+                recyclingKey={`banner-${i}`}
+                priority="high"
                 onLoad={(e: any) => onImageLoad(banner.imageUrl, e)}
               />
             </Pressable>
@@ -1224,6 +1228,8 @@ function StaticBannerSection({ section, colors, isRTL }: {
           style={{ width: bannerW, height: imgHeight, borderRadius: 14 }}
           contentFit="contain"
           transition={300}
+          cachePolicy="memory-disk"
+          priority="high"
           onLoad={(e: any) => {
             const { width: iw, height: ih } = e.source || {};
             if (iw && ih) {
@@ -1412,11 +1418,12 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
         horizontal
         inverted={isRTL}
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(_: any, i: number) => String(i)}
+        keyExtractor={(item: any, i: number) => item.handle || String(i)}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        initialNumToRender={3}
-        maxToRenderPerBatch={3}
-        windowSize={3}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        removeClippedSubviews={false}
         ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
         renderItem={({ item: p }: { item: any }) => {
           const title = language === 'ar' ? (p.titleAr || p.title) : (p.titleEn || p.title);
