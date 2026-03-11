@@ -1070,24 +1070,6 @@ export default function HomeScreen() {
           <Text style={[styles.searchPlaceholder, { textAlign: isRTL ? 'right' : 'left', color: colors.textMuted }]}>{t('search.placeholder')}</Text>
         </Pressable>
 
-        {showHeroBanner && (
-          homepageLoading ? (
-            <View style={{ padding: 16 }}><BannerSkeleton /></View>
-          ) : (
-            <PromoBannerSlider banners={resolvedHeroBanners} />
-          )
-        )}
-
-        {showMidBanner && (
-          homepageLoading ? (
-            <View style={{ padding: 16 }}><BannerSkeleton /></View>
-          ) : resolvedMidBanners.length > 0 ? (
-            <View style={{ marginTop: 16 }}>
-              <PromoBannerSlider banners={resolvedMidBanners} />
-            </View>
-          ) : null
-        )}
-
         {allSections
           .filter((s: any) => (
             s.type === 'selected_categories' ||
@@ -1097,10 +1079,21 @@ export default function HomeScreen() {
             s.type === 'product_slider' ||
             s.type === 'brands_strip' ||
             s.type === 'collection_products' ||
-            s.type === 'static_banner'
+            s.type === 'static_banner' ||
+            s.type === 'banner_slider'
           ) && s.visible !== false)
           .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
           .map((s: any) => {
+            if (s.type === 'banner_slider') {
+              const resolvedBanners = (s.banners || []).map((b: any) => ({
+                ...b,
+                imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
+              }));
+              if (resolvedBanners.length === 0) return null;
+              return (
+                <PromoBannerSlider key={s.id} banners={resolvedBanners} />
+              );
+            }
             if (s.type === 'static_banner') {
               return (
                 <StaticBannerSection

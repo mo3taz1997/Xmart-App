@@ -997,6 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               imageUrl: b.imageUrl,
               linkType: b.linkType,
               linkValue: b.linkValue,
+              sortOrder: b.sortOrder,
             })),
           };
         })
