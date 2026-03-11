@@ -578,61 +578,109 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  let _collectionsCache: { data: any[]; timestamp: number } | null = null;
+  const COLLECTIONS_CACHE_TTL = 5 * 60 * 1000;
+
+  async function fetchAllAdminCollections(): Promise<any[]> {
+    if (_collectionsCache && (Date.now() - _collectionsCache.timestamp) < COLLECTIONS_CACHE_TTL) {
+      return _collectionsCache.data;
+    }
+    async function fetchPage(language: string): Promise<any[]> {
+      const allNodes: any[] = [];
+      let hasNext = true;
+      let cursor: string | null = null;
+      const query = `query($first:Int!,$after:String) {
+        collections(first:$first, after:$after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { id handle title(locale:"${language}") image { url } } }
+        }
+      }`;
+      const fallbackQuery = `query($first:Int!,$after:String) {
+        collections(first:$first, after:$after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { id handle title image { url } } }
+        }
+      }`;
+      while (hasNext) {
+        const vars: any = { first: 250 };
+        if (cursor) vars.after = cursor;
+        let data: any;
+        try {
+          data = await shopifyAdminGraphQL(query, vars);
+        } catch {
+          data = await shopifyAdminGraphQL(fallbackQuery, vars);
+        }
+        const edges = data.collections?.edges || [];
+        edges.forEach((e: any) => allNodes.push(e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+      return allNodes;
+    }
+
+    const enCols = await fetchPage('en');
+
+    let arCols: any[] = [];
+    try {
+      const arQuery = `query($first:Int!,$after:String) {
+        translatableResources(resourceType: COLLECTION, first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { resourceId translations(locale:"ar") { key value } } }
+        }
+      }`;
+      const arTranslations: Record<string, string> = {};
+      let hasNext = true;
+      let cursor: string | null = null;
+      while (hasNext) {
+        const vars: any = { first: 250 };
+        if (cursor) vars.after = cursor;
+        try {
+          const data = await shopifyAdminGraphQL(arQuery, vars);
+          const edges = data.translatableResources?.edges || [];
+          for (const e of edges) {
+            const titleTranslation = e.node.translations?.find((t: any) => t.key === 'title');
+            if (titleTranslation) {
+              const gid = e.node.resourceId;
+              arTranslations[gid] = titleTranslation.value;
+            }
+          }
+          hasNext = data.translatableResources?.pageInfo?.hasNextPage || false;
+          cursor = data.translatableResources?.pageInfo?.endCursor || null;
+        } catch {
+          hasNext = false;
+        }
+      }
+      arCols = enCols.map((c: any) => {
+        const arTitle = arTranslations[c.id] || null;
+        return { ...c, arTitle };
+      });
+    } catch {
+      arCols = enCols.map((c: any) => ({ ...c, arTitle: null }));
+    }
+
+    const all = enCols.map((en: any, i: number) => ({
+      handle: en.handle,
+      titleEn: en.title,
+      titleAr: arCols[i]?.arTitle || en.title,
+      imageUrl: en.image?.url || null,
+    }));
+
+    _collectionsCache = { data: all, timestamp: Date.now() };
+    return all;
+  }
+
   app.get("/api/admin/search-collections", async (req: Request, res: Response) => {
     try {
       const q = ((req.query.q as string) || '').trim().toLowerCase();
-
-      async function fetchAllCollections(language: string): Promise<any[]> {
-        const allNodes: any[] = [];
-        let hasNext = true;
-        let cursor: string | null = null;
-        const query = `query($first:Int!,$after:String,$language:LanguageCode) @inContext(language:$language) {
-          collections(first:$first, after:$after) {
-            pageInfo { hasNextPage endCursor }
-            edges { node { handle title image { url } } }
-          }
-        }`;
-        while (hasNext) {
-          const vars: any = { first: 250, language };
-          if (cursor) vars.after = cursor;
-          const data = await shopifyFetch(query, vars);
-          const edges = data.collections?.edges || [];
-          edges.forEach((e: any) => allNodes.push(e.node));
-          hasNext = data.collections?.pageInfo?.hasNextPage || false;
-          cursor = data.collections?.pageInfo?.endCursor || null;
-        }
-        return allNodes;
-      }
-
-      const [arCols, enCols] = await Promise.all([
-        fetchAllCollections('AR'),
-        fetchAllCollections('EN'),
-      ]);
-      const arByHandle: Record<string, any> = {};
-      arCols.forEach((c: any) => { arByHandle[c.handle] = c; });
-      let all = enCols.map((en: any) => {
-        const ar = arByHandle[en.handle];
-        return {
-          handle: en.handle,
-          titleEn: en.title,
-          titleAr: ar?.title || en.title,
-          imageUrl: en.image?.url || ar?.image?.url || null,
-        };
-      });
-      // Also add AR-only collections not in EN
-      arCols.forEach((ar: any) => {
-        if (!all.find(c => c.handle === ar.handle)) {
-          all.push({ handle: ar.handle, titleEn: ar.title, titleAr: ar.title, imageUrl: ar.image?.url || null });
-        }
-      });
+      let all = await fetchAllAdminCollections();
       if (q) {
-        all = all.filter(c =>
+        all = all.filter((c: any) =>
           (c.titleEn || '').toLowerCase().includes(q) ||
           (c.titleAr || '').toLowerCase().includes(q) ||
           (c.handle || '').toLowerCase().includes(q)
         );
       }
-      all.sort((a, b) => (a.titleAr || a.titleEn).localeCompare(b.titleAr || b.titleEn, 'ar'));
+      all.sort((a: any, b: any) => (a.titleAr || a.titleEn).localeCompare(b.titleAr || b.titleEn, 'ar'));
       res.json(all);
     } catch (error: any) {
       console.error("Error searching collections:", error.message);
