@@ -101,6 +101,47 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  app.post("/api/admin/download-external-image", async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      if (!url || typeof url !== 'string') return res.status(400).json({ error: "Missing url" });
+      if (url.startsWith('/uploads/')) return res.json({ url });
+      const https = require('https');
+      const http = require('http');
+      const client = url.startsWith('https') ? https : http;
+      const imageData: Buffer = await new Promise((resolve, reject) => {
+        const request = client.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (response: any) => {
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            const redirectClient = response.headers.location.startsWith('https') ? https : http;
+            redirectClient.get(response.headers.location, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (res2: any) => {
+              const chunks: Buffer[] = [];
+              res2.on('data', (c: Buffer) => chunks.push(c));
+              res2.on('end', () => resolve(Buffer.concat(chunks)));
+              res2.on('error', reject);
+            }).on('error', reject);
+            return;
+          }
+          if (response.statusCode !== 200) return reject(new Error(`HTTP ${response.statusCode}`));
+          const chunks: Buffer[] = [];
+          response.on('data', (c: Buffer) => chunks.push(c));
+          response.on('end', () => resolve(Buffer.concat(chunks)));
+          response.on('error', reject);
+        });
+        request.on('error', reject);
+        request.on('timeout', () => { request.destroy(); reject(new Error('Timeout')); });
+      });
+      const contentType = url.match(/\.(png|jpg|jpeg|webp|gif)/i);
+      let ext = '.jpg';
+      if (contentType) ext = '.' + contentType[1].toLowerCase();
+      if (ext === '.jpeg') ext = '.jpg';
+      const savedFilename = `img-${Date.now()}${ext}`;
+      fs.writeFileSync(path.join(uploadsDir, savedFilename), imageData);
+      res.json({ url: `/uploads/${savedFilename}` });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.post("/api/admin/upload-logo", async (req: Request, res: Response) => {
     try {
       const { data, filename, mode } = req.body;

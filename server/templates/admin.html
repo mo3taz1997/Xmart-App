@@ -1919,8 +1919,17 @@ function renderSectionsList() {
           </div>
           ${(section.banners?.length > 0) ? `
             <div class="banner-grid">
-              ${section.banners.map(b => `
-                <div class="banner-card">
+              ${section.banners.map((b, idx) => `
+                <div class="banner-card" style="position:relative;">
+                  <div style="position:absolute;top:4px;left:4px;display:flex;flex-direction:column;gap:2px;z-index:2;">
+                    <button class="btn-icon" onclick="moveBanner('${section.id}','${b.id}',-1)" title="للأعلى" style="background:rgba(255,255,255,0.85);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.2);${idx === 0 ? 'opacity:0.3;pointer-events:none;' : ''}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
+                    </button>
+                    <button class="btn-icon" onclick="moveBanner('${section.id}','${b.id}',1)" title="للأسفل" style="background:rgba(255,255,255,0.85);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.2);${idx === section.banners.length - 1 ? 'opacity:0.3;pointer-events:none;' : ''}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+                  <div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;z-index:2;">${idx + 1}</div>
                   <img src="${resolveImageUrl(b.imageUrl)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22120%22><rect fill=%22%23eee%22 width=%22200%22 height=%22120%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2214%22>صورة غير متوفرة</text></svg>'">
                   <div class="banner-card-info">
                     ${b.linkType}: ${b.linkValue || '-'}
@@ -3040,6 +3049,34 @@ function editSection(id) {
 async function saveSection() {
   const editId = document.getElementById('sectionEditId').value;
   const type = document.getElementById('sectionType').value;
+  let metadata = type === 'selected_categories' ? { collectionHandles: Array.from(_selectedCollections.keys()) }
+           : type === 'multi_collection' ? { tabs: _multiColTabs }
+           : type === 'collection_showcase' ? { collections: _showcaseCols }
+           : type === 'product_slider' ? { products: _featuredProducts }
+           : type === 'brands_strip' ? { brands: _brands }
+           : type === 'collection_products' ? { collectionHandle: _colProductsHandle, collectionTitle: _colProductsTitle }
+           : type === 'static_banner' ? getStaticBannerMetadata()
+           : null;
+  if (type === 'static_banner' && metadata && metadata.imageUrl) {
+    const imgUrl = metadata.imageUrl;
+    if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+      try {
+        showToast('جاري حفظ الصورة على السيرفر...');
+        const dlResp = await fetch('/api/admin/download-external-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: imgUrl })
+        });
+        const dlResult = await dlResp.json();
+        if (dlResult.url) {
+          metadata.imageUrl = dlResult.url;
+          document.getElementById('staticBannerImageUrl').value = dlResult.url;
+        }
+      } catch (e) {
+        console.warn('Could not download external image', e);
+      }
+    }
+  }
   const body = {
     type,
     titleAr: document.getElementById('sectionTitleAr').value,
@@ -3047,14 +3084,7 @@ async function saveSection() {
     language: 'both',
     sortOrder: parseInt(document.getElementById('sectionSortOrder').value) || 0,
     visible: document.getElementById('sectionVisible').checked,
-    metadata: type === 'selected_categories' ? { collectionHandles: Array.from(_selectedCollections.keys()) }
-           : type === 'multi_collection' ? { tabs: _multiColTabs }
-           : type === 'collection_showcase' ? { collections: _showcaseCols }
-           : type === 'product_slider' ? { products: _featuredProducts }
-           : type === 'brands_strip' ? { brands: _brands }
-           : type === 'collection_products' ? { collectionHandle: _colProductsHandle, collectionTitle: _colProductsTitle }
-           : type === 'static_banner' ? getStaticBannerMetadata()
-           : null,
+    metadata,
   };
   try {
     if (editId) {
@@ -3372,16 +3402,34 @@ function editBanner(sectionId, bannerId) {
 
 async function saveBanner() {
   const editId = document.getElementById('bannerEditId').value;
+  let imageUrl = document.getElementById('bannerImageUrl').value.trim();
+  if (!imageUrl) { showToast('الرجاء إدخال رابط الصورة', true); return; }
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    try {
+      showToast('جاري حفظ الصورة على السيرفر...');
+      const dlResp = await fetch('/api/admin/download-external-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: imageUrl })
+      });
+      const dlResult = await dlResp.json();
+      if (dlResult.url) {
+        imageUrl = dlResult.url;
+        document.getElementById('bannerImageUrl').value = imageUrl;
+      }
+    } catch (e) {
+      console.warn('Could not download external image, saving original URL', e);
+    }
+  }
   const body = {
     sectionId: document.getElementById('bannerSectionId').value,
-    imageUrl: document.getElementById('bannerImageUrl').value,
+    imageUrl,
     linkType: document.getElementById('bannerLinkType').value,
     linkValue: document.getElementById('bannerLinkValue').value,
     sortOrder: parseInt(document.getElementById('bannerSortOrder').value) || 0,
     visible: document.getElementById('bannerVisible').checked,
     language: document.getElementById('bannerLanguage').value || 'both',
   };
-  if (!body.imageUrl) { showToast('الرجاء إدخال رابط الصورة', true); return; }
   try {
     if (editId) {
       await api('PUT', '/api/admin/banners/' + editId, body);
@@ -3394,6 +3442,29 @@ async function saveBanner() {
     loadSections();
   } catch (e) {
     showToast('حدث خطأ', true);
+  }
+}
+
+async function moveBanner(sectionId, bannerId, direction) {
+  const s = sections.find(x => x.id === sectionId);
+  if (!s || !s.banners) return;
+  const banners = [...s.banners].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  const idx = banners.findIndex(b => b.id === bannerId);
+  if (idx < 0) return;
+  const swapIdx = idx + direction;
+  if (swapIdx < 0 || swapIdx >= banners.length) return;
+  const orderA = banners[idx].sortOrder;
+  const orderB = banners[swapIdx].sortOrder;
+  if (orderA === orderB) {
+    banners[swapIdx].sortOrder = orderA + direction;
+  }
+  try {
+    await api('PUT', '/api/admin/banners/' + banners[idx].id, { ...banners[idx], sortOrder: orderB });
+    await api('PUT', '/api/admin/banners/' + banners[swapIdx].id, { ...banners[swapIdx], sortOrder: orderA });
+    showToast('تم تغيير الترتيب');
+    loadSections();
+  } catch (e) {
+    showToast('حدث خطأ في تغيير الترتيب', true);
   }
 }
 
