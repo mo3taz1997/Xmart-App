@@ -3104,22 +3104,27 @@ async function saveSection() {
            : type === 'static_banner' ? getStaticBannerMetadata()
            : null;
   if (type === 'static_banner' && metadata && metadata.imageUrl) {
-    const imgUrl = metadata.imageUrl;
-    if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
-      try {
-        showToast('جاري حفظ الصورة على السيرفر...');
-        const dlResp = await fetch('/api/admin/download-external-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: imgUrl })
-        });
-        const dlResult = await dlResp.json();
-        if (dlResult.url) {
-          metadata.imageUrl = dlResult.url;
-          document.getElementById('staticBannerImageUrl').value = dlResult.url;
-        }
-      } catch (e) {
-        console.warn('Could not download external image', e);
+    metadata.imageUrl = await persistImage(metadata.imageUrl);
+    document.getElementById('staticBannerImageUrl').value = metadata.imageUrl;
+  }
+  if (type === 'collection_showcase' && metadata && metadata.collections) {
+    for (let i = 0; i < metadata.collections.length; i++) {
+      if (metadata.collections[i].imageUrl) {
+        metadata.collections[i].imageUrl = await persistImage(metadata.collections[i].imageUrl);
+      }
+    }
+  }
+  if (type === 'brands_strip' && metadata && metadata.brands) {
+    for (let i = 0; i < metadata.brands.length; i++) {
+      if (metadata.brands[i].imageUrl) {
+        metadata.brands[i].imageUrl = await persistImage(metadata.brands[i].imageUrl);
+      }
+    }
+  }
+  if (type === 'product_slider' && metadata && metadata.products) {
+    for (let i = 0; i < metadata.products.length; i++) {
+      if (metadata.products[i].imageUrl) {
+        metadata.products[i].imageUrl = await persistImage(metadata.products[i].imageUrl);
       }
     }
   }
@@ -3459,23 +3464,8 @@ async function saveBanner(addMore) {
   const editId = document.getElementById('bannerEditId').value;
   let imageUrl = document.getElementById('bannerImageUrl').value.trim();
   if (!imageUrl) { showToast(adminLang === 'en' ? 'Please enter image URL' : 'الرجاء إدخال رابط الصورة', true); return; }
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    try {
-      showToast(adminLang === 'en' ? 'Saving image to server...' : 'جاري حفظ الصورة على السيرفر...');
-      const dlResp = await fetch('/api/admin/download-external-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: imageUrl })
-      });
-      const dlResult = await dlResp.json();
-      if (dlResult.url) {
-        imageUrl = dlResult.url;
-        document.getElementById('bannerImageUrl').value = imageUrl;
-      }
-    } catch (e) {
-      console.warn('Could not download external image, saving original URL', e);
-    }
-  }
+  imageUrl = await persistImage(imageUrl);
+  document.getElementById('bannerImageUrl').value = imageUrl;
   const currentSortOrder = parseInt(document.getElementById('bannerSortOrder').value) || 0;
   const body = {
     sectionId: document.getElementById('bannerSectionId').value,
@@ -3797,9 +3787,13 @@ async function changeAdminPassword() {
 }
 
 async function saveSettings() {
+  let logoUrl = document.getElementById('settingLogoUrl').value.trim();
+  let logoDarkUrl = document.getElementById('settingLogoDarkUrl').value.trim();
+  if (logoUrl) { logoUrl = await persistImage(logoUrl); document.getElementById('settingLogoUrl').value = logoUrl; }
+  if (logoDarkUrl) { logoDarkUrl = await persistImage(logoDarkUrl); document.getElementById('settingLogoDarkUrl').value = logoDarkUrl; }
   const body = {
-    logoUrl: document.getElementById('settingLogoUrl').value,
-    logoDarkUrl: document.getElementById('settingLogoDarkUrl').value,
+    logoUrl,
+    logoDarkUrl,
     storeNameAr: document.getElementById('settingStoreNameAr').value,
     storeNameEn: document.getElementById('settingStoreNameEn').value,
     phone: document.getElementById('settingPhone').value,
@@ -4885,11 +4879,13 @@ function selectSugProduct(handle, titleAr, titleEn, imageUrl) {
 
 async function saveSuggested() {
   const id = document.getElementById('sugEditId').value;
+  let sugImgUrl = document.getElementById('sugImageUrl').value.trim() || null;
+  if (sugImgUrl) { sugImgUrl = await persistImage(sugImgUrl); document.getElementById('sugImageUrl').value = sugImgUrl; }
   const body = {
     productHandle: document.getElementById('sugProductHandle').value.trim(),
     titleAr: document.getElementById('sugTitleAr').value.trim() || null,
     titleEn: document.getElementById('sugTitleEn').value.trim() || null,
-    imageUrl: document.getElementById('sugImageUrl').value.trim() || null,
+    imageUrl: sugImgUrl,
     sortOrder: parseInt(document.getElementById('sugSortOrder').value) || 0,
     visible: document.getElementById('sugVisible').checked,
   };
