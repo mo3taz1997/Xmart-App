@@ -613,7 +613,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
   const cardW = width - 24;
   const listW = cardW * 0.43;
   const circleSize = isTabletCS ? cardW * 0.28 : cardW * 0.48;
-  const CARD_H = isTabletCS ? 320 : 260;
+  const CARD_H = isTabletCS ? 320 : 290;
 
   const THUMB_SIZE = 36;
   const THUMB_GAP = 5;

@@ -19,7 +19,7 @@ interface Props {
 const IS_TABLET = width >= 768;
 const ITEM_GAP = 12;
 const CARD_W = width - 32;
-const CARD_H = Math.round(CARD_W * 0.66);
+const CARD_H = Math.round(CARD_W * 0.72);
 const SNAP = CARD_W + ITEM_GAP;
 
 export default function ProductSliderSection({ section, language, colors, isDark, isRTL }: Props) {
