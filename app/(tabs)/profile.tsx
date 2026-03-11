@@ -452,6 +452,7 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await setLanguage(lang);
     router.replace('/(tabs)');
+    setTimeout(() => tabEvents.emit('homeTabPress'), 400);
   };
   return (
     <>
