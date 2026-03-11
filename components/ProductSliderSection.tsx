@@ -155,16 +155,17 @@ export default function ProductSliderSection({ section, language, colors, isDark
                 flex: 1,
                 height: CARD_H,
                 paddingHorizontal: 14,
-                paddingVertical: 16,
-                justifyContent: "center",
+                paddingTop: 14,
+                paddingBottom: 12,
+                justifyContent: "flex-start",
               }}>
                 {!!brand && (
-                  <Text style={{
+                  <Text numberOfLines={1} style={{
                     fontFamily: "Cairo_400Regular",
                     fontSize: 11,
                     color: isDark ? "#99aacc" : "#666",
                     letterSpacing: 0.8,
-                    marginBottom: 3,
+                    marginBottom: 2,
                     textAlign: isRTL ? "right" : "left",
                     textTransform: "uppercase",
                   }}>
@@ -173,14 +174,14 @@ export default function ProductSliderSection({ section, language, colors, isDark
                 )}
 
                 <Text
-                  numberOfLines={3}
+                  numberOfLines={2}
                   style={{
                     fontFamily: "Cairo_700Bold",
-                    fontSize: 15,
+                    fontSize: 14,
                     color: isDark ? "#ffffff" : "#0f2240",
-                    lineHeight: 21,
+                    lineHeight: 20,
                     textAlign: isRTL ? "right" : "left",
-                    marginBottom: 4,
+                    marginBottom: 3,
                   }}
                 >
                   {title}
@@ -194,23 +195,27 @@ export default function ProductSliderSection({ section, language, colors, isDark
                       fontSize: 11,
                       color: isDark ? "#aabbd0" : "#5a6e85",
                       textAlign: isRTL ? "right" : "left",
-                      marginBottom: 8,
-                      lineHeight: 16,
+                      marginBottom: 6,
+                      lineHeight: 15,
                     }}
                   >
                     {subtitle}
                   </Text>
                 )}
 
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={{
-                    fontFamily: "Cairo_400Regular",
-                    fontSize: 10,
-                    color: isDark ? "#99aacc" : "#777",
-                    textAlign: isRTL ? "right" : "left",
-                  }}>
-                    {language === "ar" ? "السعر الآن" : "Now"}
-                  </Text>
+                <View style={{ flex: 1 }} />
+
+                <View style={{ marginBottom: 8 }}>
+                  {pct > 0 && (
+                    <Text style={{
+                      fontFamily: "Cairo_400Regular",
+                      fontSize: 10,
+                      color: isDark ? "#99aacc" : "#777",
+                      textAlign: isRTL ? "right" : "left",
+                    }}>
+                      {language === "ar" ? "السعر الآن" : "Now"}
+                    </Text>
+                  )}
                   <Text style={{
                     fontFamily: "Cairo_700Bold",
                     fontSize: 15,
