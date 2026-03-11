@@ -1886,6 +1886,25 @@ function resolveImageUrl(url) {
   return base + url;
 }
 
+async function persistImage(url) {
+  if (!url || typeof url !== 'string') return url;
+  if (url.startsWith('/uploads/')) return url;
+  if (url.startsWith('data:')) return url;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return url;
+  try {
+    const resp = await fetch('/api/admin/download-external-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const result = await resp.json();
+    return result.url || url;
+  } catch(e) {
+    console.warn('persistImage failed for:', url, e);
+    return url;
+  }
+}
+
 async function loadSections() {
   sections = await api('GET', '/api/admin/sections');
   renderSections();
@@ -4335,11 +4354,13 @@ async function saveBulkSub() {
   let successCount = 0;
   for (const item of bulkSubSelected) {
     try {
+      let imgUrl = item.imageUrl || null;
+      if (imgUrl) imgUrl = await persistImage(imgUrl);
       await api('POST', '/api/admin/categories', {
         parentId,
         titleAr: item.titleAr,
         titleEn: item.titleEn || item.titleAr,
-        imageUrl: item.imageUrl || null,
+        imageUrl: imgUrl,
         collectionHandle: item.handle,
         sortOrder: nextSort++,
         visible: true,
@@ -4453,11 +4474,16 @@ async function saveCat(addMore) {
   }
   const editId = document.getElementById('catEditId').value;
   const parentId = document.getElementById('catParentId').value || null;
+  let imgUrl = document.getElementById('catImageUrl').value.trim() || null;
+  if (imgUrl) {
+    imgUrl = await persistImage(imgUrl);
+    document.getElementById('catImageUrl').value = imgUrl;
+  }
   const body = {
     parentId,
     titleAr,
     titleEn,
-    imageUrl: document.getElementById('catImageUrl').value.trim() || null,
+    imageUrl: imgUrl,
     collectionHandle: document.getElementById('catCollectionHandle').value.trim() || null,
     sortOrder: parseInt(document.getElementById('catSortOrder').value) || 0,
     visible: document.getElementById('catVisible').checked,
