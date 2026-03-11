@@ -420,9 +420,25 @@ export function registerAdminRoutes(app: Express) {
 
   app.get("/api/admin/shopify-collections", async (_req: Request, res: Response) => {
     try {
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.COLLECTIONS, { first: 250 });
-      const collections = data.collections.edges.map((e: any) => e.node);
-      const merged = collections.map((c: any) => ({
+      const pagedQuery = `query($first: Int!, $after: String) {
+        collections(first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { id title handle description image { url altText } } }
+        }
+      }`;
+      const allNodes: any[] = [];
+      let hasNext = true;
+      let cursor: string | null = null;
+      while (hasNext) {
+        const vars: any = { first: 250 };
+        if (cursor) vars.after = cursor;
+        const data = await shopifyAdminGraphQL(pagedQuery, vars);
+        const edges = data.collections?.edges || [];
+        edges.forEach((e: any) => allNodes.push(e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+      const merged = allNodes.map((c: any) => ({
         handle: c.handle,
         titleEn: c.title,
         titleAr: c.title,
