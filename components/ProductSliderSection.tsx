@@ -19,7 +19,7 @@ interface Props {
 const IS_TABLET = width >= 768;
 const ITEM_GAP = 12;
 const CARD_W = width - 32;
-const CARD_H = Math.round(CARD_W * 0.72);
+const CARD_H = Math.round(CARD_W * 0.66);
 const SNAP = CARD_W + ITEM_GAP;
 
 export default function ProductSliderSection({ section, language, colors, isDark, isRTL }: Props) {
@@ -154,18 +154,18 @@ export default function ProductSliderSection({ section, language, colors, isDark
               <View style={{
                 flex: 1,
                 height: CARD_H,
-                paddingHorizontal: 14,
-                paddingTop: 14,
-                paddingBottom: 12,
+                paddingHorizontal: 12,
+                paddingTop: 12,
+                paddingBottom: 10,
                 justifyContent: "flex-start",
               }}>
                 {!!brand && (
                   <Text numberOfLines={1} style={{
                     fontFamily: "Cairo_400Regular",
-                    fontSize: 11,
+                    fontSize: 10,
                     color: isDark ? "#99aacc" : "#666",
-                    letterSpacing: 0.8,
-                    marginBottom: 2,
+                    letterSpacing: 0.6,
+                    marginBottom: 1,
                     textAlign: isRTL ? "right" : "left",
                     textTransform: "uppercase",
                   }}>
@@ -177,11 +177,11 @@ export default function ProductSliderSection({ section, language, colors, isDark
                   numberOfLines={2}
                   style={{
                     fontFamily: "Cairo_700Bold",
-                    fontSize: 14,
+                    fontSize: 13,
                     color: isDark ? "#ffffff" : "#0f2240",
-                    lineHeight: 20,
+                    lineHeight: 18,
                     textAlign: isRTL ? "right" : "left",
-                    marginBottom: 3,
+                    marginBottom: 2,
                   }}
                 >
                   {title}
@@ -189,14 +189,14 @@ export default function ProductSliderSection({ section, language, colors, isDark
 
                 {!!subtitle && (
                   <Text
-                    numberOfLines={2}
+                    numberOfLines={1}
                     style={{
                       fontFamily: "Cairo_400Regular",
-                      fontSize: 11,
+                      fontSize: 10,
                       color: isDark ? "#aabbd0" : "#5a6e85",
                       textAlign: isRTL ? "right" : "left",
-                      marginBottom: 6,
-                      lineHeight: 15,
+                      marginBottom: 4,
+                      lineHeight: 14,
                     }}
                   >
                     {subtitle}
@@ -205,7 +205,7 @@ export default function ProductSliderSection({ section, language, colors, isDark
 
                 <View style={{ flex: 1 }} />
 
-                <View style={{ marginBottom: 8 }}>
+                <View style={{ marginBottom: 6 }}>
                   {pct > 0 && (
                     <Text style={{
                       fontFamily: "Cairo_400Regular",
@@ -218,19 +218,19 @@ export default function ProductSliderSection({ section, language, colors, isDark
                   )}
                   <Text style={{
                     fontFamily: "Cairo_700Bold",
-                    fontSize: 15,
+                    fontSize: 14,
                     color: isDark ? "#248CCC" : "#163259",
                     textAlign: isRTL ? "right" : "left",
                   }}>
                     {priceStr}
                   </Text>
                   {pct > 0 && (
-                    <View style={{ flexDirection: isRTL ? "row-reverse" : "row", alignItems: "center", gap: 5, marginTop: 2 }}>
-                      <Text style={{ fontFamily: "Cairo_400Regular", fontSize: 10, color: "#999", textDecorationLine: "line-through" }}>
+                    <View style={{ flexDirection: isRTL ? "row-reverse" : "row", alignItems: "center", gap: 4, marginTop: 1 }}>
+                      <Text style={{ fontFamily: "Cairo_400Regular", fontSize: 9, color: "#999", textDecorationLine: "line-through" }}>
                         {parseFloat(p.compareAtPrice).toFixed(2)}
                       </Text>
                       <View style={{ backgroundColor: "#163259", borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
-                        <Text style={{ color: "#fff", fontFamily: "Cairo_700Bold", fontSize: 9 }}>-{pct}%</Text>
+                        <Text style={{ color: "#fff", fontFamily: "Cairo_700Bold", fontSize: 8 }}>-{pct}%</Text>
                       </View>
                     </View>
                   )}
@@ -244,14 +244,14 @@ export default function ProductSliderSection({ section, language, colors, isDark
                   style={({ pressed }: { pressed: boolean }) => ({
                     backgroundColor: "#D4F000",
                     borderRadius: 30,
-                    paddingVertical: 8,
-                    paddingHorizontal: 14,
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
                     alignSelf: isRTL ? "flex-end" : "flex-start",
                     opacity: pressed ? 0.8 : 1,
                     transform: [{ scale: pressed ? 0.97 : 1 }],
                   })}
                 >
-                  <Text style={{ fontFamily: "Cairo_700Bold", fontSize: 12, color: "#111" }}>
+                  <Text style={{ fontFamily: "Cairo_700Bold", fontSize: 11, color: "#111" }}>
                     {shopNowLabel}
                   </Text>
                 </Pressable>
