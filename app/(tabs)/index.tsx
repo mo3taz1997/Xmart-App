@@ -143,7 +143,7 @@ function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }:
                 overflow: 'hidden',
               }}>
                 {imgUrl ? (
-                  <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
+                  <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" transition={0} />
                 ) : (
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(36,140,204,0.12)' : 'rgba(22,50,89,0.06)' }}>
                     <Ionicons name="grid-outline" size={32} color={colors.primary} />
@@ -651,7 +651,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
               backgroundColor: isDark ? colors.card : '#f0f4f8',
               borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(22,50,89,0.08)',
             }}>
-              <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
+              <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" transition={0} />
             </View>
           ))}
         </View>
@@ -694,7 +694,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
             alignItems: 'center', justifyContent: 'center',
           }}>
             {activeCol?.imageUrl ? (
-              <Image source={{ uri: activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="contain" cachePolicy="memory-disk" />
+              <Image source={{ uri: activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="contain" cachePolicy="memory-disk" transition={0} />
             ) : (
               <Ionicons name="grid-outline" size={52} color={colors.primary} />
             )}
@@ -950,6 +950,27 @@ export default function HomeScreen() {
 
   const resolvedHeroBanners = heroBanners.map((b: any) => ({ ...b, imageUrl: resolveUrl(b.imageUrl) || b.imageUrl }));
   const resolvedMidBanners = midBanners.map((b: any) => ({ ...b, imageUrl: resolveUrl(b.imageUrl) || b.imageUrl }));
+
+  useEffect(() => {
+    const urls: string[] = [];
+    resolvedHeroBanners.forEach((b: any) => { if (b.imageUrl) urls.push(b.imageUrl); });
+    resolvedMidBanners.forEach((b: any) => { if (b.imageUrl) urls.push(b.imageUrl); });
+    allSections.forEach((s: any) => {
+      if (s.type === 'banner_slider') {
+        (s.banners || []).forEach((b: any) => {
+          const u = resolveUrl(b.imageUrl) || b.imageUrl;
+          if (u) urls.push(u);
+        });
+      }
+      if (s.type === 'featured_products' || s.type === 'product_slider') {
+        (s.featuredProducts || []).forEach((p: any) => {
+          if (p.imageUrl) urls.push(p.imageUrl);
+          if (p.customImageUrl) urls.push(p.customImageUrl);
+        });
+      }
+    });
+    urls.forEach(u => Image.prefetch(u).catch(() => {}));
+  }, [homepage]);
 
   const mainScrollRef = useRef<any>(null);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
@@ -1313,7 +1334,7 @@ function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
           <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: GAP }}>
             {p1 && (
               <Pressable onPress={() => goTo(p1.handle)} style={[cardStyle, { width: halfW, height: HERO_H }]}>
-                {p1.imageUrl && <Image source={{ uri: p1.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p1.handle} />}
+                {p1.imageUrl && <Image source={{ uri: p1.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p1.handle} transition={0} />}
                 {overlayBottom(p1)}
                 <View style={{ position: 'absolute', top: 8, left: isRTL ? undefined : 8, right: isRTL ? 8 : undefined, backgroundColor: 'rgba(22,50,89,0.75)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
                   <Text style={{ color: '#fff', fontFamily: 'Cairo_700Bold', fontSize: 9 }}>{language === 'ar' ? 'مميز' : 'Featured'}</Text>
@@ -1324,13 +1345,13 @@ function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
               <View style={{ flex: 1, gap: GAP }}>
                 {p2 && (
                   <Pressable onPress={() => goTo(p2.handle)} style={[cardStyle, { height: SMALL_H }]}>
-                    {p2.imageUrl && <Image source={{ uri: p2.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p2.handle} />}
+                    {p2.imageUrl && <Image source={{ uri: p2.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p2.handle} transition={0} />}
                     {overlayBottom(p2, true)}
                   </Pressable>
                 )}
                 {p3 && (
                   <Pressable onPress={() => goTo(p3.handle)} style={[cardStyle, { height: SMALL_H }]}>
-                    {p3.imageUrl && <Image source={{ uri: p3.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p3.handle} />}
+                    {p3.imageUrl && <Image source={{ uri: p3.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p3.handle} transition={0} />}
                     {overlayBottom(p3, true)}
                   </Pressable>
                 )}
@@ -1342,14 +1363,14 @@ function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
           <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: GAP }}>
             {p4 && (
               <Pressable onPress={() => goTo(p4.handle)} style={[cardStyle, { flex: 1, height: BOTTOM_H }]}>
-                {p4.imageUrl && <Image source={{ uri: p4.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p4.handle} />}
+                {p4.imageUrl && <Image source={{ uri: p4.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p4.handle} transition={0} />}
                 {discountBadge(p4)}
                 {overlayBottom(p4)}
               </Pressable>
             )}
             {p5 && (
               <Pressable onPress={() => goTo(p5.handle)} style={[cardStyle, { flex: 1, height: BOTTOM_H }]}>
-                {p5.imageUrl && <Image source={{ uri: p5.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p5.handle} />}
+                {p5.imageUrl && <Image source={{ uri: p5.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={p5.handle} transition={0} />}
                 {discountBadge(p5)}
                 {overlayBottom(p5)}
               </Pressable>

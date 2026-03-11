@@ -1,4 +1,3 @@
-"use no memo";
 import React from "react";
 import { View, Text, FlatList, Pressable, Dimensions, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
@@ -22,7 +21,7 @@ const CARD_W = width - 32;
 const CARD_H = Math.round(CARD_W * 0.66);
 const SNAP = CARD_W + ITEM_GAP;
 
-export default function ProductSliderSection({ section, language, colors, isDark, isRTL }: Props) {
+function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }: Props) {
   const products: any[] = section.featuredProducts || [];
   const sectionTitle = (language === "ar" ? section.titleAr : section.titleEn) || "";
 
@@ -303,3 +302,6 @@ export default function ProductSliderSection({ section, language, colors, isDark
     </View>
   );
 }
+
+const ProductSliderSection = React.memo(ProductSliderSectionInner);
+export default ProductSliderSection;

@@ -258,7 +258,7 @@ function getStyles(colors: typeof Colors.dark) {
   });
 }
 
-export default function ProductCard({
+function ProductCard({
   handle,
   title,
   price,
@@ -306,7 +306,7 @@ export default function ProductCard({
     >
       <View style={[styles.imageContainer, { aspectRatio: 1, height: undefined }]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={200} cachePolicy="memory-disk" recyclingKey={handle} />
+          <Image source={{ uri: imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={0} cachePolicy="memory-disk" recyclingKey={handle} placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkv6IuGgAAAABJRU5ErkJggg==' }} />
         ) : (
           <View style={styles.placeholderImage}>
             <Ionicons name="image-outline" size={40} color={colors.textMuted} />
@@ -355,3 +355,14 @@ export default function ProductCard({
     </Pressable>
   );
 }
+
+export default React.memo(ProductCard, (prev, next) => {
+  return prev.handle === next.handle &&
+    prev.imageUrl === next.imageUrl &&
+    prev.price === next.price &&
+    prev.compareAtPrice === next.compareAtPrice &&
+    prev.title === next.title &&
+    prev.availableForSale === next.availableForSale &&
+    prev.compact === next.compact &&
+    prev.vendor === next.vendor;
+});
