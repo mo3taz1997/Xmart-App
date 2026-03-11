@@ -539,45 +539,41 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
 
 const SHOWCASE_INTERVAL = 3400;
 
-function ShowcaseCollectionProducts({ handle, language, colors, isDark, isRTL }: {
-  handle: string; language: string; colors: any; isDark: boolean; isRTL: boolean;
-}) {
-  const { data } = useQuery({
-    queryKey: ['showcase-prods', handle, language],
-    queryFn: () => api.getCollectionProducts(handle, { first: '4', available: 'true' }, language),
-    enabled: !!handle,
-    staleTime: 1000 * 30,
-    refetchOnMount: 'always' as const,
-  });
-  const products = (data?.products || []).filter((p: any) => p.availableForSale !== false).slice(0, 3);
-  if (!products.length) return null;
-  return (
-    <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: 6, marginTop: 12, flexWrap: 'nowrap' }}>
-      {products.map((p: any, i: number) => {
-        const imgUrl = p.images?.edges?.[0]?.node?.url || p.featuredImage?.url;
-        if (!imgUrl) return null;
-        return (
-          <View key={p.handle + i} style={{
-            width: 48, height: 48, borderRadius: 10, overflow: 'hidden',
-            backgroundColor: isDark ? colors.card : '#f0f4f8',
-            borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(22,50,89,0.08)',
-          }}>
-            <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const collections: any[] = section.showcaseCollections || [];
   const [activeIdx, setActiveIdx] = useState(0);
   const imgOpacity = useRef(new RNAnimated.Value(1)).current;
-  const thumbOpacity = useRef(new RNAnimated.Value(1)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const allHandles = collections.map((c: any) => c.handle).filter(Boolean);
+  const thumbCacheRef = useRef<Record<string, string[]>>({});
+  const [thumbsReady, setThumbsReady] = useState(false);
+
+  useEffect(() => {
+    if (allHandles.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      allHandles.map(async (handle: string) => {
+        try {
+          const res = await api.getCollectionProducts(handle, { first: '10', available: 'true' }, language);
+          const prods = (res?.products || []).filter((p: any) => p.availableForSale !== false);
+          const urls = prods
+            .map((p: any) => p.images?.edges?.[0]?.node?.url || p.featuredImage?.url)
+            .filter(Boolean);
+          return { handle, urls };
+        } catch { return { handle, urls: [] as string[] }; }
+      })
+    ).then(results => {
+      if (cancelled) return;
+      const cache: Record<string, string[]> = {};
+      results.forEach(r => { cache[r.handle] = r.urls; });
+      thumbCacheRef.current = cache;
+      setThumbsReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [allHandles.join(',')]);
 
   if (collections.length === 0) return null;
 
@@ -588,15 +584,9 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
   const advanceRef = useRef<() => void>(() => {});
 
   advanceRef.current = () => {
-    RNAnimated.parallel([
-      RNAnimated.timing(imgOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
-      RNAnimated.timing(thumbOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
-    ]).start(() => {
+    RNAnimated.timing(imgOpacity, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
       setActiveIdx(prev => (prev + 1) % total);
-      RNAnimated.parallel([
-        RNAnimated.timing(imgOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-        RNAnimated.timing(thumbOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]).start();
+      RNAnimated.timing(imgOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     });
   };
 
@@ -610,15 +600,9 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
     if (idx === activeIdx) return;
     Haptics.selectionAsync();
     if (timerRef.current) clearInterval(timerRef.current);
-    RNAnimated.parallel([
-      RNAnimated.timing(imgOpacity, { toValue: 0, duration: 160, useNativeDriver: true }),
-      RNAnimated.timing(thumbOpacity, { toValue: 0, duration: 160, useNativeDriver: true }),
-    ]).start(() => {
+    RNAnimated.timing(imgOpacity, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
       setActiveIdx(idx);
-      RNAnimated.parallel([
-        RNAnimated.timing(imgOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
-        RNAnimated.timing(thumbOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
-      ]).start();
+      RNAnimated.timing(imgOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
     });
     if (total > 1) {
       timerRef.current = setInterval(() => advanceRef.current(), SHOWCASE_INTERVAL);
@@ -629,16 +613,23 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
   const cardW = width - 24;
   const listW = cardW * 0.43;
   const circleSize = isTabletCS ? cardW * 0.28 : cardW * 0.48;
+  const CARD_H = isTabletCS ? 320 : 260;
+
+  const THUMB_SIZE = 36;
+  const THUMB_GAP = 5;
+  const thumbRowW = listW - 32;
+  const maxThumbs = Math.floor((thumbRowW + THUMB_GAP) / (THUMB_SIZE + THUMB_GAP));
+  const activeThumbs = thumbsReady ? (thumbCacheRef.current[activeCol?.handle] || []).slice(0, maxThumbs) : [];
 
   const listPanel = (
-    <View style={{ width: listW, paddingVertical: 18, paddingHorizontal: 16, justifyContent: 'space-between' }}>
+    <View style={{ width: listW, height: CARD_H, paddingVertical: 14, paddingHorizontal: 16, justifyContent: 'space-between' }}>
       <View>
         {collections.map((col: any, i: number) => {
           const isActive = i === activeIdx;
           const colTitle = (language === 'ar' ? col.titleAr : col.titleEn) || col.handle;
           return (
-            <Pressable key={col.handle + i} onPress={() => switchTo(i)} style={{ paddingVertical: 5 }}>
-              <Text numberOfLines={2} style={{
+            <Pressable key={col.handle + i} onPress={() => switchTo(i)} style={{ paddingVertical: 4 }}>
+              <Text numberOfLines={1} style={{
                 fontFamily: isActive ? 'Cairo_700Bold' : 'Cairo_400Regular',
                 fontSize: 13,
                 color: isActive ? colors.text : colors.textMuted,
@@ -652,17 +643,17 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
       </View>
 
       <View>
-        <RNAnimated.View style={{ opacity: thumbOpacity }}>
-          {activeCol?.handle && (
-            <ShowcaseCollectionProducts
-              handle={activeCol.handle}
-              language={language}
-              colors={colors}
-              isDark={isDark}
-              isRTL={isRTL}
-            />
-          )}
-        </RNAnimated.View>
+        <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: THUMB_GAP, marginBottom: 10, height: THUMB_SIZE }}>
+          {activeThumbs.map((url: string, i: number) => (
+            <View key={i} style={{
+              width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 8, overflow: 'hidden',
+              backgroundColor: isDark ? colors.card : '#f0f4f8',
+              borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(22,50,89,0.08)',
+            }}>
+              <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            </View>
+          ))}
+        </View>
 
         <Pressable
           onPress={() => {
@@ -670,11 +661,10 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
             if (activeCol?.handle) router.push({ pathname: '/collection/[handle]', params: { handle: activeCol.handle } });
           }}
           style={{
-            marginTop: 10,
             backgroundColor: '#163259',
             borderRadius: 20,
             paddingHorizontal: 14,
-            paddingVertical: 8,
+            paddingVertical: 7,
             alignSelf: isRTL ? 'flex-end' : 'flex-start',
           }}
         >
@@ -687,7 +677,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
   );
 
   const imagePanel = (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 18, paddingBottom: 16, paddingHorizontal: 8 }}>
+    <View style={{ flex: 1, height: CARD_H, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
       <Pressable
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -729,7 +719,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
         backgroundColor: isDark ? colors.surface : '#F7F7F7',
         shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 14,
         shadowOffset: { width: 0, height: 4 }, elevation: 3,
-        minHeight: isTabletCS ? 320 : 248,
+        height: CARD_H,
         overflow: 'hidden',
       }}>
         {listPanel}
