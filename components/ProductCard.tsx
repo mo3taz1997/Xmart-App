@@ -306,7 +306,7 @@ export default function ProductCard({
     >
       <View style={[styles.imageContainer, { aspectRatio: 1, height: undefined }]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={300} />
+          <Image source={{ uri: imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={200} cachePolicy="memory-disk" recyclingKey={handle} />
         ) : (
           <View style={styles.placeholderImage}>
             <Ionicons name="image-outline" size={40} color={colors.textMuted} />

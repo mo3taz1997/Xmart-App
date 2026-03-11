@@ -81,7 +81,10 @@ export default function ProductSliderSection({ section, language, colors, isDark
         data={products}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(_: any, i: number) => String(i)}
+        keyExtractor={(item: any, i: number) => item.handle || String(i)}
+        windowSize={5}
+        maxToRenderPerBatch={3}
+        removeClippedSubviews={false}
         onScrollBeginDrag={() => { isUserScrolling.current = true; }}
         onMomentumScrollEnd={(e: any) => {
           isUserScrolling.current = false;
@@ -146,7 +149,9 @@ export default function ProductSliderSection({ section, language, colors, isDark
                     source={{ uri: p.customImageUrl || p.imageUrl }}
                     style={{ width: "100%", height: "100%" }}
                     contentFit="contain"
-                    transition={300}
+                    transition={200}
+                    cachePolicy="memory-disk"
+                    recyclingKey={p.handle || p.imageUrl}
                   />
                 ) : null}
               </View>
