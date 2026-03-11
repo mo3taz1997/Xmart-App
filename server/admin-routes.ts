@@ -456,7 +456,8 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/admin/search-products", async (req: Request, res: Response) => {
     try {
       const q = (req.query.q as string) || '';
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.PRODUCTS, { first: 20, query: q || undefined, sortKey: 'TITLE' });
+      const activeQuery = q ? `${q} status:active` : 'status:active';
+      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.PRODUCTS, { first: 20, query: activeQuery, sortKey: 'TITLE' });
       const products = data.products.edges.map((e: any) => mapAdminProduct(e.node));
       const result = products.map((p: any) => ({
         handle: p.handle,
@@ -482,7 +483,7 @@ export function registerAdminRoutes(app: Express) {
       const q = ((req.query.q as string) || '').trim();
       if (!q || q.length < 1) return res.json([]);
       // Search specifically by vendor name using vendor: filter
-      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q}") { edges { node { vendor images(first:1){edges{node{url}}} } } } }`);
+      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q} status:active") { edges { node { vendor images(first:1){edges{node{url}}} } } } }`);
       const products: any[] = data.products.edges.map((e: any) => e.node);
       const vendorMap = new Map<string, { name: string; imageUrl: string | null }>();
       for (const p of products) {
@@ -567,7 +568,8 @@ export function registerAdminRoutes(app: Express) {
     try {
       const q = ((req.query.q as string) || '').trim();
       if (!q || q.length < 1) return res.json([]);
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: q, first: 12 });
+      const activeQuery = `${q} status:active`;
+      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: activeQuery, first: 12 });
       const products: any[] = data.products.edges.map((e: any) => mapAdminProduct(e.node));
       const result = products.map((p: any) => {
         const price = p.priceRange?.minVariantPrice?.amount || '0';
