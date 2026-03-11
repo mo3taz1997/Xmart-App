@@ -1272,6 +1272,29 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="bulkSubModal" onclick="if(event.target===this)closeModal('bulkSubModal')">
+  <div class="modal" style="max-width:600px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="bulkSubTitle">إضافة أقسام فرعية</h3>
+      <button class="btn-icon" onclick="closeModal('bulkSubModal')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <input type="hidden" id="bulkSubParentId">
+      <div id="bulkSubParentInfo" style="padding:8px 12px;background:#e3f2fd;border-radius:8px;font-size:13px;color:#1565c0;margin-bottom:12px;"></div>
+      <div style="position:relative;margin-bottom:12px;">
+        <input type="text" id="bulkSubSearch" placeholder="ابحث عن مجموعة..." style="width:100%;padding:10px 14px;border:2px solid #248CCC;border-radius:10px;font-size:14px;direction:rtl;box-sizing:border-box;" oninput="onBulkSubSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();doBulkSubSearch()}" autocomplete="off">
+        <div id="bulkSubSearchResults" style="max-height:220px;overflow-y:auto;display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);top:100%;right:0;margin-top:4px;"></div>
+      </div>
+      <div id="bulkSubSelected" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;padding:10px;background:#f9f9f9;border-radius:10px;border:1px dashed #ccc;"></div>
+      <div id="bulkSubEmpty" style="text-align:center;color:#aaa;font-size:13px;padding:8px 0;">ابحث واختر المجموعات المطلوبة</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('bulkSubModal')">إلغاء</button>
+      <button class="btn btn-primary" id="bulkSubSaveBtn" onclick="saveBulkSub()" disabled>حفظ الكل</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="catModal" onclick="if(event.target===this)closeModal('catModal')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -4078,7 +4101,7 @@ function renderCatNode(cat, depth) {
         <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="moveCat('${cat.id}', '${cat.parentId || ''}', 1)" title="${adminLang === 'en' ? 'Move down' : 'تحريك لأسفل'}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
-        <button class="btn btn-secondary" style="font-size:${btnFs};padding:${btnPd};white-space:nowrap;" onclick="openCatModal('${cat.id}')">${adminLang === 'en' ? '+ Sub' : '+ فرعي'}</button>
+        <button class="btn btn-secondary" style="font-size:${btnFs};padding:${btnPd};white-space:nowrap;" onclick="openBulkSubModal('${cat.id}')">${adminLang === 'en' ? '+ Sub' : '+ فرعي'}</button>
         <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};" onclick="editCat('${cat.id}')">${adminLang === 'en' ? 'Edit' : 'تعديل'}</button>
         <button class="btn btn-outline" style="font-size:${btnFs};padding:${btnPd};color:#e53935;border-color:#e53935;" onclick="deleteCat('${cat.id}')">${adminLang === 'en' ? 'Delete' : 'حذف'}</button>
       </div>
@@ -4183,6 +4206,152 @@ function resetCatColPicker() {
   document.getElementById('catColSearchInput').style.display = '';
   document.getElementById('catColSearchResults').style.display = 'none';
   document.getElementById('catColSelectedBadge').style.display = 'none';
+}
+
+let bulkSubSelected = [];
+let bulkSubSearchTimer = null;
+
+function openBulkSubModal(parentId) {
+  bulkSubSelected = [];
+  document.getElementById('bulkSubParentId').value = parentId;
+  const parent = catsList.find(c => c.id === parentId);
+  const parentName = parent ? (adminLang === 'en' ? (parent.titleEn || parent.titleAr) : parent.titleAr) : '';
+  document.getElementById('bulkSubParentInfo').textContent = adminLang === 'en'
+    ? `Adding sub-categories under: ${parentName}`
+    : `إضافة أقسام فرعية تحت: ${parentName}`;
+  document.getElementById('bulkSubTitle').textContent = adminLang === 'en' ? 'Add Sub-Categories' : 'إضافة أقسام فرعية';
+  document.getElementById('bulkSubSearch').value = '';
+  document.getElementById('bulkSubSearchResults').style.display = 'none';
+  document.getElementById('bulkSubSearch').placeholder = adminLang === 'en' ? 'Search for a collection...' : 'ابحث عن مجموعة...';
+  document.getElementById('bulkSubEmpty').textContent = adminLang === 'en' ? 'Search and select the collections you want' : 'ابحث واختر المجموعات المطلوبة';
+  document.getElementById('bulkSubEmpty').style.display = '';
+  renderBulkSubSelected();
+  updateBulkSubSaveBtn();
+  document.getElementById('bulkSubModal').classList.add('show');
+  setTimeout(() => document.getElementById('bulkSubSearch').focus(), 100);
+}
+
+function onBulkSubSearchInput() {
+  clearTimeout(bulkSubSearchTimer);
+  const q = document.getElementById('bulkSubSearch').value.trim();
+  if (!q) { document.getElementById('bulkSubSearchResults').style.display = 'none'; return; }
+  bulkSubSearchTimer = setTimeout(doBulkSubSearch, 350);
+}
+
+async function doBulkSubSearch() {
+  const q = document.getElementById('bulkSubSearch').value.trim();
+  const resultsDiv = document.getElementById('bulkSubSearchResults');
+  if (!q) { resultsDiv.style.display = 'none'; return; }
+  resultsDiv.style.display = 'block';
+  resultsDiv.innerHTML = `<div style="padding:10px;text-align:center;color:#888;font-size:13px;">${adminLang === 'en' ? 'Searching...' : 'جاري البحث...'}</div>`;
+  try {
+    const items = await api('GET', `/api/admin/search-collections?q=${encodeURIComponent(q)}`);
+    if (!items.length) {
+      resultsDiv.innerHTML = `<div style="padding:10px;text-align:center;color:#888;font-size:13px;">${adminLang === 'en' ? 'No results' : 'لا توجد نتائج'}</div>`;
+      return;
+    }
+    resultsDiv.innerHTML = '';
+    items.forEach(c => {
+      const alreadySelected = bulkSubSelected.some(s => s.handle === c.handle);
+      const alreadyExists = catsList.some(cat => cat.collectionHandle === c.handle && cat.parentId === document.getElementById('bulkSubParentId').value);
+      const row = document.createElement('div');
+      row.style.cssText = `padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:${alreadySelected || alreadyExists ? 'default' : 'pointer'};border-bottom:1px solid #f0f0f0;transition:background 0.15s;direction:rtl;opacity:${alreadySelected || alreadyExists ? '0.5' : '1'};`;
+      if (!alreadySelected && !alreadyExists) {
+        row.onmouseover = () => row.style.background = '#f5f8ff';
+        row.onmouseout = () => row.style.background = '';
+        row.onclick = () => {
+          bulkSubSelected.push({ handle: c.handle, titleAr: c.titleAr || c.handle, titleEn: c.titleEn || '', imageUrl: c.imageUrl || '' });
+          renderBulkSubSelected();
+          updateBulkSubSaveBtn();
+          doBulkSubSearch();
+        };
+      }
+      const imgEl = document.createElement('div');
+      if (c.imageUrl) {
+        imgEl.innerHTML = `<img src="${resolveImageUrl(c.imageUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">`;
+      } else {
+        imgEl.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:#e8f4ff;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#248CCC" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>';
+      }
+      const info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;';
+      info.innerHTML = `<div style="font-size:13px;font-weight:600;color:#163259;">${c.titleAr || c.handle}</div><div style="font-size:11px;color:#888;">${c.titleEn || ''} — ${c.handle}</div>`;
+      const badge = document.createElement('div');
+      if (alreadySelected) {
+        badge.innerHTML = `<span style="font-size:11px;color:#2e7d32;background:#e8f5e9;padding:2px 8px;border-radius:4px;">✓ ${adminLang === 'en' ? 'Selected' : 'مختار'}</span>`;
+      } else if (alreadyExists) {
+        badge.innerHTML = `<span style="font-size:11px;color:#888;background:#f5f5f5;padding:2px 8px;border-radius:4px;">${adminLang === 'en' ? 'Already added' : 'مضاف مسبقاً'}</span>`;
+      }
+      row.appendChild(imgEl);
+      row.appendChild(info);
+      row.appendChild(badge);
+      resultsDiv.appendChild(row);
+    });
+  } catch(e) {
+    resultsDiv.innerHTML = `<div style="padding:10px;text-align:center;color:#f44336;font-size:13px;">${adminLang === 'en' ? 'Search error' : 'خطأ في البحث'}</div>`;
+  }
+}
+
+function renderBulkSubSelected() {
+  const container = document.getElementById('bulkSubSelected');
+  const emptyMsg = document.getElementById('bulkSubEmpty');
+  if (bulkSubSelected.length === 0) {
+    container.innerHTML = '';
+    emptyMsg.style.display = '';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+  container.innerHTML = bulkSubSelected.map((item, idx) => `
+    <div style="display:flex;align-items:center;gap:6px;background:#e8f4ff;border:1px solid #b3d7f0;border-radius:8px;padding:6px 10px;font-size:13px;color:#163259;">
+      ${item.imageUrl ? `<img src="${resolveImageUrl(item.imageUrl)}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : ''}
+      <span style="font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.titleAr || item.handle}</span>
+      <button onclick="removeBulkSub(${idx})" style="background:none;border:none;cursor:pointer;color:#E91E63;font-size:16px;line-height:1;padding:0 2px;">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removeBulkSub(idx) {
+  bulkSubSelected.splice(idx, 1);
+  renderBulkSubSelected();
+  updateBulkSubSaveBtn();
+  if (document.getElementById('bulkSubSearchResults').style.display === 'block') doBulkSubSearch();
+}
+
+function updateBulkSubSaveBtn() {
+  const btn = document.getElementById('bulkSubSaveBtn');
+  btn.disabled = bulkSubSelected.length === 0;
+  btn.textContent = bulkSubSelected.length > 0
+    ? (adminLang === 'en' ? `Save ${bulkSubSelected.length} Categories` : `حفظ ${bulkSubSelected.length} أقسام`)
+    : (adminLang === 'en' ? 'Save All' : 'حفظ الكل');
+}
+
+async function saveBulkSub() {
+  if (bulkSubSelected.length === 0) return;
+  const parentId = document.getElementById('bulkSubParentId').value;
+  const siblings = catsList.filter(c => (c.parentId || null) === (parentId || null));
+  let nextSort = siblings.length > 0 ? Math.max(...siblings.map(s => s.sortOrder || 0)) + 1 : 0;
+  const btn = document.getElementById('bulkSubSaveBtn');
+  btn.disabled = true;
+  btn.textContent = adminLang === 'en' ? 'Saving...' : 'جاري الحفظ...';
+  let successCount = 0;
+  for (const item of bulkSubSelected) {
+    try {
+      await api('POST', '/api/admin/categories', {
+        parentId,
+        titleAr: item.titleAr,
+        titleEn: item.titleEn || item.titleAr,
+        imageUrl: item.imageUrl || null,
+        collectionHandle: item.handle,
+        sortOrder: nextSort++,
+        visible: true,
+      });
+      successCount++;
+    } catch(e) {
+      console.error('Failed to add sub:', item.handle, e);
+    }
+  }
+  closeModal('bulkSubModal');
+  showToast(adminLang === 'en' ? `${successCount} sub-categories added successfully` : `تم إضافة ${successCount} أقسام فرعية بنجاح`);
+  loadCategories();
 }
 
 let catBulkAddCount = 0;
@@ -4807,7 +4976,7 @@ setTimeout(applyAdminLang, 400);
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    const modals = ['catModal', 'sectionModal', 'bannerModal', 'suggestedModal', 'notifModal'];
+    const modals = ['catModal', 'sectionModal', 'bannerModal', 'suggestedModal', 'notifModal', 'bulkSubModal'];
     modals.forEach(id => {
       const el = document.getElementById(id);
       if (el && el.classList.contains('show')) closeModal(id);
