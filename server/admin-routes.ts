@@ -488,13 +488,33 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/admin/search-collections", async (req: Request, res: Response) => {
     try {
       const q = ((req.query.q as string) || '').trim().toLowerCase();
-      const collQuery = `query($first:Int!,$language:LanguageCode) @inContext(language:$language) {collections(first:$first){edges{node{handle title image{url}}}}}`;
-      const [arData, enData] = await Promise.all([
-        shopifyFetch(collQuery, { first: 250, language: 'AR' }),
-        shopifyFetch(collQuery, { first: 250, language: 'EN' }),
+
+      async function fetchAllCollections(language: string): Promise<any[]> {
+        const allNodes: any[] = [];
+        let hasNext = true;
+        let cursor: string | null = null;
+        const query = `query($first:Int!,$after:String,$language:LanguageCode) @inContext(language:$language) {
+          collections(first:$first, after:$after) {
+            pageInfo { hasNextPage endCursor }
+            edges { node { handle title image { url } } }
+          }
+        }`;
+        while (hasNext) {
+          const vars: any = { first: 250, language };
+          if (cursor) vars.after = cursor;
+          const data = await shopifyFetch(query, vars);
+          const edges = data.collections?.edges || [];
+          edges.forEach((e: any) => allNodes.push(e.node));
+          hasNext = data.collections?.pageInfo?.hasNextPage || false;
+          cursor = data.collections?.pageInfo?.endCursor || null;
+        }
+        return allNodes;
+      }
+
+      const [arCols, enCols] = await Promise.all([
+        fetchAllCollections('AR'),
+        fetchAllCollections('EN'),
       ]);
-      const arCols: any[] = (arData.collections?.edges || []).map((e: any) => e.node);
-      const enCols: any[] = (enData.collections?.edges || []).map((e: any) => e.node);
       const arByHandle: Record<string, any> = {};
       arCols.forEach((c: any) => { arByHandle[c.handle] = c; });
       let all = enCols.map((en: any) => {
@@ -505,6 +525,12 @@ export function registerAdminRoutes(app: Express) {
           titleAr: ar?.title || en.title,
           imageUrl: en.image?.url || ar?.image?.url || null,
         };
+      });
+      // Also add AR-only collections not in EN
+      arCols.forEach((ar: any) => {
+        if (!all.find(c => c.handle === ar.handle)) {
+          all.push({ handle: ar.handle, titleEn: ar.title, titleAr: ar.title, imageUrl: ar.image?.url || null });
+        }
       });
       if (q) {
         all = all.filter(c =>
