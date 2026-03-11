@@ -703,7 +703,7 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
             alignItems: 'center', justifyContent: 'center',
           }}>
             {activeCol?.imageUrl ? (
-              <Image source={{ uri: activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+              <Image source={{ uri: activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
             ) : (
               <Ionicons name="grid-outline" size={52} color={colors.primary} />
             )}
