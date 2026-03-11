@@ -558,14 +558,12 @@ export function registerAdminRoutes(app: Express) {
     try {
       const q = ((req.query.q as string) || '').trim();
       if (!q || q.length < 1) return res.json([]);
-      // Search specifically by vendor name using vendor: filter
-      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q} status:active") { edges { node { vendor images(first:1){edges{node{url}}} } } } }`);
+      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q} status:active") { edges { node { vendor featuredImage { url } images(first:1){edges{node{url}}} metafield(namespace:"brand", key:"logo") { reference { ... on MediaImage { image { url } } } } } } } }`);
       const products: any[] = data.products.edges.map((e: any) => e.node);
       const vendorMap = new Map<string, { name: string; imageUrl: string | null }>();
       for (const p of products) {
         if (!p.vendor) continue;
         if (!vendorMap.has(p.vendor)) {
-          // Priority: brand.logo metafield → product image
           const brandLogo = p.metafield?.reference?.image?.url || null;
           const productImg = p.images?.edges?.[0]?.node?.url || p.featuredImage?.url || null;
           vendorMap.set(p.vendor, { name: p.vendor, imageUrl: brandLogo || productImg });

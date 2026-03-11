@@ -1138,11 +1138,31 @@
         <div id="brandsList" style="min-height:32px;margin-bottom:12px;"></div>
         <div style="border:1.5px dashed #248CCC;border-radius:10px;padding:14px;background:#f0f8ff;direction:rtl;">
           <div style="font-size:13px;font-weight:700;color:#163259;margin-bottom:12px;">➕ إضافة براند جديد</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div>
-              <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">اسم الماركة (نص احتياطي)</div>
-              <input type="text" id="brandManualName" placeholder="مثال: Samsung" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;direction:rtl;background:#fff;">
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">ابحث عن الماركة (Vendor)</div>
+            <div style="position:relative;">
+              <input type="text" id="brandVendorSearch" placeholder="ابحث عن اسم الماركة مثل Samsung, Anker..." oninput="onBrandVendorSearch(this.value)" autocomplete="off" style="width:100%;padding:9px 12px;border:1.5px solid #248CCC;border-radius:8px;font-size:13px;box-sizing:border-box;background:#fff;">
+              <div id="brandVendorResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);top:100%;right:0;"></div>
             </div>
+          </div>
+          <div id="brandSelectedPreview" style="display:none;background:#fff;border:1.5px solid #b3d7f0;border-radius:10px;padding:12px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+              <img id="brandPreviewImg" src="" style="height:50px;max-width:120px;object-fit:contain;background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:4px;">
+              <div>
+                <div id="brandPreviewName" style="font-size:14px;font-weight:700;color:#163259;"></div>
+                <div style="font-size:10px;color:#888;margin-top:2px;">تم سحب الصورة تلقائياً من Shopify</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="font-size:11px;color:#555;font-weight:600;white-space:nowrap;">تغيير الصورة:</div>
+              <input type="file" id="brandCustomImgFile" accept="image/*" onchange="onBrandCustomImgUpload(this)" style="font-size:11px;flex:1;">
+              <button onclick="clearBrandCustomImg()" id="brandClearCustomBtn" style="display:none;background:none;border:1px solid #e53935;color:#e53935;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;">إزالة</button>
+            </div>
+          </div>
+          <input type="hidden" id="brandManualName" value="">
+          <input type="hidden" id="brandManualImg" value="">
+          <input type="hidden" id="brandAutoImg" value="">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
             <div>
               <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">حجم الصورة</div>
               <select id="brandManualSize" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
@@ -1151,17 +1171,13 @@
                 <option value="lg">كبير (60px)</option>
               </select>
             </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">رابط الصورة (شعار الماركة)</div>
-            <input type="text" id="brandManualImg" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
-          </div>
-          <div style="margin-bottom:12px;">
-            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">الكولكشن المرتبط (اختياري — عند الضغط ينتقل إليه)</div>
-            <div style="position:relative;">
-              <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
-              <input type="hidden" id="brandCollHandle" value="">
-              <div id="brandCollResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.1);top:100%;right:0;"></div>
+            <div>
+              <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">الكولكشن المرتبط (اختياري)</div>
+              <div style="position:relative;">
+                <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
+                <input type="hidden" id="brandCollHandle" value="">
+                <div id="brandCollResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.1);top:100%;right:0;"></div>
+              </div>
             </div>
           </div>
           <button onclick="addBrandManually()" style="width:100%;background:#248CCC;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">+ إضافة البراند</button>
@@ -3890,19 +3906,27 @@ const catCollapsed = {};
 // ── Brands Strip ────────────────────────────────────────
 let _brands = [];
 let _brandCollTimer = null;
+let _brandVendorTimer = null;
 
 function loadBrands(preBrands) {
   _brands = preBrands ? [...preBrands] : [];
   const nameEl = document.getElementById('brandManualName');
   const imgEl = document.getElementById('brandManualImg');
+  const autoEl = document.getElementById('brandAutoImg');
   const sizeEl = document.getElementById('brandManualSize');
   const collEl = document.getElementById('brandCollInput');
   const collHEl = document.getElementById('brandCollHandle');
+  const searchEl = document.getElementById('brandVendorSearch');
   if (nameEl) nameEl.value = '';
   if (imgEl) imgEl.value = '';
+  if (autoEl) autoEl.value = '';
   if (sizeEl) sizeEl.value = 'md';
   if (collEl) collEl.value = '';
   if (collHEl) collHEl.value = '';
+  if (searchEl) searchEl.value = '';
+  document.getElementById('brandSelectedPreview').style.display = 'none';
+  document.getElementById('brandVendorResults').style.display = 'none';
+  document.getElementById('brandClearCustomBtn').style.display = 'none';
   renderBrandsList();
 }
 
@@ -3992,21 +4016,110 @@ function selectBrandColl(handle, title) {
   document.getElementById('brandCollResults').style.display = 'none';
 }
 
+function onBrandVendorSearch(q) {
+  clearTimeout(_brandVendorTimer);
+  const resultsEl = document.getElementById('brandVendorResults');
+  if (!q || !q.trim()) { resultsEl.style.display = 'none'; return; }
+  _brandVendorTimer = setTimeout(async () => {
+    resultsEl.style.display = '';
+    resultsEl.innerHTML = '<div style="padding:10px 12px;color:#888;font-size:12px;direction:rtl;">جاري البحث...</div>';
+    try {
+      const data = await api('GET', `/api/admin/search-vendors?q=${encodeURIComponent(q.trim())}`);
+      if (!data.length) {
+        resultsEl.innerHTML = '<div style="padding:10px 12px;color:#aaa;font-size:12px;direction:rtl;">لا توجد نتائج</div>';
+        return;
+      }
+      resultsEl.innerHTML = data.map(v => `
+        <div onclick="selectBrandVendor('${(v.name||'').replace(/'/g,"\\'")}','${(v.imageUrl||'').replace(/'/g,"\\'")}');"
+             style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;direction:rtl;"
+             onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
+          ${v.imageUrl ? `<img src="${v.imageUrl}" style="height:36px;max-width:80px;object-fit:contain;border-radius:4px;border:1px solid #eee;background:#fff;padding:2px;">` : '<div style="width:50px;height:36px;background:#eee;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;">لا صورة</div>'}
+          <div style="font-size:13px;font-weight:600;color:#163259;">${v.name}</div>
+        </div>
+      `).join('');
+    } catch {
+      resultsEl.innerHTML = '<div style="padding:10px 12px;color:#e53935;font-size:12px;">خطأ في الاتصال</div>';
+    }
+  }, 350);
+}
+
+function selectBrandVendor(name, imageUrl) {
+  document.getElementById('brandVendorResults').style.display = 'none';
+  document.getElementById('brandVendorSearch').value = name;
+  document.getElementById('brandManualName').value = name;
+  document.getElementById('brandAutoImg').value = imageUrl || '';
+  document.getElementById('brandManualImg').value = imageUrl || '';
+  const preview = document.getElementById('brandSelectedPreview');
+  const previewImg = document.getElementById('brandPreviewImg');
+  const previewName = document.getElementById('brandPreviewName');
+  previewName.textContent = name;
+  if (imageUrl) {
+    previewImg.src = imageUrl;
+    previewImg.style.display = '';
+  } else {
+    previewImg.style.display = 'none';
+  }
+  preview.style.display = '';
+  document.getElementById('brandClearCustomBtn').style.display = 'none';
+  document.getElementById('brandCustomImgFile').value = '';
+}
+
+async function onBrandCustomImgUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const resp = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: e.target.result, filename: file.name })
+      });
+      const result = await resp.json();
+      if (result.url) {
+        document.getElementById('brandManualImg').value = result.url;
+        document.getElementById('brandPreviewImg').src = result.url;
+        document.getElementById('brandPreviewImg').style.display = '';
+        document.getElementById('brandClearCustomBtn').style.display = '';
+        showToast(adminLang === 'en' ? 'Custom image uploaded' : 'تم رفع الصورة المخصصة ✓');
+      }
+    } catch(err) {
+      showToast(adminLang === 'en' ? 'Upload failed' : 'فشل رفع الصورة', true);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBrandCustomImg() {
+  const autoImg = document.getElementById('brandAutoImg').value;
+  document.getElementById('brandManualImg').value = autoImg;
+  document.getElementById('brandPreviewImg').src = autoImg || '';
+  document.getElementById('brandPreviewImg').style.display = autoImg ? '' : 'none';
+  document.getElementById('brandCustomImgFile').value = '';
+  document.getElementById('brandClearCustomBtn').style.display = 'none';
+  showToast(adminLang === 'en' ? 'Restored original image' : 'تم استعادة الصورة الأصلية');
+}
+
 function addBrandManually() {
   const name = document.getElementById('brandManualName').value.trim();
   const imageUrl = document.getElementById('brandManualImg').value.trim();
   const size = document.getElementById('brandManualSize').value || 'md';
   const collectionHandle = document.getElementById('brandCollHandle').value.trim();
-  if (!name && !imageUrl) { showToast(adminLang === 'en' ? 'Please enter a brand name or image URL' : 'يرجى إدخال اسم الماركة أو رابط الصورة على الأقل', true); return; }
-  const label = name || imageUrl.split('/').pop() || 'براند';
+  if (!name && !imageUrl) { showToast(adminLang === 'en' ? 'Please search and select a brand first' : 'يرجى البحث واختيار ماركة أولاً', true); return; }
+  const label = name || 'براند';
   _brands.push({ name: label, imageUrl, size, collectionHandle });
   renderBrandsList();
   document.getElementById('brandManualName').value = '';
   document.getElementById('brandManualImg').value = '';
+  document.getElementById('brandAutoImg').value = '';
   document.getElementById('brandManualSize').value = 'md';
   document.getElementById('brandCollInput').value = '';
   document.getElementById('brandCollHandle').value = '';
   document.getElementById('brandCollResults').style.display = 'none';
+  document.getElementById('brandVendorSearch').value = '';
+  document.getElementById('brandSelectedPreview').style.display = 'none';
+  document.getElementById('brandClearCustomBtn').style.display = 'none';
+  document.getElementById('brandCustomImgFile').value = '';
   showToast('تم إضافة البراند ✓');
 }
 // ────────────────────────────────────────────────────────
