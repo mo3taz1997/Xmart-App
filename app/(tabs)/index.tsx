@@ -78,11 +78,11 @@ function JordanFlagBadge() {
         backgroundColor: '#163259',
         borderWidth: 1, borderColor: expandAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', 'rgba(36,140,204,0.45)'] }),
       }}>
-        <View style={{ width: 30, height: 22, borderRadius: 4, overflow: 'hidden', flexShrink: 0 }} pointerEvents="none">
+        <View style={{ width: 30, height: 20, borderRadius: 3, overflow: 'hidden', flexShrink: 0 }} pointerEvents="none">
           <Image
-            source={{ uri: 'https://flagcdn.com/w80/jo.png' }}
-            style={{ width: 30, height: 22 }}
-            contentFit="contain"
+            source={{ uri: 'https://flagcdn.com/w160/jo.png' }}
+            style={{ width: 30, height: 20 }}
+            contentFit="fill"
           />
         </View>
         <RNAnimated.View style={{ opacity: textOpacity, flex: 1, alignItems: 'center', justifyContent: 'center', height: 22 }}>
