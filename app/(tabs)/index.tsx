@@ -282,19 +282,47 @@ function BrandsStripSection({ section, isDark }: {
   const doubled = [...brands, ...brands, ...brands];
 
   const translateX = useRef(new RNAnimated.Value(0)).current;
+  const animRef = useRef<RNAnimated.CompositeAnimation | null>(null);
+  const pausedAt = useRef(0);
 
-  useEffect(() => {
+  const startAnim = (fromValue?: number) => {
+    if (fromValue !== undefined) {
+      translateX.setValue(fromValue);
+    }
+    const listener = translateX.addListener(({ value }) => { pausedAt.current = value; });
     const anim = RNAnimated.loop(
       RNAnimated.timing(translateX, {
         toValue: -totalW,
-        duration: totalW * 30,
+        duration: totalW * 30 * ((totalW + (pausedAt.current || 0)) / totalW),
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
+    animRef.current = anim;
     anim.start();
-    return () => anim.stop();
+    return listener;
+  };
+
+  const stopAnim = () => {
+    if (animRef.current) {
+      animRef.current.stop();
+      animRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    const listener = startAnim(0);
+    return () => {
+      stopAnim();
+      translateX.removeListener(listener);
+    };
   }, [totalW]);
+
+  const handleBrandPress = (brand: any) => {
+    if (!brand.collectionHandle) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/collection/${brand.collectionHandle}`);
+  };
 
   const vPad = Math.max(10, Math.round((60 - maxH) / 2) + 8);
 
@@ -307,7 +335,11 @@ function BrandsStripSection({ section, isDark }: {
       borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(22,50,89,0.08)',
       paddingVertical: vPad,
       overflow: 'hidden',
-    }}>
+    }}
+      onTouchStart={() => stopAnim()}
+      onTouchEnd={() => startAnim(pausedAt.current)}
+      onTouchCancel={() => startAnim(pausedAt.current)}
+    >
       <RNAnimated.View style={{ flexDirection: 'row', transform: [{ translateX }] }}>
         {doubled.map((brand: any, i: number) => {
           const sz = BRAND_SIZES[brand.size] ?? BRAND_SIZES.md;
@@ -315,12 +347,8 @@ function BrandsStripSection({ section, isDark }: {
           return (
             <Pressable
               key={i}
-              onPress={() => {
-                if (canPress) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/collection/${brand.collectionHandle}`);
-                }
-              }}
+              onPress={() => handleBrandPress(brand)}
+              hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
               style={({ pressed }) => ({
                 width: sz.w,
                 alignItems: 'center',
