@@ -259,6 +259,10 @@ export function registerAdminRoutes(app: Express) {
   app.post("/api/admin/sections", async (req: Request, res: Response) => {
     try {
       const { type, titleAr, titleEn, sortOrder, visible, language, metadata } = req.body;
+      let finalMetadata = metadata;
+      if (finalMetadata && finalMetadata.imageUrl) {
+        finalMetadata.imageUrl = await persistImageOnServer(finalMetadata.imageUrl);
+      }
       const [section] = await db
         .insert(homepageSections)
         .values({
@@ -268,7 +272,7 @@ export function registerAdminRoutes(app: Express) {
           language: language || "both",
           sortOrder: sortOrder ?? 0,
           visible: visible ?? true,
-          metadata: metadata ? JSON.stringify(metadata) : null,
+          metadata: finalMetadata ? JSON.stringify(finalMetadata) : null,
         })
         .returning();
       res.json(section);
@@ -296,6 +300,10 @@ export function registerAdminRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { type, titleAr, titleEn, sortOrder, visible, language, metadata } = req.body;
+      let finalMetadata = metadata;
+      if (finalMetadata && finalMetadata.imageUrl) {
+        finalMetadata.imageUrl = await persistImageOnServer(finalMetadata.imageUrl);
+      }
       const [section] = await db
         .update(homepageSections)
         .set({
@@ -305,7 +313,7 @@ export function registerAdminRoutes(app: Express) {
           language: language || "both",
           sortOrder,
           visible,
-          metadata: metadata !== undefined ? (metadata ? JSON.stringify(metadata) : null) : undefined,
+          metadata: finalMetadata !== undefined ? (finalMetadata ? JSON.stringify(finalMetadata) : null) : undefined,
           updatedAt: new Date(),
         })
         .where(sql`${homepageSections.id} = ${id}`)
@@ -327,14 +335,55 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  async function persistImageOnServer(url: string): Promise<string> {
+    if (!url || url.startsWith('/uploads/') || url.startsWith('data:')) return url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return url;
+    try {
+      const https = require('https');
+      const http = require('http');
+      const client = url.startsWith('https') ? https : http;
+      const imageData: Buffer = await new Promise((resolve, reject) => {
+        const request = client.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (response: any) => {
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            const redirectClient = response.headers.location.startsWith('https') ? https : http;
+            redirectClient.get(response.headers.location, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (res2: any) => {
+              const chunks: Buffer[] = [];
+              res2.on('data', (c: Buffer) => chunks.push(c));
+              res2.on('end', () => resolve(Buffer.concat(chunks)));
+              res2.on('error', reject);
+            }).on('error', reject);
+            return;
+          }
+          if (response.statusCode !== 200) return reject(new Error(`HTTP ${response.statusCode}`));
+          const chunks: Buffer[] = [];
+          response.on('data', (c: Buffer) => chunks.push(c));
+          response.on('end', () => resolve(Buffer.concat(chunks)));
+          response.on('error', reject);
+        });
+        request.on('error', reject);
+        request.on('timeout', () => { request.destroy(); reject(new Error('Timeout')); });
+      });
+      const contentMatch = url.match(/\.(png|jpg|jpeg|webp|gif)/i);
+      let ext = '.jpg';
+      if (contentMatch) ext = '.' + contentMatch[1].toLowerCase();
+      if (ext === '.jpeg') ext = '.jpg';
+      const savedFilename = `img-${Date.now()}${ext}`;
+      return await saveImageToDb(savedFilename, imageData, ext);
+    } catch (e: any) {
+      console.warn('persistImageOnServer failed for:', url, e.message);
+      return url;
+    }
+  }
+
   app.post("/api/admin/banners", async (req: Request, res: Response) => {
     try {
       const { sectionId, imageUrl, linkType, linkValue, sortOrder, visible, language } = req.body;
+      const persistedUrl = await persistImageOnServer(imageUrl);
       const [banner] = await db
         .insert(homepageBanners)
         .values({
           sectionId,
-          imageUrl,
+          imageUrl: persistedUrl,
           linkType: linkType || "collection",
           linkValue: linkValue || null,
           sortOrder: sortOrder ?? 0,
@@ -352,9 +401,10 @@ export function registerAdminRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { imageUrl, linkType, linkValue, sortOrder, visible, language } = req.body;
+      const persistedUrl = await persistImageOnServer(imageUrl);
       const [banner] = await db
         .update(homepageBanners)
-        .set({ imageUrl, linkType, linkValue, sortOrder, visible, language: language || "both" })
+        .set({ imageUrl: persistedUrl, linkType, linkValue, sortOrder, visible, language: language || "both" })
         .where(sql`${homepageBanners.id} = ${id}`)
         .returning();
       res.json(banner);
