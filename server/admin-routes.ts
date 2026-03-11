@@ -583,17 +583,11 @@ export function registerAdminRoutes(app: Express) {
     if (_collectionsCache && (Date.now() - _collectionsCache.timestamp) < COLLECTIONS_CACHE_TTL) {
       return _collectionsCache.data;
     }
-    async function fetchPage(language: string): Promise<any[]> {
+    async function fetchPage(_language: string): Promise<any[]> {
       const allNodes: any[] = [];
       let hasNext = true;
       let cursor: string | null = null;
       const query = `query($first:Int!,$after:String) {
-        collections(first:$first, after:$after) {
-          pageInfo { hasNextPage endCursor }
-          edges { node { id handle title(locale:"${language}") image { url } } }
-        }
-      }`;
-      const fallbackQuery = `query($first:Int!,$after:String) {
         collections(first:$first, after:$after) {
           pageInfo { hasNextPage endCursor }
           edges { node { id handle title image { url } } }
@@ -602,12 +596,7 @@ export function registerAdminRoutes(app: Express) {
       while (hasNext) {
         const vars: any = { first: 250 };
         if (cursor) vars.after = cursor;
-        let data: any;
-        try {
-          data = await shopifyAdminGraphQL(query, vars);
-        } catch {
-          data = await shopifyAdminGraphQL(fallbackQuery, vars);
-        }
+        const data = await shopifyAdminGraphQL(query, vars);
         const edges = data.collections?.edges || [];
         edges.forEach((e: any) => allNodes.push(e.node));
         hasNext = data.collections?.pageInfo?.hasNextPage || false;
