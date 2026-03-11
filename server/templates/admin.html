@@ -1336,9 +1336,11 @@
         </label>
       </div>
     </div>
+    <div id="catBulkCounter" style="display:none;padding:6px 14px;background:#e8f5e9;color:#2e7d32;border-radius:8px;font-size:13px;font-weight:600;text-align:center;margin-bottom:0;"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('catModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveCat()">حفظ</button>
+      <button class="btn btn-secondary" id="catSaveAddMore" style="display:none;" onclick="saveCat(true)">حفظ وإضافة آخر</button>
+      <button class="btn btn-primary" onclick="saveCat(false)">حفظ</button>
     </div>
   </div>
 </div>
@@ -4151,6 +4153,8 @@ function resetCatColPicker() {
   document.getElementById('catColSelectedBadge').style.display = 'none';
 }
 
+let catBulkAddCount = 0;
+
 function openCatModal(parentId) {
   document.getElementById('catEditId').value = '';
   document.getElementById('catParentId').value = parentId || '';
@@ -4160,12 +4164,15 @@ function openCatModal(parentId) {
   document.getElementById('catVisible').checked = true;
   document.getElementById('catImagePreview').style.display = 'none';
   resetCatColPicker();
+  catBulkAddCount = 0;
+  document.getElementById('catBulkCounter').style.display = 'none';
 
   const siblings = catsList.filter(c => (c.parentId || null) === (parentId || null));
   const autoSort = siblings.length > 0 ? Math.max(...siblings.map(s => s.sortOrder || 0)) + 1 : 0;
   document.getElementById('catSortOrder').value = String(autoSort);
 
   const info = document.getElementById('catLevelInfo');
+  const saveMoreBtn = document.getElementById('catSaveAddMore');
   if (parentId) {
     const parent = catsList.find(c => c.id === parentId);
     const parentDepth = parent ? getCatDepth(parent) : 0;
@@ -4173,9 +4180,13 @@ function openCatModal(parentId) {
     info.style.display = 'block';
     info.textContent = `إضافة قسم فرعي (المستوى ${childLevel}) تحت: ${parent ? getCatAncestorPath(parent) : ''}`;
     document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Add Sub-Category' : 'إضافة قسم فرعي';
+    saveMoreBtn.style.display = '';
+    saveMoreBtn.textContent = adminLang === 'en' ? 'Save & Add Another' : 'حفظ وإضافة آخر';
   } else {
     info.style.display = 'none';
     document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Add Main Category' : 'إضافة قسم رئيسي';
+    saveMoreBtn.style.display = '';
+    saveMoreBtn.textContent = adminLang === 'en' ? 'Save & Add Another' : 'حفظ وإضافة آخر';
   }
   document.getElementById('catModal').classList.add('show');
 }
@@ -4192,6 +4203,8 @@ function editCat(id) {
   document.getElementById('catVisible').checked = cat.visible;
   document.getElementById('catModalTitle').textContent = adminLang === 'en' ? 'Edit Category' : 'تعديل قسم';
   document.getElementById('catLevelInfo').style.display = 'none';
+  document.getElementById('catSaveAddMore').style.display = 'none';
+  document.getElementById('catBulkCounter').style.display = 'none';
 
   if (cat.collectionHandle) {
     document.getElementById('catCollectionHandle').value = cat.collectionHandle;
@@ -4230,7 +4243,7 @@ document.getElementById('catImageUrl').addEventListener('input', function() {
   }
 });
 
-async function saveCat() {
+async function saveCat(addMore) {
   const titleAr = document.getElementById('catTitleAr').value.trim();
   const titleEn = document.getElementById('catTitleEn').value.trim();
   if (!titleAr || !titleEn) {
@@ -4238,8 +4251,9 @@ async function saveCat() {
     return;
   }
   const editId = document.getElementById('catEditId').value;
+  const parentId = document.getElementById('catParentId').value || null;
   const body = {
-    parentId: document.getElementById('catParentId').value || null,
+    parentId,
     titleAr,
     titleEn,
     imageUrl: document.getElementById('catImageUrl').value.trim() || null,
@@ -4253,11 +4267,31 @@ async function saveCat() {
     } else {
       await api('POST', '/api/admin/categories', body);
     }
-    closeModal('catModal');
-    showToast(editId ? 'تم تعديل القسم بنجاح' : 'تم إضافة القسم بنجاح');
-    loadCategories();
+    if (addMore && !editId) {
+      catBulkAddCount++;
+      const counter = document.getElementById('catBulkCounter');
+      counter.style.display = 'block';
+      counter.textContent = adminLang === 'en'
+        ? `✓ ${catBulkAddCount} categor${catBulkAddCount === 1 ? 'y' : 'ies'} added — add another`
+        : `✓ تم إضافة ${catBulkAddCount} قسم — أضف آخر`;
+      showToast(adminLang === 'en' ? 'Saved! Add the next one' : 'تم الحفظ! أضف التالي');
+      document.getElementById('catTitleAr').value = '';
+      document.getElementById('catTitleEn').value = '';
+      document.getElementById('catImageUrl').value = '';
+      document.getElementById('catImagePreview').style.display = 'none';
+      resetCatColPicker();
+      const newSiblings = catsList.filter(c => (c.parentId || null) === (parentId || null));
+      document.getElementById('catSortOrder').value = String(body.sortOrder + 1);
+      await loadCategories();
+    } else {
+      closeModal('catModal');
+      showToast(editId
+        ? (adminLang === 'en' ? 'Category updated' : 'تم تعديل القسم بنجاح')
+        : (adminLang === 'en' ? `${catBulkAddCount + 1} categor${catBulkAddCount + 1 === 1 ? 'y' : 'ies'} added` : `تم إضافة ${catBulkAddCount + 1} قسم بنجاح`));
+      loadCategories();
+    }
   } catch (e) {
-    showToast('حدث خطأ في حفظ القسم', true);
+    showToast(adminLang === 'en' ? 'Error saving category' : 'حدث خطأ في حفظ القسم', true);
   }
 }
 
