@@ -102,11 +102,11 @@ function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }:
   const isTablet = width >= 768;
   const circleSize = Math.round(isTablet ? width * 0.11 : width * 0.185);
   return (
-    <View style={{ marginTop: 20 }}>
+    <View style={{ marginTop: 10 }}>
       {!!title && (
         <Text style={{
           fontFamily: 'Cairo_700Bold', fontSize: 17, color: colors.text,
-          marginHorizontal: 16, marginBottom: 12,
+          marginHorizontal: 16, marginBottom: 8,
           textAlign: isRTL ? 'right' : 'left',
           writingDirection: isRTL ? 'rtl' : 'ltr',
         }}>{title}</Text>
@@ -322,7 +322,7 @@ function BrandsStripSection({ section, isDark }: {
 
   return (
     <View style={{
-      marginVertical: 8,
+      marginVertical: 4,
       backgroundColor: isDark ? '#111c2d' : '#ffffff',
       borderTopWidth: StyleSheet.hairlineWidth,
       borderBottomWidth: StyleSheet.hairlineWidth,
@@ -417,11 +417,11 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
   };
 
   return (
-    <View style={{ marginTop: 20 }}>
+    <View style={{ marginTop: 10 }}>
       {!!title && (
         <Text style={{
           fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text,
-          marginHorizontal: 16, marginBottom: 12,
+          marginHorizontal: 16, marginBottom: 8,
           textAlign: isRTL ? 'right' : 'left',
         }}>{title}</Text>
       )}
@@ -714,11 +714,11 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
   );
 
   return (
-    <View style={{ marginTop: 20 }}>
+    <View style={{ marginTop: 10 }}>
       {!!sectionTitle && (
         <Text style={{
           fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text,
-          marginHorizontal: 16, marginBottom: 8,
+          marginHorizontal: 16, marginBottom: 6,
           textAlign: isRTL ? 'right' : 'left',
         }}>{sectionTitle}</Text>
       )}
@@ -1215,7 +1215,7 @@ function StaticBannerSection({ section, colors, isRTL }: {
   if (!imageUrl) return null;
 
   return (
-    <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+    <View style={{ marginTop: 8, paddingHorizontal: 16 }}>
       <Pressable
         onPress={() => {
           if (!linkValue || linkType === 'none') return;
@@ -1308,9 +1308,9 @@ function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
   const cardStyle = { borderRadius: 14, overflow: 'hidden' as const, backgroundColor: cardBg };
 
   return (
-    <View style={{ marginTop: 20 }}>
+    <View style={{ marginTop: 10 }}>
       {!!sectionTitle && (
-        <Text style={{ fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text, marginHorizontal: 16, marginBottom: 10, textAlign: isRTL ? 'right' : 'left' }}>{sectionTitle}</Text>
+        <Text style={{ fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text, marginHorizontal: 16, marginBottom: 6, textAlign: isRTL ? 'right' : 'left' }}>{sectionTitle}</Text>
       )}
       <View style={{ marginHorizontal: 12, gap: GAP }}>
         {(p1 || p2 || p3) && (
@@ -1398,8 +1398,8 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
   const CARD_W_CP = Math.round(isTabletCP ? width * 0.22 : width * 0.39);
 
   return (
-    <View style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 10 }}>
+    <View style={{ marginTop: 8 }}>
+      <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 6 }}>
         <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, flex: 1 }}>
           <View style={{ width: 4, height: 20, borderRadius: 2, backgroundColor: colors.primary }} />
           <Text style={{ fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text, textAlign: isRTL ? 'right' : 'left' }}>
@@ -1561,7 +1561,7 @@ function getStyles(colors: typeof Colors.dark) {
   const bannerStyles = StyleSheet.create({
     container: {
       position: 'relative',
-      marginTop: 16,
+      marginTop: 8,
     },
     image: {
       width: bannerW,
