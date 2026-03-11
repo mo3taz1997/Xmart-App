@@ -200,11 +200,38 @@ function configureExpoAndLanding(app: express.Application) {
     next();
   });
 
-  app.get("/favicon.png", (_req: Request, res: Response) => {
+  app.get("/favicon.png", async (_req: Request, res: Response) => {
+    try {
+      const { db: appDb } = await import("./db");
+      const { appSettings: appSettingsTable } = await import("../shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      if (rows.length && rows[0].value) {
+        const logoUrl = rows[0].value.split('?')[0];
+        if (logoUrl.startsWith('/uploads/')) {
+          return res.redirect(logoUrl);
+        }
+      }
+    } catch {}
+    res.sendFile(path.resolve(process.cwd(), "assets", "images", "favicon.png"));
+  });
+  app.get("/favicon.ico", async (_req: Request, res: Response) => {
+    try {
+      const { db: appDb } = await import("./db");
+      const { appSettings: appSettingsTable } = await import("../shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      if (rows.length && rows[0].value) {
+        const logoUrl = rows[0].value.split('?')[0];
+        if (logoUrl.startsWith('/uploads/')) {
+          return res.redirect(logoUrl);
+        }
+      }
+    } catch {}
     res.sendFile(path.resolve(process.cwd(), "assets", "images", "favicon.png"));
   });
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app.use(express.static(path.resolve(process.cwd(), "static-build")));
+  app.use(express.static(path.resolve(process.cwd(), "static-build"), { index: false }));
 
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
