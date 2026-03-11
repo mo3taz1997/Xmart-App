@@ -282,53 +282,47 @@ function BrandsStripSection({ section, isDark }: {
   const doubled = [...brands, ...brands, ...brands];
 
   const translateX = useRef(new RNAnimated.Value(0)).current;
-  const animRef = useRef<RNAnimated.CompositeAnimation | null>(null);
-  const pausedAt = useRef(0);
+  const currentOffset = useRef(0);
+  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
-  const startAnim = (fromValue?: number) => {
-    if (fromValue !== undefined) {
-      translateX.setValue(fromValue);
-    }
-    const listener = translateX.addListener(({ value }) => { pausedAt.current = value; });
+  useEffect(() => {
+    const listener = translateX.addListener(({ value }) => { currentOffset.current = value; });
     const anim = RNAnimated.loop(
       RNAnimated.timing(translateX, {
         toValue: -totalW,
-        duration: totalW * 30 * ((totalW + (pausedAt.current || 0)) / totalW),
+        duration: totalW * 30,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
-    animRef.current = anim;
     anim.start();
-    return listener;
-  };
+    return () => { anim.stop(); translateX.removeListener(listener); };
+  }, [totalW]);
 
-  const stopAnim = () => {
-    if (animRef.current) {
-      animRef.current.stop();
-      animRef.current = null;
+  const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
+
+  const handleTap = (pageX: number) => {
+    const offset = Math.abs(currentOffset.current);
+    const tapInStrip = pageX + offset;
+    let acc = 0;
+    for (let i = 0; i < doubled.length; i++) {
+      acc += brandWidths[i];
+      if (tapInStrip < acc) {
+        const brand = doubled[i];
+        if (brand.collectionHandle) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push(`/collection/${brand.collectionHandle}`);
+        }
+        return;
+      }
     }
   };
 
-  useEffect(() => {
-    const listener = startAnim(0);
-    return () => {
-      stopAnim();
-      translateX.removeListener(listener);
-    };
-  }, [totalW]);
-
-  const handleBrandPress = (brand: any) => {
-    if (!brand.collectionHandle) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/collection/${brand.collectionHandle}`);
-  };
-
-  const vPad = Math.max(10, Math.round((60 - maxH) / 2) + 8);
+  const vPad = Math.max(4, Math.round((48 - maxH) / 2) + 4);
 
   return (
     <View style={{
-      marginVertical: 12,
+      marginVertical: 8,
       backgroundColor: isDark ? '#111c2d' : '#ffffff',
       borderTopWidth: StyleSheet.hairlineWidth,
       borderBottomWidth: StyleSheet.hairlineWidth,
@@ -336,26 +330,32 @@ function BrandsStripSection({ section, isDark }: {
       paddingVertical: vPad,
       overflow: 'hidden',
     }}
-      onTouchStart={() => stopAnim()}
-      onTouchEnd={() => startAnim(pausedAt.current)}
-      onTouchCancel={() => startAnim(pausedAt.current)}
+      onTouchStart={(e) => {
+        touchStart.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, time: Date.now() };
+      }}
+      onTouchEnd={(e) => {
+        if (!touchStart.current) return;
+        const dx = Math.abs(e.nativeEvent.pageX - touchStart.current.x);
+        const dy = Math.abs(e.nativeEvent.pageY - touchStart.current.y);
+        const dt = Date.now() - touchStart.current.time;
+        if (dx < 15 && dy < 15 && dt < 400) {
+          handleTap(e.nativeEvent.pageX);
+        }
+        touchStart.current = null;
+      }}
     >
-      <RNAnimated.View style={{ flexDirection: 'row', transform: [{ translateX }] }}>
+      <RNAnimated.View style={{ flexDirection: 'row', transform: [{ translateX }] }} pointerEvents="none">
         {doubled.map((brand: any, i: number) => {
           const sz = BRAND_SIZES[brand.size] ?? BRAND_SIZES.md;
-          const canPress = !!brand.collectionHandle;
           return (
-            <Pressable
+            <View
               key={i}
-              onPress={() => handleBrandPress(brand)}
-              hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
-              style={({ pressed }) => ({
+              style={{
                 width: sz.w,
                 alignItems: 'center',
                 justifyContent: 'center',
                 paddingHorizontal: 12,
-                opacity: pressed && canPress ? 0.75 : 1,
-              })}
+              }}
             >
               {brand.imageUrl ? (
                 <Image
@@ -375,7 +375,7 @@ function BrandsStripSection({ section, isDark }: {
                   {brand.name}
                 </Text>
               )}
-            </Pressable>
+            </View>
           );
         })}
       </RNAnimated.View>
