@@ -447,6 +447,12 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
   setLanguage: (l: string) => void; setMode: (m: 'light' | 'dark') => void; t: any;
 }) {
   const { switchCount } = useLanguage();
+  const handleLanguageChange = async (lang: string) => {
+    if (lang === language) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await setLanguage(lang);
+    router.replace('/(tabs)');
+  };
   return (
     <>
       <View style={[styles.settingsCard, { backgroundColor: colors.card }]}>
@@ -457,14 +463,14 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
         <View style={[styles.toggleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <Pressable
             style={[styles.toggleBtn, { backgroundColor: colors.surfaceLight }, language === 'ar' && { backgroundColor: colors.primary + '20', borderWidth: 1.5, borderColor: colors.primary }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLanguage('ar'); }}
+            onPress={() => handleLanguageChange('ar')}
           >
             <Text style={[styles.toggleFlag, { color: colors.primary }]}>ع</Text>
             <Text key={`ar-${switchCount}`} style={[styles.toggleText, { color: language === 'ar' ? colors.text : colors.textSecondary, textAlign: 'center' }]}>العربية</Text>
           </Pressable>
           <Pressable
             style={[styles.toggleBtn, { backgroundColor: colors.surfaceLight }, language === 'en' && { backgroundColor: colors.primary + '20', borderWidth: 1.5, borderColor: colors.primary }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLanguage('en'); }}
+            onPress={() => handleLanguageChange('en')}
           >
             <Text style={[styles.toggleFlag, { color: colors.primary }]}>EN</Text>
             <Text key={`en-${switchCount}`} style={[styles.toggleText, { color: language === 'en' ? colors.text : colors.textSecondary, textAlign: 'center' }]}>English</Text>
