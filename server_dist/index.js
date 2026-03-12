@@ -2855,6 +2855,15 @@ function fixCheckoutUrl(cart) {
   }
   return cart;
 }
+var apiCache = /* @__PURE__ */ new Map();
+function getCached(key, ttlMs) {
+  const entry = apiCache.get(key);
+  if (entry && Date.now() - entry.ts < ttlMs) return entry.data;
+  return null;
+}
+function setCache(key, data) {
+  apiCache.set(key, { data, ts: Date.now() });
+}
 function toAbsoluteUrl(url, req) {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -2870,8 +2879,12 @@ async function registerRoutes(app2) {
     try {
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
+      const cacheKey = `collections-${language}`;
+      const cached = getCached(cacheKey, 5 * 60 * 1e3);
+      if (cached) return res.json(cached);
       const data = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language });
       const collections = data.collections.edges.map((edge) => edge.node);
+      setCache(cacheKey, collections);
       res.json(collections);
     } catch (error) {
       console.error("Error fetching collections:", error.message);
@@ -3004,6 +3017,11 @@ async function registerRoutes(app2) {
       const reverse = req.query.reverse === "true";
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
+      if (!after && first <= 12) {
+        const cacheKey = `col-${handle}-${language}-${first}-${req.query.available || ""}`;
+        const cached = getCached(cacheKey, 3 * 60 * 1e3);
+        if (cached) return res.json(cached);
+      }
       const filters = [];
       if (req.query.minPrice || req.query.maxPrice) {
         const priceFilter = {};
@@ -3038,7 +3056,7 @@ async function registerRoutes(app2) {
         }
       }
       const pageInfo = collection.products.pageInfo;
-      res.json({
+      const result = {
         collection: {
           id: collection.id,
           title: collection.title,
@@ -3047,7 +3065,12 @@ async function registerRoutes(app2) {
         },
         products,
         pageInfo
-      });
+      };
+      if (!after && first <= 12) {
+        const cacheKey = `col-${handle}-${language}-${first}-${req.query.available || ""}`;
+        setCache(cacheKey, result);
+      }
+      res.json(result);
     } catch (error) {
       console.error("Error fetching collection products:", error.message);
       res.status(500).json({ error: error.message });
@@ -3723,6 +3746,36 @@ async function registerRoutes(app2) {
               }
             }
           }
+          const slimFeaturedProducts = featuredProducts.map((p) => ({
+            handle: p.handle,
+            titleEn: p.titleEn,
+            titleAr: p.titleAr,
+            vendor: p.vendor,
+            imageUrl: p.imageUrl,
+            price: p.price,
+            compareAtPrice: p.compareAtPrice,
+            currency: p.currency
+          }));
+          let cleanMetadata = section.metadata || null;
+          if (cleanMetadata && (section.type === "product_slider" || section.type === "featured_products")) {
+            try {
+              const parsed = JSON.parse(cleanMetadata);
+              if (parsed.products) {
+                parsed.products = parsed.products.map((p) => ({
+                  handle: p.handle,
+                  titleEn: p.titleEn,
+                  titleAr: p.titleAr,
+                  vendor: p.vendor,
+                  imageUrl: p.imageUrl,
+                  price: p.price,
+                  compareAtPrice: p.compareAtPrice,
+                  currency: p.currency
+                }));
+                cleanMetadata = JSON.stringify(parsed);
+              }
+            } catch {
+            }
+          }
           return {
             id: section.id,
             type: section.type,
@@ -3731,11 +3784,11 @@ async function registerRoutes(app2) {
             language: section.language || "both",
             sortOrder: section.sortOrder,
             visible: section.visible,
-            metadata: section.metadata || null,
+            metadata: cleanMetadata,
             selectedCategories,
             tabs: multiTabs,
             showcaseCollections,
-            featuredProducts,
+            featuredProducts: slimFeaturedProducts,
             brands,
             banners: banners.map((b) => ({
               id: b.id,

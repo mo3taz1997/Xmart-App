@@ -14,6 +14,16 @@ function fixCheckoutUrl(cart: any): any {
   return cart;
 }
 
+const apiCache = new Map<string, { data: any; ts: number }>();
+function getCached(key: string, ttlMs: number): any | null {
+  const entry = apiCache.get(key);
+  if (entry && Date.now() - entry.ts < ttlMs) return entry.data;
+  return null;
+}
+function setCache(key: string, data: any) {
+  apiCache.set(key, { data, ts: Date.now() });
+}
+
 function toAbsoluteUrl(url: string | null | undefined, req: Request): string | null {
   if (!url) return null;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -30,8 +40,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const lang = ((req.query.lang as string) || "AR").toUpperCase();
       const language = lang === 'EN' ? 'EN' : 'AR';
+      const cacheKey = `collections-${language}`;
+      const cached = getCached(cacheKey, 5 * 60 * 1000);
+      if (cached) return res.json(cached);
       const data = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language });
       const collections = data.collections.edges.map((edge: any) => edge.node);
+      setCache(cacheKey, collections);
       res.json(collections);
     } catch (error: any) {
       console.error("Error fetching collections:", error.message);
@@ -181,6 +195,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reverse = req.query.reverse === "true";
       const lang = ((req.query.lang as string) || "AR").toUpperCase();
       const language = lang === 'EN' ? 'EN' : 'AR';
+
+      if (!after && first <= 12) {
+        const cacheKey = `col-${handle}-${language}-${first}-${req.query.available || ''}`;
+        const cached = getCached(cacheKey, 3 * 60 * 1000);
+        if (cached) return res.json(cached);
+      }
+
       const filters: any[] = [];
 
       if (req.query.minPrice || req.query.maxPrice) {
@@ -220,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       const pageInfo = collection.products.pageInfo;
-      res.json({
+      const result = {
         collection: {
           id: collection.id,
           title: collection.title,
@@ -229,7 +250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         products,
         pageInfo,
-      });
+      };
+      if (!after && first <= 12) {
+        const cacheKey = `col-${handle}-${language}-${first}-${req.query.available || ''}`;
+        setCache(cacheKey, result);
+      }
+      res.json(result);
     } catch (error: any) {
       console.error("Error fetching collection products:", error.message);
       res.status(500).json({ error: error.message });
@@ -983,6 +1009,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          const slimFeaturedProducts = featuredProducts.map((p: any) => ({
+            handle: p.handle,
+            titleEn: p.titleEn,
+            titleAr: p.titleAr,
+            vendor: p.vendor,
+            imageUrl: p.imageUrl,
+            price: p.price,
+            compareAtPrice: p.compareAtPrice,
+            currency: p.currency,
+          }));
+
+          let cleanMetadata = (section as any).metadata || null;
+          if (cleanMetadata && (section.type === 'product_slider' || section.type === 'featured_products')) {
+            try {
+              const parsed = JSON.parse(cleanMetadata);
+              if (parsed.products) {
+                parsed.products = parsed.products.map((p: any) => ({
+                  handle: p.handle, titleEn: p.titleEn, titleAr: p.titleAr,
+                  vendor: p.vendor, imageUrl: p.imageUrl, price: p.price,
+                  compareAtPrice: p.compareAtPrice, currency: p.currency,
+                }));
+                cleanMetadata = JSON.stringify(parsed);
+              }
+            } catch {}
+          }
+
           return {
             id: section.id,
             type: section.type,
@@ -991,11 +1043,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             language: (section as any).language || "both",
             sortOrder: section.sortOrder,
             visible: section.visible,
-            metadata: (section as any).metadata || null,
+            metadata: cleanMetadata,
             selectedCategories,
             tabs: multiTabs,
             showcaseCollections,
-            featuredProducts,
+            featuredProducts: slimFeaturedProducts,
             brands,
             banners: banners.map((b) => ({
               id: b.id,
