@@ -1,11 +1,215 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  appSettings: () => appSettings,
+  categories: () => categories,
+  customerAddresses: () => customerAddresses,
+  homepageBanners: () => homepageBanners,
+  homepageSections: () => homepageSections,
+  insertUserSchema: () => insertUserSchema,
+  notifications: () => notifications,
+  orderItems: () => orderItems,
+  orders: () => orders,
+  pushTokens: () => pushTokens,
+  suggestedProducts: () => suggestedProducts,
+  uploadedImages: () => uploadedImages,
+  users: () => users
+});
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var bytea, uploadedImages, users, insertUserSchema, homepageSections, homepageBanners, appSettings, orders, customerAddresses, orderItems, categories, suggestedProducts, pushTokens, notifications;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    bytea = customType({
+      dataType() {
+        return "bytea";
+      },
+      toDriver(value) {
+        return value;
+      },
+      fromDriver(value) {
+        return Buffer.from(value);
+      }
+    });
+    uploadedImages = pgTable("uploaded_images", {
+      filename: varchar("filename").primaryKey(),
+      data: bytea("data").notNull(),
+      mimeType: text("mime_type").notNull().default("image/png"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    users = pgTable("users", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      username: text("username").notNull().unique(),
+      password: text("password").notNull()
+    });
+    insertUserSchema = createInsertSchema(users).pick({
+      username: true,
+      password: true
+    });
+    homepageSections = pgTable("homepage_sections", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      type: text("type").notNull(),
+      titleAr: text("title_ar"),
+      titleEn: text("title_en"),
+      language: text("language").notNull().default("both"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      metadata: text("metadata"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    homepageBanners = pgTable("homepage_banners", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      sectionId: varchar("section_id").notNull(),
+      imageUrl: text("image_url").notNull(),
+      linkType: text("link_type").default("collection"),
+      linkValue: text("link_value"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      language: text("language").default("both"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    appSettings = pgTable("app_settings", {
+      key: varchar("key").primaryKey(),
+      value: text("value").notNull(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    orders = pgTable("orders", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      orderNumber: integer("order_number").notNull(),
+      shopifyCheckoutId: text("shopify_checkout_id"),
+      customerEmail: text("customer_email").notNull(),
+      customerFirstName: text("customer_first_name").notNull(),
+      customerLastName: text("customer_last_name").notNull(),
+      customerPhone: text("customer_phone").notNull(),
+      shippingAddress: text("shipping_address"),
+      shippingCity: text("shipping_city"),
+      notes: text("notes"),
+      paymentMethod: text("payment_method").notNull().default("cod"),
+      status: text("status").notNull().default("pending"),
+      subtotal: text("subtotal").notNull(),
+      shippingCost: text("shipping_cost").notNull().default("0"),
+      total: text("total").notNull(),
+      currency: text("currency").notNull().default("JOD"),
+      deliveryCode: text("delivery_code"),
+      shopifyOrderName: text("shopify_order_name"),
+      shopifyOrderId: text("shopify_order_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    customerAddresses = pgTable("customer_addresses", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerEmail: text("customer_email").notNull(),
+      label: text("label"),
+      firstName: text("first_name").notNull(),
+      lastName: text("last_name").notNull(),
+      phone: text("phone").notNull(),
+      address: text("address"),
+      city: text("city"),
+      country: text("country").default("JO"),
+      isDefault: boolean("is_default").notNull().default(false),
+      shopifyAddressId: text("shopify_address_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    orderItems = pgTable("order_items", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      orderId: varchar("order_id").notNull(),
+      productTitle: text("product_title").notNull(),
+      productHandle: text("product_handle"),
+      variantTitle: text("variant_title"),
+      variantId: text("variant_id"),
+      quantity: integer("quantity").notNull(),
+      price: text("price").notNull(),
+      currency: text("currency").notNull().default("JOD"),
+      imageUrl: text("image_url")
+    });
+    categories = pgTable("categories", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      parentId: varchar("parent_id"),
+      titleAr: text("title_ar").notNull(),
+      titleEn: text("title_en").notNull(),
+      imageUrl: text("image_url"),
+      collectionHandle: text("collection_handle"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    suggestedProducts = pgTable("suggested_products", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      productHandle: text("product_handle").notNull(),
+      titleAr: text("title_ar"),
+      titleEn: text("title_en"),
+      imageUrl: text("image_url"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    pushTokens = pgTable("push_tokens", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      token: text("token").notNull().unique(),
+      platform: text("platform"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    notifications = pgTable("notifications", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      titleAr: text("title_ar").notNull(),
+      titleEn: text("title_en").notNull(),
+      bodyAr: text("body_ar"),
+      bodyEn: text("body_en"),
+      imageUrl: text("image_url"),
+      linkType: text("link_type").default("none"),
+      linkValue: text("link_value"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+  }
+});
+
+// server/db.ts
+var db_exports = {};
+__export(db_exports, {
+  db: () => db
+});
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+var pool, db;
+var init_db = __esm({
+  "server/db.ts"() {
+    "use strict";
+    init_schema();
+    pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 10,
+      idleTimeoutMillis: 3e4,
+      connectionTimeoutMillis: 1e4
+    });
+    pool.on("error", (err) => {
+      console.error("[DB Pool] Unexpected error on idle client:", err.message);
+    });
+    db = drizzle(pool, { schema: schema_exports });
+  }
+});
+
 // server/index.ts
-import express2 from "express";
+import express from "express";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 
@@ -1639,167 +1843,22 @@ async function autoCompleteCheckout(checkoutUrl, customer) {
   }
 }
 
-// server/db.ts
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  appSettings: () => appSettings,
-  categories: () => categories,
-  customerAddresses: () => customerAddresses,
-  homepageBanners: () => homepageBanners,
-  homepageSections: () => homepageSections,
-  insertUserSchema: () => insertUserSchema,
-  notifications: () => notifications,
-  orderItems: () => orderItems,
-  orders: () => orders,
-  pushTokens: () => pushTokens,
-  suggestedProducts: () => suggestedProducts,
-  users: () => users
-});
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull()
-});
-var insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true
-});
-var homepageSections = pgTable("homepage_sections", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  type: text("type").notNull(),
-  titleAr: text("title_ar"),
-  titleEn: text("title_en"),
-  language: text("language").notNull().default("both"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  metadata: text("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var homepageBanners = pgTable("homepage_banners", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  sectionId: varchar("section_id").notNull(),
-  imageUrl: text("image_url").notNull(),
-  linkType: text("link_type").default("collection"),
-  linkValue: text("link_value"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  language: text("language").default("both"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var appSettings = pgTable("app_settings", {
-  key: varchar("key").primaryKey(),
-  value: text("value").notNull(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var orders = pgTable("orders", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderNumber: integer("order_number").notNull(),
-  shopifyCheckoutId: text("shopify_checkout_id"),
-  customerEmail: text("customer_email").notNull(),
-  customerFirstName: text("customer_first_name").notNull(),
-  customerLastName: text("customer_last_name").notNull(),
-  customerPhone: text("customer_phone").notNull(),
-  shippingAddress: text("shipping_address"),
-  shippingCity: text("shipping_city"),
-  notes: text("notes"),
-  paymentMethod: text("payment_method").notNull().default("cod"),
-  status: text("status").notNull().default("pending"),
-  subtotal: text("subtotal").notNull(),
-  shippingCost: text("shipping_cost").notNull().default("0"),
-  total: text("total").notNull(),
-  currency: text("currency").notNull().default("JOD"),
-  deliveryCode: text("delivery_code"),
-  shopifyOrderName: text("shopify_order_name"),
-  shopifyOrderId: text("shopify_order_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var customerAddresses = pgTable("customer_addresses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  customerEmail: text("customer_email").notNull(),
-  label: text("label"),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  phone: text("phone").notNull(),
-  address: text("address"),
-  city: text("city"),
-  country: text("country").default("JO"),
-  isDefault: boolean("is_default").notNull().default(false),
-  shopifyAddressId: text("shopify_address_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var orderItems = pgTable("order_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").notNull(),
-  productTitle: text("product_title").notNull(),
-  productHandle: text("product_handle"),
-  variantTitle: text("variant_title"),
-  variantId: text("variant_id"),
-  quantity: integer("quantity").notNull(),
-  price: text("price").notNull(),
-  currency: text("currency").notNull().default("JOD"),
-  imageUrl: text("image_url")
-});
-var categories = pgTable("categories", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  parentId: varchar("parent_id"),
-  titleAr: text("title_ar").notNull(),
-  titleEn: text("title_en").notNull(),
-  imageUrl: text("image_url"),
-  collectionHandle: text("collection_handle"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var suggestedProducts = pgTable("suggested_products", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productHandle: text("product_handle").notNull(),
-  titleAr: text("title_ar"),
-  titleEn: text("title_en"),
-  imageUrl: text("image_url"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var pushTokens = pgTable("push_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  token: text("token").notNull().unique(),
-  platform: text("platform"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  titleAr: text("title_ar").notNull(),
-  titleEn: text("title_en").notNull(),
-  bodyAr: text("body_ar"),
-  bodyEn: text("body_en"),
-  imageUrl: text("image_url"),
-  linkType: text("link_type").default("none"),
-  linkValue: text("link_value"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-
-// server/db.ts
-var pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL
-});
-var db = drizzle(pool, { schema: schema_exports });
-
 // server/routes.ts
+init_db();
+init_schema();
 import { asc, desc, eq, sql as sql2, inArray } from "drizzle-orm";
 
 // server/search-engine.ts
 import pg2 from "pg";
-var pool2 = new pg2.Pool({ connectionString: process.env.DATABASE_URL });
+var pool2 = new pg2.Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 3e4,
+  connectionTimeoutMillis: 1e4
+});
+pool2.on("error", (err) => {
+  console.error("[SearchEngine DB] Unexpected error on idle client:", err.message);
+});
 var SYNONYM_GROUPS = [
   // ===== ELECTRONICS & DEVICES =====
   ["earbuds", "headphones", "earphones", "\u0633\u0645\u0627\u0639\u0627\u062A", "\u0633\u0645\u0627\u0639\u0629", "\u0633\u0645\u0627\u0639\u0647", "\u0647\u064A\u062F\u0641\u0648\u0646", "\u0627\u064A\u0631\u0628\u0648\u062F\u0632", "earphone", "headphone", "headset", "\u0647\u064A\u062F\u0633\u062A", "\u0633\u0645\u0639\u0627\u062A", "\u0633\u0645\u0639\u0647", "\u0633\u0645\u0639\u0629", "\u0647\u062F\u0641\u0648\u0646", "\u0633\u0645\u0627\u0639\u0627\u062A \u0627\u0630\u0646", "\u0633\u0645\u0627\u0639\u0627\u062A \u0628\u0644\u0648\u062A\u0648\u062B", "\u0633\u0645\u0627\u0639\u0627\u062A \u0631\u0627\u0633", "\u0647\u0646\u062F\u0632 \u0641\u0631\u064A", "\u0647\u0627\u0646\u062F\u0632 \u0641\u0631\u064A", "handsfree"],
@@ -3669,7 +3728,8 @@ async function registerRoutes(app2) {
               id: b.id,
               imageUrl: b.imageUrl,
               linkType: b.linkType,
-              linkValue: b.linkValue
+              linkValue: b.linkValue,
+              sortOrder: b.sortOrder
             }))
           };
         })
@@ -4541,7 +4601,8 @@ async function registerRoutes(app2) {
 }
 
 // server/admin-routes.ts
-import express from "express";
+init_db();
+init_schema();
 import { eq as eq2, asc as asc2, desc as desc2, sql as sql3 } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
@@ -4605,7 +4666,33 @@ async function sendPushNotifications(notification) {
 function registerAdminRoutes(app2) {
   const uploadsDir = path.resolve(process.cwd(), "server", "uploads");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  app2.use("/uploads", express.static(uploadsDir));
+  const MIME_MAP = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml" };
+  async function saveImageToDb(filename, buffer, ext) {
+    const mime = MIME_MAP[ext] || "image/png";
+    try {
+      await db.insert(uploadedImages).values({ filename, data: buffer, mimeType: mime }).onConflictDoUpdate({ target: uploadedImages.filename, set: { data: buffer, mimeType: mime, createdAt: /* @__PURE__ */ new Date() } });
+      console.log(`[ImageDB] Saved ${filename} (${buffer.length} bytes) to database`);
+    } catch (err) {
+      console.error(`[ImageDB] FAILED to save ${filename}: ${err.message}`);
+      throw err;
+    }
+    return `/uploads/${filename}`;
+  }
+  app2.get("/uploads/:filename", async (req, res) => {
+    try {
+      const row = await db.select().from(uploadedImages).where(eq2(uploadedImages.filename, req.params.filename)).limit(1);
+      if (row.length === 0) {
+        const filePath = path.join(uploadsDir, req.params.filename);
+        if (fs.existsSync(filePath)) return res.sendFile(filePath);
+        return res.status(404).send("Not found");
+      }
+      res.setHeader("Content-Type", row[0].mimeType);
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.send(row[0].data);
+    } catch {
+      res.status(500).send("Error");
+    }
+  });
   app2.post("/api/admin/upload-image", async (req, res) => {
     try {
       const { data, filename } = req.body;
@@ -4616,8 +4703,57 @@ function registerAdminRoutes(app2) {
       const base64Data = data.replace(/^data:[^;]+;base64,/, "");
       const buffer = Buffer.from(base64Data, "base64");
       const savedFilename = `img-${Date.now()}${ext}`;
-      fs.writeFileSync(path.join(uploadsDir, savedFilename), buffer);
-      res.json({ url: `/uploads/${savedFilename}` });
+      const url = await saveImageToDb(savedFilename, buffer, ext);
+      res.json({ url });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  app2.post("/api/admin/download-external-image", async (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url || typeof url !== "string") return res.status(400).json({ error: "Missing url" });
+      if (url.startsWith("/uploads/")) {
+        const fname = url.split("/uploads/")[1]?.split("?")[0];
+        if (fname) {
+          const exists = await db.select({ filename: uploadedImages.filename }).from(uploadedImages).where(eq2(uploadedImages.filename, fname)).limit(1);
+          if (exists.length > 0) return res.json({ url });
+        }
+      }
+      const https = __require("https");
+      const http = __require("http");
+      const client = url.startsWith("https") ? https : http;
+      const imageData = await new Promise((resolve3, reject) => {
+        const request = client.get(url, { timeout: 15e3, headers: { "User-Agent": "Mozilla/5.0" } }, (response) => {
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            const redirectClient = response.headers.location.startsWith("https") ? https : http;
+            redirectClient.get(response.headers.location, { timeout: 15e3, headers: { "User-Agent": "Mozilla/5.0" } }, (res2) => {
+              const chunks2 = [];
+              res2.on("data", (c) => chunks2.push(c));
+              res2.on("end", () => resolve3(Buffer.concat(chunks2)));
+              res2.on("error", reject);
+            }).on("error", reject);
+            return;
+          }
+          if (response.statusCode !== 200) return reject(new Error(`HTTP ${response.statusCode}`));
+          const chunks = [];
+          response.on("data", (c) => chunks.push(c));
+          response.on("end", () => resolve3(Buffer.concat(chunks)));
+          response.on("error", reject);
+        });
+        request.on("error", reject);
+        request.on("timeout", () => {
+          request.destroy();
+          reject(new Error("Timeout"));
+        });
+      });
+      const contentType = url.match(/\.(png|jpg|jpeg|webp|gif)/i);
+      let ext = ".jpg";
+      if (contentType) ext = "." + contentType[1].toLowerCase();
+      if (ext === ".jpeg") ext = ".jpg";
+      const savedFilename = `img-${Date.now()}${ext}`;
+      const savedUrl = await saveImageToDb(savedFilename, imageData, ext);
+      res.json({ url: savedUrl });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
@@ -4655,8 +4791,8 @@ function registerAdminRoutes(app2) {
         savedFilename = `${prefix}${ext}`;
         finalBuffer = buffer;
       }
-      const filePath = path.join(uploadsDir, savedFilename);
-      fs.writeFileSync(filePath, finalBuffer);
+      const finalExt = ext === ".svg" || ext === ".ai" ? ".png" : ext;
+      await saveImageToDb(savedFilename, finalBuffer, finalExt);
       const logoUrl = `/uploads/${savedFilename}?t=${Date.now()}`;
       await db.insert(appSettings).values({ key: settingKey, value: logoUrl, updatedAt: /* @__PURE__ */ new Date() }).onConflictDoUpdate({
         target: appSettings.key,
@@ -4687,6 +4823,10 @@ function registerAdminRoutes(app2) {
   app2.post("/api/admin/sections", async (req, res) => {
     try {
       const { type, titleAr, titleEn, sortOrder, visible, language, metadata } = req.body;
+      let finalMetadata = metadata;
+      if (finalMetadata && finalMetadata.imageUrl) {
+        finalMetadata.imageUrl = await persistImageOnServer(finalMetadata.imageUrl);
+      }
       const [section] = await db.insert(homepageSections).values({
         type,
         titleAr: titleAr || null,
@@ -4694,7 +4834,7 @@ function registerAdminRoutes(app2) {
         language: language || "both",
         sortOrder: sortOrder ?? 0,
         visible: visible ?? true,
-        metadata: metadata ? JSON.stringify(metadata) : null
+        metadata: finalMetadata ? JSON.stringify(finalMetadata) : null
       }).returning();
       res.json(section);
     } catch (error) {
@@ -4716,6 +4856,10 @@ function registerAdminRoutes(app2) {
     try {
       const { id } = req.params;
       const { type, titleAr, titleEn, sortOrder, visible, language, metadata } = req.body;
+      let finalMetadata = metadata;
+      if (finalMetadata && finalMetadata.imageUrl) {
+        finalMetadata.imageUrl = await persistImageOnServer(finalMetadata.imageUrl);
+      }
       const [section] = await db.update(homepageSections).set({
         type,
         titleAr: titleAr || null,
@@ -4723,7 +4867,7 @@ function registerAdminRoutes(app2) {
         language: language || "both",
         sortOrder,
         visible,
-        metadata: metadata !== void 0 ? metadata ? JSON.stringify(metadata) : null : void 0,
+        metadata: finalMetadata !== void 0 ? finalMetadata ? JSON.stringify(finalMetadata) : null : void 0,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(sql3`${homepageSections.id} = ${id}`).returning();
       res.json(section);
@@ -4741,12 +4885,55 @@ function registerAdminRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  async function persistImageOnServer(url) {
+    if (!url || url.startsWith("/uploads/") || url.startsWith("data:")) return url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) return url;
+    try {
+      const https = __require("https");
+      const http = __require("http");
+      const client = url.startsWith("https") ? https : http;
+      const imageData = await new Promise((resolve3, reject) => {
+        const request = client.get(url, { timeout: 15e3, headers: { "User-Agent": "Mozilla/5.0" } }, (response) => {
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            const redirectClient = response.headers.location.startsWith("https") ? https : http;
+            redirectClient.get(response.headers.location, { timeout: 15e3, headers: { "User-Agent": "Mozilla/5.0" } }, (res2) => {
+              const chunks2 = [];
+              res2.on("data", (c) => chunks2.push(c));
+              res2.on("end", () => resolve3(Buffer.concat(chunks2)));
+              res2.on("error", reject);
+            }).on("error", reject);
+            return;
+          }
+          if (response.statusCode !== 200) return reject(new Error(`HTTP ${response.statusCode}`));
+          const chunks = [];
+          response.on("data", (c) => chunks.push(c));
+          response.on("end", () => resolve3(Buffer.concat(chunks)));
+          response.on("error", reject);
+        });
+        request.on("error", reject);
+        request.on("timeout", () => {
+          request.destroy();
+          reject(new Error("Timeout"));
+        });
+      });
+      const contentMatch = url.match(/\.(png|jpg|jpeg|webp|gif)/i);
+      let ext = ".jpg";
+      if (contentMatch) ext = "." + contentMatch[1].toLowerCase();
+      if (ext === ".jpeg") ext = ".jpg";
+      const savedFilename = `img-${Date.now()}${ext}`;
+      return await saveImageToDb(savedFilename, imageData, ext);
+    } catch (e) {
+      console.warn("persistImageOnServer failed for:", url, e.message);
+      return url;
+    }
+  }
   app2.post("/api/admin/banners", async (req, res) => {
     try {
       const { sectionId, imageUrl, linkType, linkValue, sortOrder, visible, language } = req.body;
+      const persistedUrl = await persistImageOnServer(imageUrl);
       const [banner] = await db.insert(homepageBanners).values({
         sectionId,
-        imageUrl,
+        imageUrl: persistedUrl,
         linkType: linkType || "collection",
         linkValue: linkValue || null,
         sortOrder: sortOrder ?? 0,
@@ -4762,7 +4949,8 @@ function registerAdminRoutes(app2) {
     try {
       const { id } = req.params;
       const { imageUrl, linkType, linkValue, sortOrder, visible, language } = req.body;
-      const [banner] = await db.update(homepageBanners).set({ imageUrl, linkType, linkValue, sortOrder, visible, language: language || "both" }).where(sql3`${homepageBanners.id} = ${id}`).returning();
+      const persistedUrl = await persistImageOnServer(imageUrl);
+      const [banner] = await db.update(homepageBanners).set({ imageUrl: persistedUrl, linkType, linkValue, sortOrder, visible, language: language || "both" }).where(sql3`${homepageBanners.id} = ${id}`).returning();
       res.json(banner);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -4834,9 +5022,25 @@ function registerAdminRoutes(app2) {
   });
   app2.get("/api/admin/shopify-collections", async (_req, res) => {
     try {
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.COLLECTIONS, { first: 250 });
-      const collections = data.collections.edges.map((e) => e.node);
-      const merged = collections.map((c) => ({
+      const pagedQuery = `query($first: Int!, $after: String) {
+        collections(first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { id title handle description image { url altText } } }
+        }
+      }`;
+      const allNodes = [];
+      let hasNext = true;
+      let cursor = null;
+      while (hasNext) {
+        const vars = { first: 250 };
+        if (cursor) vars.after = cursor;
+        const data = await shopifyAdminGraphQL(pagedQuery, vars);
+        const edges = data.collections?.edges || [];
+        edges.forEach((e) => allNodes.push(e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+      const merged = allNodes.map((c) => ({
         handle: c.handle,
         titleEn: c.title,
         titleAr: c.title,
@@ -4853,7 +5057,8 @@ function registerAdminRoutes(app2) {
   app2.get("/api/admin/search-products", async (req, res) => {
     try {
       const q = req.query.q || "";
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.PRODUCTS, { first: 20, query: q || void 0, sortKey: "TITLE" });
+      const activeQuery = q ? `${q} status:active` : "status:active";
+      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.PRODUCTS, { first: 20, query: activeQuery, sortKey: "TITLE" });
       const products = data.products.edges.map((e) => mapAdminProduct(e.node));
       const result = products.map((p) => ({
         handle: p.handle,
@@ -4877,7 +5082,7 @@ function registerAdminRoutes(app2) {
     try {
       const q = (req.query.q || "").trim();
       if (!q || q.length < 1) return res.json([]);
-      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q}") { edges { node { vendor images(first:1){edges{node{url}}} } } } }`);
+      const data = await shopifyAdminGraphQL(`query { products(first: 50, query: "vendor:${q} status:active") { edges { node { vendor featuredImage { url } images(first:1){edges{node{url}}} metafield(namespace:"brand", key:"logo") { reference { ... on MediaImage { image { url } } } } } } } }`);
       const products = data.products.edges.map((e) => e.node);
       const vendorMap = /* @__PURE__ */ new Map();
       for (const p of products) {
@@ -4894,29 +5099,85 @@ function registerAdminRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  let _collectionsCache = null;
+  const COLLECTIONS_CACHE_TTL = 5 * 60 * 1e3;
+  async function fetchAllAdminCollections() {
+    if (_collectionsCache && Date.now() - _collectionsCache.timestamp < COLLECTIONS_CACHE_TTL) {
+      return _collectionsCache.data;
+    }
+    async function fetchPage(_language) {
+      const allNodes = [];
+      let hasNext = true;
+      let cursor = null;
+      const query = `query($first:Int!,$after:String) {
+        collections(first:$first, after:$after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { id handle title image { url } } }
+        }
+      }`;
+      while (hasNext) {
+        const vars = { first: 250 };
+        if (cursor) vars.after = cursor;
+        const data = await shopifyAdminGraphQL(query, vars);
+        const edges = data.collections?.edges || [];
+        edges.forEach((e) => allNodes.push(e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+      return allNodes;
+    }
+    const enCols = await fetchPage("en");
+    console.log(`[Collections] Fetched ${enCols.length} collections from Shopify`);
+    let arCols = [];
+    try {
+      const arQuery = `query($first:Int!,$after:String) {
+        translatableResources(resourceType: COLLECTION, first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { resourceId translations(locale:"ar") { key value } } }
+        }
+      }`;
+      const arTranslations = {};
+      let hasNext = true;
+      let cursor = null;
+      while (hasNext) {
+        const vars = { first: 250 };
+        if (cursor) vars.after = cursor;
+        try {
+          const data = await shopifyAdminGraphQL(arQuery, vars);
+          const edges = data.translatableResources?.edges || [];
+          for (const e of edges) {
+            const titleTranslation = e.node.translations?.find((t) => t.key === "title");
+            if (titleTranslation) {
+              const gid = e.node.resourceId;
+              arTranslations[gid] = titleTranslation.value;
+            }
+          }
+          hasNext = data.translatableResources?.pageInfo?.hasNextPage || false;
+          cursor = data.translatableResources?.pageInfo?.endCursor || null;
+        } catch {
+          hasNext = false;
+        }
+      }
+      arCols = enCols.map((c) => {
+        const arTitle = arTranslations[c.id] || null;
+        return { ...c, arTitle };
+      });
+    } catch {
+      arCols = enCols.map((c) => ({ ...c, arTitle: null }));
+    }
+    const all = enCols.map((en, i) => ({
+      handle: en.handle,
+      titleEn: en.title,
+      titleAr: arCols[i]?.arTitle || en.title,
+      imageUrl: en.image?.url || null
+    }));
+    _collectionsCache = { data: all, timestamp: Date.now() };
+    return all;
+  }
   app2.get("/api/admin/search-collections", async (req, res) => {
     try {
       const q = (req.query.q || "").trim().toLowerCase();
-      const collQuery = `query($first:Int!,$language:LanguageCode) @inContext(language:$language) {collections(first:$first){edges{node{handle title image{url}}}}}`;
-      const [arData, enData] = await Promise.all([
-        shopifyFetch(collQuery, { first: 250, language: "AR" }),
-        shopifyFetch(collQuery, { first: 250, language: "EN" })
-      ]);
-      const arCols = (arData.collections?.edges || []).map((e) => e.node);
-      const enCols = (enData.collections?.edges || []).map((e) => e.node);
-      const arByHandle = {};
-      arCols.forEach((c) => {
-        arByHandle[c.handle] = c;
-      });
-      let all = enCols.map((en) => {
-        const ar = arByHandle[en.handle];
-        return {
-          handle: en.handle,
-          titleEn: en.title,
-          titleAr: ar?.title || en.title,
-          imageUrl: en.image?.url || ar?.image?.url || null
-        };
-      });
+      let all = await fetchAllAdminCollections();
       if (q) {
         all = all.filter(
           (c) => (c.titleEn || "").toLowerCase().includes(q) || (c.titleAr || "").toLowerCase().includes(q) || (c.handle || "").toLowerCase().includes(q)
@@ -4933,7 +5194,8 @@ function registerAdminRoutes(app2) {
     try {
       const q = (req.query.q || "").trim();
       if (!q || q.length < 1) return res.json([]);
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: q, first: 12 });
+      const activeQuery = `${q} status:active`;
+      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: activeQuery, first: 12 });
       const products = data.products.edges.map((e) => mapAdminProduct(e.node));
       const result = products.map((p) => {
         const price = p.priceRange?.minVariantPrice?.amount || "0";
@@ -5136,10 +5398,12 @@ function registerAdminRoutes(app2) {
 }
 
 // server/index.ts
+init_db();
+init_schema();
 import { eq as eq3 } from "drizzle-orm";
 import * as fs2 from "fs";
 import * as path2 from "path";
-var app = express2();
+var app = express();
 var log = console.log;
 function setupCors(app2) {
   app2.use((req, res, next) => {
@@ -5171,14 +5435,14 @@ function setupCors(app2) {
 }
 function setupBodyParsing(app2) {
   app2.use(
-    express2.json({
+    express.json({
       limit: "10mb",
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       }
     })
   );
-  app2.use(express2.urlencoded({ extended: false }));
+  app2.use(express.urlencoded({ extended: false }));
 }
 function setupRequestLogging(app2) {
   app2.use((req, res, next) => {
@@ -5231,24 +5495,6 @@ function serveExpoManifest(platform, res) {
   const manifest = fs2.readFileSync(manifestPath, "utf-8");
   res.send(manifest);
 }
-function serveLandingPage({
-  req,
-  res,
-  landingPageTemplate,
-  appName
-}) {
-  const forwardedProto = req.header("x-forwarded-proto");
-  const protocol = forwardedProto || req.protocol || "https";
-  const forwardedHost = req.header("x-forwarded-host");
-  const host = forwardedHost || req.get("host");
-  const baseUrl = `${protocol}://${host}`;
-  const expsUrl = `${host}`;
-  log(`baseUrl`, baseUrl);
-  log(`expsUrl`, expsUrl);
-  const html = landingPageTemplate.replace(/BASE_URL_PLACEHOLDER/g, baseUrl).replace(/EXPS_URL_PLACEHOLDER/g, expsUrl).replace(/APP_NAME_PLACEHOLDER/g, appName);
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(200).send(html);
-}
 function configureExpoAndLanding(app2) {
   const templatePath = path2.resolve(
     process.cwd(),
@@ -5271,17 +5517,44 @@ function configureExpoAndLanding(app2) {
       return serveExpoManifest(platform, res);
     }
     if (req.path === "/") {
-      return serveLandingPage({
-        req,
-        res,
-        landingPageTemplate,
-        appName
-      });
+      return res.redirect("/admin");
     }
     next();
   });
-  app2.use("/assets", express2.static(path2.resolve(process.cwd(), "assets")));
-  app2.use(express2.static(path2.resolve(process.cwd(), "static-build")));
+  app2.get("/favicon.png", async (_req, res) => {
+    try {
+      const { db: appDb } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const { appSettings: appSettingsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eqOp } = await import("drizzle-orm");
+      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      if (rows.length && rows[0].value) {
+        const logoUrl = rows[0].value.split("?")[0];
+        if (logoUrl.startsWith("/uploads/")) {
+          return res.redirect(logoUrl);
+        }
+      }
+    } catch {
+    }
+    res.sendFile(path2.resolve(process.cwd(), "assets", "images", "favicon.png"));
+  });
+  app2.get("/favicon.ico", async (_req, res) => {
+    try {
+      const { db: appDb } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const { appSettings: appSettingsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eqOp } = await import("drizzle-orm");
+      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      if (rows.length && rows[0].value) {
+        const logoUrl = rows[0].value.split("?")[0];
+        if (logoUrl.startsWith("/uploads/")) {
+          return res.redirect(logoUrl);
+        }
+      }
+    } catch {
+    }
+    res.sendFile(path2.resolve(process.cwd(), "assets", "images", "favicon.png"));
+  });
+  app2.use("/assets", express.static(path2.resolve(process.cwd(), "assets")));
+  app2.use(express.static(path2.resolve(process.cwd(), "static-build"), { index: false }));
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 function setupErrorHandler(app2) {
