@@ -1,54 +1,20 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions, Animated as RNAnimated } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSalesCount } from '@/contexts/SalesCountContext';
 
-function AnimatedFire() {
-  const scale = useSharedValue(1);
-  const rotate = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.25, { duration: 400, easing: Easing.out(Easing.ease) }),
-        withTiming(0.9, { duration: 300, easing: Easing.in(Easing.ease) }),
-        withTiming(1.15, { duration: 350, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 250, easing: Easing.in(Easing.ease) }),
-      ),
-      -1,
-      false,
-    );
-    rotate.value = withRepeat(
-      withSequence(
-        withTiming(-8, { duration: 300, easing: Easing.inOut(Easing.ease) }),
-        withTiming(8, { duration: 300, easing: Easing.inOut(Easing.ease) }),
-        withTiming(-4, { duration: 250, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 200, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-      false,
-    );
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotate.value}deg` },
-    ],
-  }));
-
+function StaticFire() {
   return (
-    <Animated.Text style={[{ fontSize: 11 }, animStyle]}>
+    <Text style={{ fontSize: 11 }}>
       {'\uD83D\uDD25'}
-    </Animated.Text>
+    </Text>
   );
 }
 
@@ -87,29 +53,15 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
   }, [freeDelivery, soldCount, language]);
 
   const [currentIdx, setCurrentIdx] = useState(() => startOffset % badges.length);
-  const fadeAnim = useRef(new RNAnimated.Value(1)).current;
-  const slideAnim = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
     setCurrentIdx(startOffset % badges.length);
-    fadeAnim.setValue(1);
-    slideAnim.setValue(0);
   }, [badges.length]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      RNAnimated.parallel([
-        RNAnimated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-        RNAnimated.timing(slideAnim, { toValue: -10, duration: 250, useNativeDriver: true }),
-      ]).start(() => {
-        setCurrentIdx(prev => (prev + 1) % badges.length);
-        slideAnim.setValue(10);
-        RNAnimated.parallel([
-          RNAnimated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
-          RNAnimated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-        ]).start();
-      });
-    }, 2500);
+      setCurrentIdx(prev => (prev + 1) % badges.length);
+    }, 3000);
     return () => clearInterval(interval);
   }, [badges.length]);
 
@@ -130,19 +82,17 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
       overflow: 'hidden',
     }}>
       <Ionicons name={badge.icon as any} size={11} color={badge.color} />
-      <RNAnimated.Text
+      <Text
         style={{
           fontFamily: 'Cairo_600SemiBold',
           fontSize: 9,
           color: badge.color,
           writingDirection: isRTL ? 'rtl' : 'ltr',
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
         }}
         numberOfLines={1}
       >
         {badge.text}
-      </RNAnimated.Text>
+      </Text>
     </View>
   );
 }
