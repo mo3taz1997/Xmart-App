@@ -2855,6 +2855,16 @@ function fixCheckoutUrl(cart) {
   }
   return cart;
 }
+function toAbsoluteUrl(url, req) {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/")) {
+    const fwdProto = (req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
+    const fwdHost = (req.headers["x-forwarded-host"] || "").split(",")[0].trim() || req.headers.host || "";
+    return `${fwdProto}://${fwdHost}${url}`;
+  }
+  return url;
+}
 async function registerRoutes(app2) {
   app2.get("/api/collections", async (req, res) => {
     try {
@@ -3663,7 +3673,10 @@ async function registerRoutes(app2) {
           let brands = [];
           if (section.type === "brands_strip" && section.metadata) {
             try {
-              brands = JSON.parse(section.metadata).brands || [];
+              brands = (JSON.parse(section.metadata).brands || []).map((b) => ({
+                ...b,
+                imageUrl: toAbsoluteUrl(b.imageUrl, req) || b.imageUrl
+              }));
             } catch {
             }
           }

@@ -940,7 +940,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Parse brands_strip
           let brands: any[] = [];
           if (section.type === 'brands_strip' && (section as any).metadata) {
-            try { brands = JSON.parse((section as any).metadata).brands || []; } catch {}
+            try {
+              brands = (JSON.parse((section as any).metadata).brands || []).map((b: any) => ({
+                ...b,
+                imageUrl: toAbsoluteUrl(b.imageUrl, req) || b.imageUrl,
+              }));
+            } catch {}
           }
 
           // Parse featured_products / product_slider
