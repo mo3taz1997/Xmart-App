@@ -273,7 +273,7 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
             disabled={current === 0}
             style={{ opacity: current === 0 ? 0.3 : 0.7, padding: 4 }}
           >
-            <Ionicons name="chevron-back" size={18} color={colors.text} />
+            <Ionicons name={isRTL ? "chevron-forward" : "chevron-back"} size={18} color={colors.text} />
           </TouchableOpacity>
 
           {products.map((_: any, i: number) => (
@@ -296,7 +296,7 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
             disabled={current === products.length - 1}
             style={{ opacity: current === products.length - 1 ? 0.3 : 0.7, padding: 4 }}
           >
-            <Ionicons name="chevron-forward" size={18} color={colors.text} />
+            <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={colors.text} />
           </TouchableOpacity>
         </View>
       )}
