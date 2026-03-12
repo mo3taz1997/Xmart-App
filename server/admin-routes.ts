@@ -86,7 +86,13 @@ export function registerAdminRoutes(app: Express) {
 
   async function saveImageToDb(filename: string, buffer: Buffer, ext: string): Promise<string> {
     const mime = MIME_MAP[ext] || 'image/png';
-    await db.insert(uploadedImages).values({ filename, data: buffer, mimeType: mime }).onConflictDoUpdate({ target: uploadedImages.filename, set: { data: buffer, mimeType: mime, createdAt: new Date() } });
+    try {
+      await db.insert(uploadedImages).values({ filename, data: buffer, mimeType: mime }).onConflictDoUpdate({ target: uploadedImages.filename, set: { data: buffer, mimeType: mime, createdAt: new Date() } });
+      console.log(`[ImageDB] Saved ${filename} (${buffer.length} bytes) to database`);
+    } catch (err: any) {
+      console.error(`[ImageDB] FAILED to save ${filename}: ${err.message}`);
+      throw err;
+    }
     return `/uploads/${filename}`;
   }
 

@@ -1,7 +1,15 @@
 import pg from "pg";
 import { shopifyAdminGraphQL, shopifyFetch } from "./shopify";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+pool.on('error', (err: Error) => {
+  console.error('[SearchEngine DB] Unexpected error on idle client:', err.message);
+});
 
 const SYNONYM_GROUPS: string[][] = [
   // ===== ELECTRONICS & DEVICES =====
