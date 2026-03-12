@@ -606,6 +606,7 @@ export function registerAdminRoutes(app: Express) {
     }
 
     const enCols = await fetchPage('en');
+    console.log(`[Collections] Fetched ${enCols.length} collections from Shopify`);
 
     let arCols: any[] = [];
     try {
