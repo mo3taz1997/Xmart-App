@@ -317,7 +317,10 @@ const BRAND_SIZES: Record<string, { w: number; h: number }> = {
 const BrandsStripSection = React.memo(function BrandsStripSection({ section, isDark }: {
   section: any; isDark: boolean;
 }) {
-  const brands: any[] = section.brands || [];
+  const brands: any[] = (section.brands || []).map((b: any) => ({
+    ...b,
+    imageUrl: b.imageUrl ? (b.imageUrl.startsWith('http') ? b.imageUrl : (process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${b.imageUrl}` : b.imageUrl)) : null,
+  }));
   if (brands.length === 0) return null;
 
   const totalW = brands.reduce((sum: number, b: any) => sum + (BRAND_SIZES[b.size]?.w ?? 130), 0);
@@ -352,9 +355,9 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       acc += brandWidths[i];
       if (tapInStrip < acc) {
         const brand = doubled[i];
-        if (brand.collectionHandle) {
+        if (brand.name) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push(`/collection/${brand.collectionHandle}`);
+          router.push(`/brand/${encodeURIComponent(brand.name)}`);
         }
         return;
       }

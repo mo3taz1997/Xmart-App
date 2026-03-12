@@ -1134,7 +1134,7 @@
 
       <!-- Brands Strip Manager -->
       <div class="form-group" id="secBrandsWrap" style="display:none;">
-        <label>البراندات <span style="color:#888;font-size:11px;">(شريط متحرك — يمكن الضغط على كل براند للانتقال لكولكشنه)</span></label>
+        <label>البراندات <span style="color:#888;font-size:11px;">(شريط متحرك — يمكن الضغط على كل براند للانتقال لصفحة منتجاته)</span></label>
         <div id="brandsList" style="min-height:32px;margin-bottom:12px;"></div>
         <div style="border:1.5px dashed #248CCC;border-radius:10px;padding:14px;background:#f0f8ff;direction:rtl;">
           <div style="font-size:13px;font-weight:700;color:#163259;margin-bottom:12px;">➕ إضافة براند جديد</div>
@@ -1162,24 +1162,17 @@
           <input type="hidden" id="brandManualName" value="">
           <input type="hidden" id="brandManualImg" value="">
           <input type="hidden" id="brandAutoImg" value="">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div>
-              <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">حجم الصورة</div>
-              <select id="brandManualSize" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
-                <option value="sm">صغير (24px)</option>
-                <option value="md" selected>متوسط (40px)</option>
-                <option value="lg">كبير (60px)</option>
-              </select>
-            </div>
-            <div>
-              <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">الكولكشن المرتبط (اختياري)</div>
-              <div style="position:relative;">
-                <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
-                <input type="hidden" id="brandCollHandle" value="">
-                <div id="brandCollResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.1);top:100%;right:0;"></div>
-              </div>
-            </div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">حجم الصورة</div>
+            <select id="brandManualSize" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
+              <option value="sm">صغير (24px)</option>
+              <option value="md" selected>متوسط (40px)</option>
+              <option value="lg">كبير (60px)</option>
+            </select>
           </div>
+          <input type="hidden" id="brandCollInput" value="">
+          <input type="hidden" id="brandCollHandle" value="">
+          <div id="brandCollResults" style="display:none;"></div>
           <button onclick="addBrandManually()" style="width:100%;background:#248CCC;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">+ إضافة البراند</button>
         </div>
       </div>
@@ -3946,9 +3939,7 @@ function renderBrandsList() {
     const imgPreview = b.imageUrl
       ? `<img src="${b.imageUrl}" style="height:${h}px;max-width:100px;object-fit:contain;border-radius:4px;background:#fff;border:1px solid #ddd;padding:2px;" onerror="this.style.display='none'">`
       : `<div style="width:60px;height:${h}px;background:#eef2f8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;">لا صورة</div>`;
-    const collBadge = b.collectionHandle
-      ? `<span style="font-size:10px;color:#248CCC;background:#e8f5ff;padding:2px 7px;border-radius:10px;border:1px solid #b3d7f0;">🔗 ${b.collectionHandle}</span>`
-      : '';
+    const collBadge = `<span style="font-size:10px;color:#248CCC;background:#e8f5ff;padding:2px 7px;border-radius:10px;border:1px solid #b3d7f0;">🏷️ ${b.name || 'vendor'}</span>`;
     return `
     <div style="display:flex;align-items:center;gap:10px;background:#f7fbff;border:1px solid #dde9f7;border-radius:10px;padding:8px 12px;margin-bottom:6px;direction:rtl;">
       ${imgPreview}
@@ -4104,10 +4095,9 @@ function addBrandManually() {
   const name = document.getElementById('brandManualName').value.trim();
   const imageUrl = document.getElementById('brandManualImg').value.trim();
   const size = document.getElementById('brandManualSize').value || 'md';
-  const collectionHandle = document.getElementById('brandCollHandle').value.trim();
   if (!name && !imageUrl) { showToast(adminLang === 'en' ? 'Please search and select a brand first' : 'يرجى البحث واختيار ماركة أولاً', true); return; }
   const label = name || 'براند';
-  _brands.push({ name: label, imageUrl, size, collectionHandle });
+  _brands.push({ name: label, imageUrl, size });
   renderBrandsList();
   document.getElementById('brandManualName').value = '';
   document.getElementById('brandManualImg').value = '';
