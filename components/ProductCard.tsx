@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions, Animated as RNAnimated } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -270,7 +270,7 @@ function ProductCard({
   vendor,
 }: ProductCardProps) {
   const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { language, formatCurrency, t, isRTL } = useLanguage();
   const soldCount = useSalesCount(handle);
@@ -282,15 +282,15 @@ function ProductCard({
     ? Math.round(((parseFloat(compareAtPrice!) - parseFloat(price)) / parseFloat(compareAtPrice!)) * 100)
     : 0;
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: '/product/[handle]', params: { handle } });
-  };
+  }, [handle]);
 
-  const handleWishlist = () => {
+  const handleWishlist = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleWishlist({ handle, title, price, currencyCode, compareAtPrice, imageUrl });
-  };
+  }, [handle, title, price, currencyCode, compareAtPrice, imageUrl, toggleWishlist]);
 
   const isTablet = width >= 768;
   const tabletCardW = Math.round((width - 80) / 5);

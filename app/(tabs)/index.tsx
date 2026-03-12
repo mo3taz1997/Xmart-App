@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import ProductSliderSection from '@/components/ProductSliderSection';
 import {
   View, Text, ScrollView, FlatList, Pressable, StyleSheet, Dimensions,
   RefreshControl, Platform, ActivityIndicator,
-  Animated as RNAnimated, Easing,
+  Animated as RNAnimated, Easing, LayoutChangeEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
 import XmartLogoSvg from '@/components/XmartLogoSvg';
@@ -22,7 +22,50 @@ import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useNotifications } from '@/contexts/NotificationContext';
 
-const { width } = Dimensions.get('window');
+const { width, height: screenHeight } = Dimensions.get('window');
+
+const lazySectionRegistry = new Set<() => void>();
+function notifyLazySections() {
+  lazySectionRegistry.forEach(fn => fn());
+}
+
+function LazySection({ children, estimatedHeight = 280, scrollY }: {
+  children: React.ReactNode;
+  estimatedHeight?: number;
+  scrollY: React.MutableRefObject<number>;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const layoutY = useRef(0);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    layoutY.current = e.nativeEvent.layout.y;
+    const viewportBottom = scrollY.current + screenHeight * 2;
+    if (layoutY.current < viewportBottom) {
+      setIsVisible(true);
+    }
+  }, [scrollY]);
+
+  useEffect(() => {
+    if (isVisible) return;
+    const check = () => {
+      const viewportBottom = scrollY.current + screenHeight * 1.5;
+      if (layoutY.current >= 0 && layoutY.current < viewportBottom) {
+        setIsVisible(true);
+        lazySectionRegistry.delete(check);
+      }
+    };
+    lazySectionRegistry.add(check);
+    return () => { lazySectionRegistry.delete(check); };
+  }, [isVisible, scrollY]);
+
+  if (isVisible) return <>{children}</>;
+
+  return (
+    <View onLayout={onLayout} style={{ minHeight: estimatedHeight }} />
+  );
+}
+
+const FlatListGap10 = () => <View style={{ width: 10 }} />;
 
 const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN;
 function resolveAssetUrl(url: string | null | undefined): string | null {
@@ -93,7 +136,7 @@ function JordanFlagBadge() {
   );
 }
 
-function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }: {
+const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const cats: any[] = section.selectedCategories || [];
@@ -166,7 +209,7 @@ function SelectedCategoriesSection({ section, language, colors, isDark, isRTL }:
       </ScrollView>
     </View>
   );
-}
+});
 
 const CARD_COL_W = Math.floor((width - 40) / 2);
 const IS_TABLET_HOME = width >= 768;
@@ -271,7 +314,7 @@ const BRAND_SIZES: Record<string, { w: number; h: number }> = {
   lg: { w: 170, h: 60 },
 };
 
-function BrandsStripSection({ section, isDark }: {
+const BrandsStripSection = React.memo(function BrandsStripSection({ section, isDark }: {
   section: any; isDark: boolean;
 }) {
   const brands: any[] = section.brands || [];
@@ -382,9 +425,9 @@ function BrandsStripSection({ section, isDark }: {
       </RNAnimated.View>
     </View>
   );
-}
+});
 
-function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
+const MultiCollectionSection = React.memo(function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const tabs: any[] = section.tabs || [];
@@ -397,8 +440,8 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
     queryKey: ['multi-col-products', activeTab?.handle, language],
     queryFn: () => api.getCollectionProducts(activeTab.handle, { first: '12', available: 'true' }, language),
     enabled: !!activeTab?.handle,
-    staleTime: 1000 * 30,
-    refetchOnMount: 'always' as const,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
   });
 
   if (tabs.length === 0) return null;
@@ -536,11 +579,11 @@ function MultiCollectionSection({ section, language, colors, isDark, isRTL }: {
       </RNAnimated.View>
     </View>
   );
-}
+});
 
 const SHOWCASE_INTERVAL = 3400;
 
-function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }: {
+const CollectionShowcaseSection = React.memo(function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const collections: any[] = section.showcaseCollections || [];
@@ -728,9 +771,9 @@ function CollectionShowcaseSection({ section, language, colors, isDark, isRTL }:
       </View>
     </View>
   );
-}
+});
 
-function PromoBannerSlider({ banners }: { banners: { imageUrl: string; linkType?: string; linkValue?: string; collectionHandle?: string }[] }) {
+const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { banners: { imageUrl: string; linkType?: string; linkValue?: string; collectionHandle?: string }[] }) {
   const scrollRef = useRef<ScrollView>(null);
   const currentIndex = useRef(0);
   const isBusy = useRef(false);
@@ -867,7 +910,7 @@ function PromoBannerSlider({ banners }: { banners: { imageUrl: string; linkType?
       </ScrollView>
     </View>
   );
-}
+});
 
 
 
@@ -876,7 +919,7 @@ export default function HomeScreen() {
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { t, isRTL, language, setLanguage } = useLanguage();
   const { colors, isDark, setMode } = useTheme();
-  const { styles } = getStyles(colors);
+  const { styles } = useMemo(() => getStyles(colors), [colors]);
   const { unreadCount, hasNewNotification, clearNewFlag, markAllRead } = useNotifications();
 
   const bellShake = useRef(new RNAnimated.Value(0)).current;
@@ -905,11 +948,10 @@ export default function HomeScreen() {
   const { data: homepage, isLoading: homepageLoading, refetch: refetchHomepage } = useQuery({
     queryKey: ['homepage', language],
     queryFn: () => api.getHomepage(language),
-    staleTime: 1000 * 30,
-    gcTime: 1000 * 60 * 10,
-    refetchOnMount: 'always' as const,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 15,
     refetchOnWindowFocus: true,
-    refetchInterval: 1000 * 60,
+    refetchInterval: 1000 * 60 * 2,
     placeholderData: keepPreviousData,
   });
 
@@ -925,6 +967,13 @@ export default function HomeScreen() {
   const midBanners = homepage?.midBanners || [];
 
   const allSections = homepage?.sections || [];
+  const SECTION_TYPES = new Set(['selected_categories', 'multi_collection', 'collection_showcase', 'featured_products', 'product_slider', 'brands_strip', 'collection_products', 'static_banner', 'banner_slider']);
+  const sortedSections = useMemo(() =>
+    allSections
+      .filter((s: any) => SECTION_TYPES.has(s.type) && s.visible !== false)
+      .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+    [allSections]
+  );
   const findSection = (type: string) => allSections.find((s: any) => s.type === type);
   const sectionVisible = (type: string) => { const s = findSection(type); return s ? s.visible !== false : true; };
   const sectionTitle = (type: string, fallback: string) => {
@@ -952,32 +1001,44 @@ export default function HomeScreen() {
   const resolvedMidBanners = midBanners.map((b: any) => ({ ...b, imageUrl: resolveUrl(b.imageUrl) || b.imageUrl }));
 
   useEffect(() => {
-    const urls: string[] = [];
-    resolvedHeroBanners.forEach((b: any) => { if (b.imageUrl) urls.push(b.imageUrl); });
-    resolvedMidBanners.forEach((b: any) => { if (b.imageUrl) urls.push(b.imageUrl); });
-    allSections.forEach((s: any) => {
+    const priorityUrls: string[] = [];
+    const deferredUrls: string[] = [];
+    resolvedHeroBanners.forEach((b: any) => { if (b.imageUrl) priorityUrls.push(b.imageUrl); });
+    resolvedMidBanners.forEach((b: any) => { if (b.imageUrl) priorityUrls.push(b.imageUrl); });
+    sortedSections.forEach((s: any, idx: number) => {
+      const target = idx < 3 ? priorityUrls : deferredUrls;
       if (s.type === 'banner_slider') {
         (s.banners || []).forEach((b: any) => {
           const u = resolveUrl(b.imageUrl) || b.imageUrl;
-          if (u) urls.push(u);
+          if (u) target.push(u);
         });
       }
       if (s.type === 'featured_products' || s.type === 'product_slider') {
         (s.featuredProducts || []).forEach((p: any) => {
-          if (p.imageUrl) urls.push(p.imageUrl);
-          if (p.customImageUrl) urls.push(p.customImageUrl);
+          if (p.imageUrl) target.push(p.imageUrl);
+          if (p.customImageUrl) target.push(p.customImageUrl);
         });
       }
     });
-    urls.forEach(u => Image.prefetch(u).catch(() => {}));
+    const seen = new Set<string>();
+    priorityUrls.forEach(u => { if (!seen.has(u)) { seen.add(u); Image.prefetch(u).catch(() => {}); } });
+    if (deferredUrls.length > 0) {
+      const t = setTimeout(() => {
+        deferredUrls.forEach(u => { if (!seen.has(u)) { seen.add(u); Image.prefetch(u).catch(() => {}); } });
+      }, 2000);
+      return () => clearTimeout(t);
+    }
   }, [homepage]);
 
   const mainScrollRef = useRef<any>(null);
+  const scrollYRef = useRef(0);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const lastSearchVisible = useRef(false);
 
   const handleScroll = useCallback((e: any) => {
     const y = e.nativeEvent.contentOffset.y;
+    scrollYRef.current = y;
+    notifyLazySections();
     const shouldShow = y > 50;
     if (shouldShow !== lastSearchVisible.current) {
       lastSearchVisible.current = shouldShow;
@@ -1085,118 +1146,48 @@ export default function HomeScreen() {
           <Text style={[styles.searchPlaceholder, { textAlign: isRTL ? 'right' : 'left', color: colors.textMuted }]}>{t('search.placeholder')}</Text>
         </Pressable>
 
-        {allSections
-          .filter((s: any) => (
-            s.type === 'selected_categories' ||
-            s.type === 'multi_collection' ||
-            s.type === 'collection_showcase' ||
-            s.type === 'featured_products' ||
-            s.type === 'product_slider' ||
-            s.type === 'brands_strip' ||
-            s.type === 'collection_products' ||
-            s.type === 'static_banner' ||
-            s.type === 'banner_slider'
-          ) && s.visible !== false)
-          .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-          .map((s: any) => {
-            if (s.type === 'banner_slider') {
-              const resolvedBanners = (s.banners || []).map((b: any) => ({
-                ...b,
-                imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
-              }));
-              if (resolvedBanners.length === 0) return null;
-              return (
-                <PromoBannerSlider key={s.id} banners={resolvedBanners} />
-              );
+        {sortedSections.map((s: any, idx: number) => {
+            const renderSection = () => {
+              if (s.type === 'banner_slider') {
+                const resolvedBanners = (s.banners || []).map((b: any) => ({
+                  ...b,
+                  imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
+                }));
+                if (resolvedBanners.length === 0) return null;
+                return <PromoBannerSlider banners={resolvedBanners} />;
+              }
+              if (s.type === 'static_banner') {
+                return <StaticBannerSection section={s} colors={colors} isRTL={isRTL} />;
+              }
+              if (s.type === 'brands_strip') {
+                return <BrandsStripSection section={s} isDark={isDark} />;
+              }
+              if (s.type === 'multi_collection') {
+                return <MultiCollectionSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+              }
+              if (s.type === 'collection_showcase') {
+                return <CollectionShowcaseSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+              }
+              if (s.type === 'featured_products') {
+                return <FeaturedProductsSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+              }
+              if (s.type === 'product_slider') {
+                return <ProductSliderSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+              }
+              if (s.type === 'collection_products') {
+                return <CollectionProductsSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+              }
+              return <SelectedCategoriesSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
+            };
+
+            if (idx < 3) {
+              return <React.Fragment key={s.id}>{renderSection()}</React.Fragment>;
             }
-            if (s.type === 'static_banner') {
-              return (
-                <StaticBannerSection
-                  key={s.id}
-                  section={s}
-                  colors={colors}
-                  isRTL={isRTL}
-                />
-              );
-            }
-            if (s.type === 'brands_strip') {
-              return (
-                <BrandsStripSection
-                  key={s.id}
-                  section={s}
-                  isDark={isDark}
-                />
-              );
-            }
-            if (s.type === 'multi_collection') {
-              return (
-                <MultiCollectionSection
-                  key={s.id}
-                  section={s}
-                  language={language}
-                  colors={colors}
-                  isDark={isDark}
-                  isRTL={isRTL}
-                />
-              );
-            }
-            if (s.type === 'collection_showcase') {
-              return (
-                <CollectionShowcaseSection
-                  key={s.id}
-                  section={s}
-                  language={language}
-                  colors={colors}
-                  isDark={isDark}
-                  isRTL={isRTL}
-                />
-              );
-            }
-            if (s.type === 'featured_products') {
-              return (
-                <FeaturedProductsSection
-                  key={s.id}
-                  section={s}
-                  language={language}
-                  colors={colors}
-                  isDark={isDark}
-                  isRTL={isRTL}
-                />
-              );
-            }
-            if (s.type === 'product_slider') {
-              return (
-                <ProductSliderSection
-                  key={s.id}
-                  section={s}
-                  language={language}
-                  colors={colors}
-                  isDark={isDark}
-                  isRTL={isRTL}
-                />
-              );
-            }
-            if (s.type === 'collection_products') {
-              return (
-                <CollectionProductsSection
-                  key={s.id}
-                  section={s}
-                  language={language}
-                  colors={colors}
-                  isDark={isDark}
-                  isRTL={isRTL}
-                />
-              );
-            }
+
             return (
-              <SelectedCategoriesSection
-                key={s.id}
-                section={s}
-                language={language}
-                colors={colors}
-                isDark={isDark}
-                isRTL={isRTL}
-              />
+              <LazySection key={s.id} scrollY={scrollYRef} estimatedHeight={s.type === 'brands_strip' ? 60 : 280}>
+                {renderSection()}
+              </LazySection>
             );
           })
         }
@@ -1206,7 +1197,7 @@ export default function HomeScreen() {
   );
 }
 
-function StaticBannerSection({ section, colors, isRTL }: {
+const StaticBannerSection = React.memo(function StaticBannerSection({ section, colors, isRTL }: {
   section: any; colors: any; isRTL: boolean;
 }) {
   const metadata = React.useMemo(() => {
@@ -1261,9 +1252,9 @@ function StaticBannerSection({ section, colors, isRTL }: {
       </Pressable>
     </View>
   );
-}
+});
 
-function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
+const FeaturedProductsSection = React.memo(function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const products: any[] = section.featuredProducts || [];
@@ -1380,9 +1371,9 @@ function FeaturedProductsSection({ section, language, colors, isDark, isRTL }: {
       </View>
     </View>
   );
-}
+});
 
-function CollectionProductsSection({ section, language, colors, isDark, isRTL }: {
+const CollectionProductsSection = React.memo(function CollectionProductsSection({ section, language, colors, isDark, isRTL }: {
   section: any; language: string; colors: any; isDark: boolean; isRTL: boolean;
 }) {
   const metadata = React.useMemo(() => {
@@ -1397,8 +1388,8 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
     queryKey: ['collectionProducts', collectionHandle, language],
     queryFn: () => api.getCollectionProducts(collectionHandle, { first: '12', available: 'true' }, language),
     enabled: !!collectionHandle,
-    staleTime: 1000 * 30,
-    refetchOnMount: 'always' as const,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
   });
 
   const products: any[] = ((data as any)?.products || []).filter((p: any) => p.availableForSale === true);
@@ -1445,7 +1436,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
         maxToRenderPerBatch={4}
         windowSize={7}
         removeClippedSubviews={false}
-        ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+        ItemSeparatorComponent={FlatListGap10}
         renderItem={({ item: p }: { item: any }) => {
           const title = language === 'ar' ? (p.titleAr || p.title) : (p.titleEn || p.title);
           const price = p.priceRange?.minVariantPrice?.amount || p.price || '0';
@@ -1471,7 +1462,7 @@ function CollectionProductsSection({ section, language, colors, isDark, isRTL }:
       />
     </View>
   );
-}
+});
 
 function getStyles(colors: typeof Colors.dark) {
   const styles = StyleSheet.create({

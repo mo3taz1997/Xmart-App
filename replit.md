@@ -108,3 +108,10 @@ Preferred communication style: Simple, everyday language (Arabic).
 - `bcryptjs` - Password hashing
 - `sharp` - Image processing for logo uploads
 - `esbuild` - Server bundling for production
+
+## Performance Optimizations (March 2026)
+- **Lazy Loading Sections**: Home screen sections below the fold are lazy-loaded via `LazySection` wrapper. Only the first 3 sections render immediately; the rest mount when scrolled near viewport. Uses a scroll-driven registry pattern (no polling intervals).
+- **Memoization**: All home section components wrapped in `React.memo()` (SelectedCategories, BrandsStrip, MultiCollection, CollectionShowcase, PromoBannerSlider, StaticBanner, FeaturedProducts, CollectionProducts, ProductSliderSection). `ProductCard` callbacks (`handlePress`, `handleWishlist`) wrapped in `useCallback`. Styles computed via `useMemo`.
+- **Query Caching**: Homepage and collection queries use `staleTime: 2min`, `gcTime: 10-15min`. Removed `refetchOnMount: 'always'` to avoid bypassing cache on lazy section mount. Pull-to-refresh still forces refetch.
+- **Image Prefetch**: Priority prefetch for above-fold images (hero banners + first 3 sections); deferred prefetch after 2s for below-fold images. URL deduplication via `Set`.
+- **FlatList Separators**: Moved inline `ItemSeparatorComponent` arrow functions to module-level constants to avoid re-creation on each render.

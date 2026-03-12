@@ -20,6 +20,7 @@ const ITEM_GAP = 12;
 const CARD_W = width - 32;
 const CARD_H = Math.round(CARD_W * 0.66);
 const SNAP = CARD_W + ITEM_GAP;
+const FlatListGap = () => <View style={{ width: ITEM_GAP }} />;
 
 function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }: Props) {
   const products: any[] = section.featuredProducts || [];
@@ -104,7 +105,7 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
         getItemLayout={(_: any, i: number) => ({ length: SNAP, offset: SNAP * i, index: i })}
         snapToOffsets={products.map((_: any, i: number) => i * SNAP)}
         decelerationRate={0.92}
-        ItemSeparatorComponent={() => <View style={{ width: ITEM_GAP }} />}
+        ItemSeparatorComponent={FlatListGap}
         renderItem={({ item: p }: { item: any }) => {
           const now = parseFloat(p.price || "0");
           const orig = p.compareAtPrice ? parseFloat(p.compareAtPrice) : 0;
