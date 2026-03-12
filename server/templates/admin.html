@@ -2028,6 +2028,15 @@ function renderSectionsList() {
                 return adminLang === 'en' ? `⭕ Displays ${ids.length} selected categories as circles — click edit to change` : `⭕ يعرض ${ids.length} قسم محدد على شكل دوائر — اضغط تعديل لتغيير الأقسام`;
               } catch { return adminLang === 'en' ? '⭕ Selected Categories (circles)' : '⭕ أقسام محددة (دوائر)'; }
             })() : ''}
+            ${section.type === 'static_banner' ? (() => {
+              try {
+                const meta = JSON.parse(section.metadata || '{}');
+                if (meta.imageUrl) {
+                  return '<div style="margin-top:8px;"><img src="' + resolveImageUrl(meta.imageUrl) + '" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid #e0e8f0;background:#f8fafc;" onerror="this.style.display=\'none\'"></div>';
+                }
+                return adminLang === 'en' ? '🖼️ Static banner — no image set' : '🖼️ بانر ثابت — لم يتم تحديد صورة';
+              } catch { return ''; }
+            })() : ''}
           </div>
         `}
       </div>
