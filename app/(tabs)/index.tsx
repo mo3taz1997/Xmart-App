@@ -1140,6 +1140,8 @@ export default function HomeScreen() {
       <ScrollView
         ref={mainScrollRef}
         showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
         onScroll={handleScroll}
         scrollEventThrottle={16}
         refreshControl={
