@@ -404,13 +404,15 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
               }}
             >
               {brand.imageUrl ? (
-                <Image
-                  source={{ uri: brand.imageUrl }}
-                  style={{ width: sz.w - 20, height: sz.h, tintColor: isDark ? '#ffffff' : undefined }}
-                  contentFit="contain"
-                  transition={0}
-                  cachePolicy="memory-disk"
-                />
+                <View style={isDark ? { backgroundColor: '#ffffff', borderRadius: 6, padding: 4 } : undefined}>
+                  <Image
+                    source={{ uri: brand.imageUrl }}
+                    style={{ width: sz.w - 28, height: sz.h }}
+                    contentFit="contain"
+                    transition={0}
+                    cachePolicy="memory-disk"
+                  />
+                </View>
               ) : (
                 <Text style={{
                   fontFamily: 'Cairo_700Bold',
