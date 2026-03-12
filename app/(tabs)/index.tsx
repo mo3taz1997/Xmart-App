@@ -355,7 +355,10 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       acc += brandWidths[i];
       if (tapInStrip < acc) {
         const brand = doubled[i];
-        if (brand.name) {
+        if (brand.collectionHandle) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push(`/collection/${brand.collectionHandle}`);
+        } else if (brand.name) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push(`/brand/${encodeURIComponent(brand.name)}`);
         }
