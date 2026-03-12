@@ -347,9 +347,9 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
 
   const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
 
-  const handleTap = (pageX: number) => {
+  const handleTap = (locX: number) => {
     const offset = Math.abs(currentOffset.current);
-    const tapInStrip = pageX + offset;
+    const tapInStrip = locX + offset;
     let acc = 0;
     for (let i = 0; i < doubled.length; i++) {
       acc += brandWidths[i];
@@ -377,15 +377,15 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       overflow: 'hidden',
     }}
       onTouchStart={(e) => {
-        touchStart.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, time: Date.now() };
+        touchStart.current = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, time: Date.now() };
       }}
       onTouchEnd={(e) => {
         if (!touchStart.current) return;
-        const dx = Math.abs(e.nativeEvent.pageX - touchStart.current.x);
-        const dy = Math.abs(e.nativeEvent.pageY - touchStart.current.y);
+        const dx = Math.abs(e.nativeEvent.locationX - touchStart.current.x);
+        const dy = Math.abs(e.nativeEvent.locationY - touchStart.current.y);
         const dt = Date.now() - touchStart.current.time;
         if (dx < 15 && dy < 15 && dt < 400) {
-          handleTap(e.nativeEvent.pageX);
+          handleTap(e.nativeEvent.locationX);
         }
         touchStart.current = null;
       }}
