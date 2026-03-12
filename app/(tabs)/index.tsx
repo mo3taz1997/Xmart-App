@@ -9,7 +9,7 @@ import { Image } from 'expo-image';
 import XmartLogoSvg from '@/components/XmartLogoSvg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
@@ -955,13 +955,16 @@ export default function HomeScreen() {
     placeholderData: keepPreviousData,
   });
 
+  const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    qc.invalidateQueries({ queryKey: ['multi-col-products'] });
+    qc.invalidateQueries({ queryKey: ['collectionProducts'] });
     await refetchHomepage();
     setRefreshing(false);
-  }, [refetchHomepage]);
+  }, [refetchHomepage, qc]);
 
   const heroBanners = homepage?.heroBanners || [];
   const midBanners = homepage?.midBanners || [];
