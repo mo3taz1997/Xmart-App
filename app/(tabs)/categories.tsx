@@ -570,6 +570,7 @@ export default function CategoriesScreen() {
                 colors={colors}
                 isDark={isDark}
                 language={language}
+                isRTL={isRTL}
               />
             ))}
           </ScrollView>
