@@ -309,9 +309,9 @@ function MultiCollectionTabBar({ tabs, activeIdx, onSelect, colors, isDark, isRT
 }
 
 const BRAND_SIZES: Record<string, { w: number; h: number }> = {
-  sm: { w: 90,  h: 24 },
-  md: { w: 130, h: 40 },
-  lg: { w: 170, h: 60 },
+  sm: { w: 75,  h: 24 },
+  md: { w: 110, h: 40 },
+  lg: { w: 145, h: 60 },
 };
 
 const BrandsStripSection = React.memo(function BrandsStripSection({ section, isDark }: {
@@ -336,7 +336,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
     const anim = RNAnimated.loop(
       RNAnimated.timing(translateX, {
         toValue: -totalW,
-        duration: totalW * 30,
+        duration: totalW * 22,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -403,7 +403,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
                 width: sz.w,
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingHorizontal: 12,
+                paddingHorizontal: 6,
               }}
             >
               {brand.imageUrl ? (
