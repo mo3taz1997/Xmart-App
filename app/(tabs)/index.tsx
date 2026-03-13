@@ -314,8 +314,8 @@ const BRAND_SIZES: Record<string, { w: number; h: number }> = {
   lg: { w: 145, h: 60 },
 };
 
-const BrandsStripSection = React.memo(function BrandsStripSection({ section, isDark }: {
-  section: any; isDark: boolean;
+const BrandsStripSection = React.memo(function BrandsStripSection({ section, isDark, scrollY }: {
+  section: any; isDark: boolean; scrollY: React.MutableRefObject<number>;
 }) {
   const brands: any[] = (section.brands || []).map((b: any) => ({
     ...b,
@@ -330,8 +330,31 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const translateX = useRef(new RNAnimated.Value(0)).current;
   const currentOffset = useRef(0);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const animRef = useRef<RNAnimated.CompositeAnimation | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const layoutY = useRef(-1);
+
+  const onStripLayout = useCallback((e: LayoutChangeEvent) => {
+    layoutY.current = e.nativeEvent.layout.y;
+  }, []);
 
   useEffect(() => {
+    const check = () => {
+      if (layoutY.current < 0) return;
+      const sy = scrollY.current;
+      const inView = layoutY.current < sy + screenHeight * 1.3 && layoutY.current + 80 > sy - screenHeight * 0.3;
+      setIsVisible(inView);
+    };
+    lazySectionRegistry.add(check);
+    check();
+    return () => { lazySectionRegistry.delete(check); };
+  }, [scrollY]);
+
+  useEffect(() => {
+    if (!isVisible) {
+      if (animRef.current) { animRef.current.stop(); animRef.current = null; }
+      return;
+    }
     const listener = translateX.addListener(({ value }) => { currentOffset.current = value; });
     const anim = RNAnimated.loop(
       RNAnimated.timing(translateX, {
@@ -341,9 +364,10 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
         useNativeDriver: true,
       })
     );
+    animRef.current = anim;
     anim.start();
-    return () => { anim.stop(); translateX.removeListener(listener); };
-  }, [totalW]);
+    return () => { anim.stop(); translateX.removeListener(listener); animRef.current = null; };
+  }, [totalW, isVisible]);
 
   const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
 
@@ -370,7 +394,9 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const vPad = Math.max(4, Math.round((48 - maxH) / 2) + 4);
 
   return (
-    <View style={{
+    <View
+      onLayout={onStripLayout}
+      style={{
       marginVertical: 4,
       backgroundColor: isDark ? '#111c2d' : '#ffffff',
       borderTopWidth: StyleSheet.hairlineWidth,
@@ -1173,7 +1199,7 @@ export default function HomeScreen() {
                 return <StaticBannerSection section={s} colors={colors} isRTL={isRTL} />;
               }
               if (s.type === 'brands_strip') {
-                return <BrandsStripSection section={s} isDark={isDark} />;
+                return <BrandsStripSection section={s} isDark={isDark} scrollY={scrollYRef} />;
               }
               if (s.type === 'multi_collection') {
                 return <MultiCollectionSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
