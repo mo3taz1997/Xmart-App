@@ -146,12 +146,19 @@ export default function CollectionScreen() {
       return undefined;
     },
     enabled: !!activeProductHandle,
-    placeholderData: (prev) => prev,
   });
 
-  const allProducts = useMemo(() => {
+  const currentProducts = useMemo(() => {
     return data?.pages?.flatMap((page: any) => page.products) || [];
   }, [data]);
+
+  const prevProductsRef = React.useRef<any[]>([]);
+  const allProducts = currentProducts.length > 0 ? currentProducts : prevProductsRef.current;
+  useEffect(() => {
+    if (currentProducts.length > 0) {
+      prevProductsRef.current = currentProducts;
+    }
+  }, [currentProducts]);
 
   const availableTypes = useMemo(() => {
     const types = new Set<string>();
@@ -465,7 +472,7 @@ export default function CollectionScreen() {
 
       {subCatRow}
 
-      {isLoading && !data ? (
+      {isLoading && allProducts.length === 0 ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -474,7 +481,7 @@ export default function CollectionScreen() {
           data={products}
           keyExtractor={(item, index) => item.handle + index}
           numColumns={PRODUCT_COLUMNS}
-          columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+          columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row', opacity: (isFetching && !isFetchingNextPage && currentProducts.length === 0) ? 0.4 : 1 }}
           renderItem={({ item }) => (
             <View style={{ width: (width - 24) / PRODUCT_COLUMNS, padding: 4 }}>
               <ProductCard {...extractProductData(item)} />
@@ -482,7 +489,7 @@ export default function CollectionScreen() {
           )}
           ListHeaderComponent={<>
             {listHeader}
-            {isFetching && !isLoading && !isFetchingNextPage && (
+            {isFetching && !isFetchingNextPage && (
               <View style={{ paddingVertical: 12, alignItems: 'center' }}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
