@@ -3927,7 +3927,7 @@ function loadBrands(preBrands) {
   if (collHEl) collHEl.value = '';
   if (searchEl) searchEl.value = '';
   document.getElementById('brandSelectedPreview').style.display = 'none';
-  document.getElementById('brandVendorResults').style.display = 'none';
+  const vr = document.getElementById('brandVendorResults'); if (vr) vr.style.display = 'none';
   document.getElementById('brandClearCustomBtn').style.display = 'none';
   renderBrandsList();
 }
