@@ -289,13 +289,16 @@ export default function CategoriesScreen() {
   const collectionHandle = currentCategory?.collectionHandle;
   const activeHandle = activeChild?.collectionHandle || collectionHandle;
 
-  useEffect(() => { setActiveChild(null); }, [currentCategory]);
+  useEffect(() => {
+    setActiveChild(null);
+    prevCollProductsRef.current = [];
+  }, [currentCategory]);
 
   useEffect(() => {
     if (activeHandle) setRandomSeed(Math.random());
   }, [activeHandle]);
 
-  const { data: collectionData, isLoading: collLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  const { data: collectionData, isLoading: collLoading, isFetching: collFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['category-products', activeHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0],
     queryFn: async ({ pageParam }) => {
       const sort = SORT_OPTIONS[sortIdx];
@@ -322,9 +325,17 @@ export default function CategoriesScreen() {
     enabled: !!activeHandle,
   });
 
-  const allCollProducts = useMemo(() => {
+  const currentCollProducts = useMemo(() => {
     return collectionData?.pages?.flatMap((page: any) => page.products) || [];
   }, [collectionData]);
+
+  const prevCollProductsRef = useRef<any[]>([]);
+  const allCollProducts = currentCollProducts.length > 0 ? currentCollProducts : prevCollProductsRef.current;
+  useEffect(() => {
+    if (currentCollProducts.length > 0) {
+      prevCollProductsRef.current = currentCollProducts;
+    }
+  }, [currentCollProducts]);
 
   const availableTypes = useMemo(() => {
     const types = new Set<string>();
@@ -536,46 +547,60 @@ export default function CategoriesScreen() {
     </View>
   ) : null;
 
-  /* List header: breadcrumb + circles row + sort bar */
+  const subCircleScrollRef = useRef<ScrollView>(null);
+  const subCirclePositions = useRef<Record<string, number>>({});
+
+  const circlesRow = showChildRow ? (
+    <View style={{
+      paddingTop: 12,
+      paddingBottom: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border + '55',
+    }}>
+      <ScrollView
+        ref={subCircleScrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+      >
+        {childItems.map((child: CategoryItem) => (
+          <View
+            key={child.id}
+            onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
+          >
+            <SubCircle
+              item={child}
+              onPress={() => {
+                if (child.children && child.children.length > 0) {
+                  drillDown(child);
+                } else if (activeChild?.id === child.id && sortIdx === 0) {
+                  setRandomSeed(Math.random());
+                } else {
+                  setActiveChild(child);
+                  const pos = subCirclePositions.current[child.id];
+                  if (pos !== undefined) {
+                    setTimeout(() => {
+                      subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
+                    }, 50);
+                  }
+                }
+              }}
+              isSelected={activeChild?.id === child.id}
+              colors={colors}
+              isDark={isDark}
+              language={language}
+              isRTL={isRTL}
+            />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
+
+  /* List header: sort bar only */
   const listHeader = (
     <>
-      {breadcrumb}
-      {showChildRow && (
-        <View style={{
-          paddingTop: 12,
-          paddingBottom: 8,
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: colors.border + '55',
-        }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-            contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-          >
-            {childItems.map((child: CategoryItem) => (
-              <SubCircle
-                key={child.id}
-                item={child}
-                onPress={() => {
-                  if (child.children && child.children.length > 0) {
-                    drillDown(child);
-                  } else if (activeChild?.id === child.id && sortIdx === 0) {
-                    setRandomSeed(Math.random());
-                  } else {
-                    setActiveChild(child);
-                  }
-                }}
-                isSelected={activeChild?.id === child.id}
-                colors={colors}
-                isDark={isDark}
-                language={language}
-                isRTL={isRTL}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      )}
       {sortBar}
     </>
   );
@@ -663,6 +688,9 @@ export default function CategoriesScreen() {
         <React.Fragment key={navStack.map(c => c.id).join('-')}>
           {renderHeader(true)}
 
+          {breadcrumb}
+          {circlesRow}
+
           {showChildGrid ? (
             <FlatList
               key="child-circle-grid"
@@ -676,7 +704,6 @@ export default function CategoriesScreen() {
               }}
               contentContainerStyle={{ paddingTop: 16, paddingBottom: 120, gap: 16 }}
               showsVerticalScrollIndicator={false}
-              ListHeaderComponent={breadcrumb}
               renderItem={({ item }) => (
                 <CatCircleItem
                   item={item}
@@ -687,7 +714,7 @@ export default function CategoriesScreen() {
                 />
               )}
             />
-          ) : collLoading ? (
+          ) : collLoading && collProducts.length === 0 ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={colors.primary} />
             </View>
@@ -697,13 +724,20 @@ export default function CategoriesScreen() {
               data={collProducts}
               keyExtractor={(item: any, i) => (item.handle || item.id) + i}
               numColumns={PRODUCT_COLUMNS}
-              columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+              columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row', opacity: (collFetching && !isFetchingNextPage && collProducts.length > 0) ? 0.5 : 1 }}
               renderItem={({ item }) => (
                 <View style={{ width: (width - 24) / PRODUCT_COLUMNS, padding: 4 }}>
                   <ProductCard {...extractProductData(item)} />
                 </View>
               )}
-              ListHeaderComponent={listHeader}
+              ListHeaderComponent={<>
+                {listHeader}
+                {collFetching && !isFetchingNextPage && (
+                  <View style={{ paddingVertical: 10, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                )}
+              </>}
               contentContainerStyle={{ paddingBottom: 110 }}
               showsVerticalScrollIndicator={false}
               scrollEnabled={!!collProducts.length || !!outOfStockProducts.length}
