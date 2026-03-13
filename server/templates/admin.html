@@ -4162,7 +4162,7 @@ async function autoSaveBrandsSection() {
 // ────────────────────────────────────────────────────────
 
 function toggleCatCollapse(key) {
-  catCollapsed[key] = !catCollapsed[key];
+  catCollapsed[key] = catCollapsed[key] === false ? true : false;
   renderCatTree();
 }
 
@@ -4215,7 +4215,7 @@ function countDescendants(id) {
 function renderCatNode(cat, depth) {
   const children = catsList.filter(c => c.parentId === cat.id).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0));
   const colKey = 'cat_' + cat.id;
-  const collapsed = !!catCollapsed[colKey];
+  const collapsed = catCollapsed[colKey] !== false;
   const imgSize = depth === 0 ? 48 : depth === 1 ? 36 : 28;
   const titleSize = depth === 0 ? 15 : depth === 1 ? 13 : 12;
   const gap = depth === 0 ? 12 : 8;
