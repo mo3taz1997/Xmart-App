@@ -116,7 +116,7 @@ function CatCircleItem({
 
 /* ── Horizontal subcategory circle ── */
 function SubCircle({
-  item, onPress, isSelected, colors, isDark, language,
+  item, onPress, isSelected, colors, isDark, language, isRTL,
 }: {
   item: CategoryItem;
   onPress: () => void;
@@ -124,6 +124,7 @@ function SubCircle({
   colors: typeof Colors.dark;
   isDark: boolean;
   language: string;
+  isRTL?: boolean;
 }) {
   const title = language === 'ar' ? item.titleAr : item.titleEn;
   const imgUrl = resolveImageUrl(item.imageUrl) || item.imageUrl;
@@ -134,7 +135,7 @@ function SubCircle({
       style={({ pressed }) => ({
         alignItems: 'center',
         opacity: pressed ? 0.75 : 1,
-        transform: [{ scale: pressed ? 0.94 : 1 }],
+        transform: isRTL ? [{ scaleX: -1 }, { scale: pressed ? 0.94 : 1 }] : [{ scale: pressed ? 0.94 : 1 }],
         width: Math.round(width * 0.2),
       })}
     >
@@ -549,7 +550,8 @@ export default function CategoriesScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
           >
             {childItems.map((child: CategoryItem) => (
               <SubCircle
