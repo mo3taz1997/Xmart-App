@@ -117,7 +117,7 @@ export default function CollectionScreen() {
 
   useEffect(() => { setRandomSeed(Math.random()); }, [activeProductHandle]);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  const { data, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['collection', activeProductHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0],
     queryFn: async ({ pageParam }) => {
       const sort = SORT_OPTIONS[sortIdx];
@@ -146,6 +146,7 @@ export default function CollectionScreen() {
       return undefined;
     },
     enabled: !!activeProductHandle,
+    placeholderData: (prev) => prev,
   });
 
   const allProducts = useMemo(() => {
@@ -227,6 +228,9 @@ export default function CollectionScreen() {
     };
   }
 
+  const subScrollRef = React.useRef<ScrollView>(null);
+  const subItemPositions = React.useRef<Record<string, number>>({});
+
   /* ── Sub-categories row ── */
   const subCatRow = showSubRow ? (
     <View style={{
@@ -234,7 +238,6 @@ export default function CollectionScreen() {
       borderBottomColor: colors.border + '55',
       paddingVertical: 10,
     }}>
-      {/* Back button when drilled into sub-nav */}
       {subNavStack.length > 0 && (
         <Pressable
           onPress={() => {
@@ -261,12 +264,13 @@ export default function CollectionScreen() {
         </Pressable>
       )}
       <ScrollView
+        ref={subScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
       >
-        {subChildItems.map((child) => {
+        {subChildItems.map((child, childIdx) => {
           const isSelected = activeSubChild?.id === child.id;
           const title = language === 'ar' ? child.titleAr : child.titleEn;
           const imgUrl = child.imageUrl?.startsWith('http')
@@ -278,6 +282,9 @@ export default function CollectionScreen() {
           return (
             <Pressable
               key={child.id}
+              onLayout={(e) => {
+                subItemPositions.current[child.id] = e.nativeEvent.layout.x;
+              }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setSelectedType(null);
@@ -285,7 +292,16 @@ export default function CollectionScreen() {
                   setSubNavStack(prev => [...prev, child]);
                   setActiveSubChild(null);
                 } else {
-                  setActiveSubChild(prev => prev?.id === child.id ? null : child);
+                  const newChild = activeSubChild?.id === child.id ? null : child;
+                  setActiveSubChild(newChild);
+                  if (newChild) {
+                    const pos = subItemPositions.current[child.id];
+                    if (pos !== undefined) {
+                      setTimeout(() => {
+                        subScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
+                      }, 50);
+                    }
+                  }
                 }
               }}
               style={({ pressed }) => ({
@@ -341,7 +357,6 @@ export default function CollectionScreen() {
   /* ── Sort / filter chips ── */
   const listHeader = (
     <>
-      {subCatRow}
       <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <ScrollView
           horizontal
@@ -448,7 +463,9 @@ export default function CollectionScreen() {
         </View>
       </View>
 
-      {isLoading ? (
+      {subCatRow}
+
+      {isLoading && !data ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -463,7 +480,14 @@ export default function CollectionScreen() {
               <ProductCard {...extractProductData(item)} />
             </View>
           )}
-          ListHeaderComponent={listHeader}
+          ListHeaderComponent={<>
+            {listHeader}
+            {isFetching && !isLoading && !isFetchingNextPage && (
+              <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            )}
+          </>}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!products.length || showSubRow || !!outOfStockProducts.length}
