@@ -1,212 +1,14 @@
 var __defProp = Object.defineProperty;
-var __getOwnPropNames = Object.getOwnPropertyNames;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  appSettings: () => appSettings,
-  categories: () => categories,
-  customerAddresses: () => customerAddresses,
-  homepageBanners: () => homepageBanners,
-  homepageSections: () => homepageSections,
-  insertUserSchema: () => insertUserSchema,
-  notifications: () => notifications,
-  orderItems: () => orderItems,
-  orders: () => orders,
-  pushTokens: () => pushTokens,
-  suggestedProducts: () => suggestedProducts,
-  uploadedImages: () => uploadedImages,
-  users: () => users
-});
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var bytea, uploadedImages, users, insertUserSchema, homepageSections, homepageBanners, appSettings, orders, customerAddresses, orderItems, categories, suggestedProducts, pushTokens, notifications;
-var init_schema = __esm({
-  "shared/schema.ts"() {
-    "use strict";
-    bytea = customType({
-      dataType() {
-        return "bytea";
-      },
-      toDriver(value) {
-        return value;
-      },
-      fromDriver(value) {
-        return Buffer.from(value);
-      }
-    });
-    uploadedImages = pgTable("uploaded_images", {
-      filename: varchar("filename").primaryKey(),
-      data: bytea("data").notNull(),
-      mimeType: text("mime_type").notNull().default("image/png"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    users = pgTable("users", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      username: text("username").notNull().unique(),
-      password: text("password").notNull()
-    });
-    insertUserSchema = createInsertSchema(users).pick({
-      username: true,
-      password: true
-    });
-    homepageSections = pgTable("homepage_sections", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      type: text("type").notNull(),
-      titleAr: text("title_ar"),
-      titleEn: text("title_en"),
-      language: text("language").notNull().default("both"),
-      sortOrder: integer("sort_order").notNull().default(0),
-      visible: boolean("visible").notNull().default(true),
-      metadata: text("metadata"),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    homepageBanners = pgTable("homepage_banners", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      sectionId: varchar("section_id").notNull(),
-      imageUrl: text("image_url").notNull(),
-      linkType: text("link_type").default("collection"),
-      linkValue: text("link_value"),
-      sortOrder: integer("sort_order").notNull().default(0),
-      visible: boolean("visible").notNull().default(true),
-      language: text("language").default("both"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    appSettings = pgTable("app_settings", {
-      key: varchar("key").primaryKey(),
-      value: text("value").notNull(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    orders = pgTable("orders", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      orderNumber: integer("order_number").notNull(),
-      shopifyCheckoutId: text("shopify_checkout_id"),
-      customerEmail: text("customer_email").notNull(),
-      customerFirstName: text("customer_first_name").notNull(),
-      customerLastName: text("customer_last_name").notNull(),
-      customerPhone: text("customer_phone").notNull(),
-      shippingAddress: text("shipping_address"),
-      shippingCity: text("shipping_city"),
-      notes: text("notes"),
-      paymentMethod: text("payment_method").notNull().default("cod"),
-      status: text("status").notNull().default("pending"),
-      subtotal: text("subtotal").notNull(),
-      shippingCost: text("shipping_cost").notNull().default("0"),
-      total: text("total").notNull(),
-      currency: text("currency").notNull().default("JOD"),
-      deliveryCode: text("delivery_code"),
-      shopifyOrderName: text("shopify_order_name"),
-      shopifyOrderId: text("shopify_order_id"),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    customerAddresses = pgTable("customer_addresses", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      customerEmail: text("customer_email").notNull(),
-      label: text("label"),
-      firstName: text("first_name").notNull(),
-      lastName: text("last_name").notNull(),
-      phone: text("phone").notNull(),
-      address: text("address"),
-      city: text("city"),
-      country: text("country").default("JO"),
-      isDefault: boolean("is_default").notNull().default(false),
-      shopifyAddressId: text("shopify_address_id"),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    orderItems = pgTable("order_items", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      orderId: varchar("order_id").notNull(),
-      productTitle: text("product_title").notNull(),
-      productHandle: text("product_handle"),
-      variantTitle: text("variant_title"),
-      variantId: text("variant_id"),
-      quantity: integer("quantity").notNull(),
-      price: text("price").notNull(),
-      currency: text("currency").notNull().default("JOD"),
-      imageUrl: text("image_url")
-    });
-    categories = pgTable("categories", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      parentId: varchar("parent_id"),
-      titleAr: text("title_ar").notNull(),
-      titleEn: text("title_en").notNull(),
-      imageUrl: text("image_url"),
-      collectionHandle: text("collection_handle"),
-      sortOrder: integer("sort_order").notNull().default(0),
-      visible: boolean("visible").notNull().default(true),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    suggestedProducts = pgTable("suggested_products", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      productHandle: text("product_handle").notNull(),
-      titleAr: text("title_ar"),
-      titleEn: text("title_en"),
-      imageUrl: text("image_url"),
-      sortOrder: integer("sort_order").notNull().default(0),
-      visible: boolean("visible").notNull().default(true),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    pushTokens = pgTable("push_tokens", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      token: text("token").notNull().unique(),
-      platform: text("platform"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-    notifications = pgTable("notifications", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      titleAr: text("title_ar").notNull(),
-      titleEn: text("title_en").notNull(),
-      bodyAr: text("body_ar"),
-      bodyEn: text("body_en"),
-      imageUrl: text("image_url"),
-      linkType: text("link_type").default("none"),
-      linkValue: text("link_value"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
-  }
-});
-
-// server/db.ts
-var db_exports = {};
-__export(db_exports, {
-  db: () => db
-});
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-var pool, db;
-var init_db = __esm({
-  "server/db.ts"() {
-    "use strict";
-    init_schema();
-    pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 10,
-      idleTimeoutMillis: 3e4,
-      connectionTimeoutMillis: 1e4
-    });
-    pool.on("error", (err) => {
-      console.error("[DB Pool] Unexpected error on idle client:", err.message);
-    });
-    db = drizzle(pool, { schema: schema_exports });
-  }
-});
 
 // server/index.ts
 import express from "express";
@@ -1843,9 +1645,186 @@ async function autoCompleteCheckout(checkoutUrl, customer) {
   }
 }
 
+// server/db.ts
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  appSettings: () => appSettings,
+  categories: () => categories,
+  customerAddresses: () => customerAddresses,
+  homepageBanners: () => homepageBanners,
+  homepageSections: () => homepageSections,
+  insertUserSchema: () => insertUserSchema,
+  notifications: () => notifications,
+  orderItems: () => orderItems,
+  orders: () => orders,
+  pushTokens: () => pushTokens,
+  suggestedProducts: () => suggestedProducts,
+  uploadedImages: () => uploadedImages,
+  users: () => users
+});
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var bytea = customType({
+  dataType() {
+    return "bytea";
+  },
+  toDriver(value) {
+    return value;
+  },
+  fromDriver(value) {
+    return Buffer.from(value);
+  }
+});
+var uploadedImages = pgTable("uploaded_images", {
+  filename: varchar("filename").primaryKey(),
+  data: bytea("data").notNull(),
+  mimeType: text("mime_type").notNull().default("image/png"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull()
+});
+var insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true
+});
+var homepageSections = pgTable("homepage_sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(),
+  titleAr: text("title_ar"),
+  titleEn: text("title_en"),
+  language: text("language").notNull().default("both"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var homepageBanners = pgTable("homepage_banners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sectionId: varchar("section_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  linkType: text("link_type").default("collection"),
+  linkValue: text("link_value"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  language: text("language").default("both"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var appSettings = pgTable("app_settings", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: integer("order_number").notNull(),
+  shopifyCheckoutId: text("shopify_checkout_id"),
+  customerEmail: text("customer_email").notNull(),
+  customerFirstName: text("customer_first_name").notNull(),
+  customerLastName: text("customer_last_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  shippingAddress: text("shipping_address"),
+  shippingCity: text("shipping_city"),
+  notes: text("notes"),
+  paymentMethod: text("payment_method").notNull().default("cod"),
+  status: text("status").notNull().default("pending"),
+  subtotal: text("subtotal").notNull(),
+  shippingCost: text("shipping_cost").notNull().default("0"),
+  total: text("total").notNull(),
+  currency: text("currency").notNull().default("JOD"),
+  deliveryCode: text("delivery_code"),
+  shopifyOrderName: text("shopify_order_name"),
+  shopifyOrderId: text("shopify_order_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var customerAddresses = pgTable("customer_addresses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerEmail: text("customer_email").notNull(),
+  label: text("label"),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address"),
+  city: text("city"),
+  country: text("country").default("JO"),
+  isDefault: boolean("is_default").notNull().default(false),
+  shopifyAddressId: text("shopify_address_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var orderItems = pgTable("order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  productTitle: text("product_title").notNull(),
+  productHandle: text("product_handle"),
+  variantTitle: text("variant_title"),
+  variantId: text("variant_id"),
+  quantity: integer("quantity").notNull(),
+  price: text("price").notNull(),
+  currency: text("currency").notNull().default("JOD"),
+  imageUrl: text("image_url")
+});
+var categories = pgTable("categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentId: varchar("parent_id"),
+  titleAr: text("title_ar").notNull(),
+  titleEn: text("title_en").notNull(),
+  imageUrl: text("image_url"),
+  collectionHandle: text("collection_handle"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var suggestedProducts = pgTable("suggested_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productHandle: text("product_handle").notNull(),
+  titleAr: text("title_ar"),
+  titleEn: text("title_en"),
+  imageUrl: text("image_url"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var pushTokens = pgTable("push_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: text("token").notNull().unique(),
+  platform: text("platform"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  titleAr: text("title_ar").notNull(),
+  titleEn: text("title_en").notNull(),
+  bodyAr: text("body_ar"),
+  bodyEn: text("body_en"),
+  imageUrl: text("image_url"),
+  linkType: text("link_type").default("none"),
+  linkValue: text("link_value"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// server/db.ts
+var pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 3e4,
+  connectionTimeoutMillis: 1e4
+});
+pool.on("error", (err) => {
+  console.error("[DB Pool] Unexpected error on idle client:", err.message);
+});
+var db = drizzle(pool, { schema: schema_exports });
+
 // server/routes.ts
-init_db();
-init_schema();
 import { asc, desc, eq, sql as sql2, inArray } from "drizzle-orm";
 
 // server/search-engine.ts
@@ -4667,8 +4646,6 @@ async function registerRoutes(app2) {
 }
 
 // server/admin-routes.ts
-init_db();
-init_schema();
 import { eq as eq2, asc as asc2, desc as desc2, sql as sql3 } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
@@ -5465,8 +5442,6 @@ function registerAdminRoutes(app2) {
 }
 
 // server/index.ts
-init_db();
-init_schema();
 import { eq as eq3 } from "drizzle-orm";
 import * as fs2 from "fs";
 import * as path2 from "path";
@@ -5588,38 +5563,28 @@ function configureExpoAndLanding(app2) {
     }
     next();
   });
-  app2.get("/favicon.png", async (_req, res) => {
+  async function serveFavicon(_req, res) {
     try {
-      const { db: appDb } = await Promise.resolve().then(() => (init_db(), db_exports));
-      const { appSettings: appSettingsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eqOp } = await import("drizzle-orm");
-      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      const rows = await db.select().from(appSettings).where(eq3(appSettings.key, "logoUrl"));
       if (rows.length && rows[0].value) {
         const logoUrl = rows[0].value.split("?")[0];
         if (logoUrl.startsWith("/uploads/")) {
+          const filename = logoUrl.replace("/uploads/", "");
+          const imgRows = await db.select({ mimeType: uploadedImages.mimeType, data: uploadedImages.data }).from(uploadedImages).where(eq3(uploadedImages.filename, filename)).limit(1);
+          if (imgRows.length && imgRows[0].data && imgRows[0].data.length > 200) {
+            res.setHeader("Content-Type", imgRows[0].mimeType || "image/png");
+            res.setHeader("Cache-Control", "public, max-age=86400");
+            return res.send(imgRows[0].data);
+          }
           return res.redirect(logoUrl);
         }
       }
     } catch {
     }
     res.sendFile(path2.resolve(process.cwd(), "assets", "images", "favicon.png"));
-  });
-  app2.get("/favicon.ico", async (_req, res) => {
-    try {
-      const { db: appDb } = await Promise.resolve().then(() => (init_db(), db_exports));
-      const { appSettings: appSettingsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eqOp } = await import("drizzle-orm");
-      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
-      if (rows.length && rows[0].value) {
-        const logoUrl = rows[0].value.split("?")[0];
-        if (logoUrl.startsWith("/uploads/")) {
-          return res.redirect(logoUrl);
-        }
-      }
-    } catch {
-    }
-    res.sendFile(path2.resolve(process.cwd(), "assets", "images", "favicon.png"));
-  });
+  }
+  app2.get("/favicon.png", serveFavicon);
+  app2.get("/favicon.ico", serveFavicon);
   app2.use("/assets", express.static(path2.resolve(process.cwd(), "assets")));
   app2.use(express.static(path2.resolve(process.cwd(), "static-build"), { index: false }));
   log("Expo routing: Checking expo-platform header on / and /manifest");

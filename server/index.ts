@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { registerRoutes } from "./routes";
 import { registerAdminRoutes } from "./admin-routes";
 import { db } from "./db";
-import { appSettings } from "../shared/schema";
+import { appSettings, uploadedImages } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
@@ -200,36 +200,27 @@ function configureExpoAndLanding(app: express.Application) {
     next();
   });
 
-  app.get("/favicon.png", async (_req: Request, res: Response) => {
+  async function serveFavicon(_req: Request, res: Response) {
     try {
-      const { db: appDb } = await import("./db");
-      const { appSettings: appSettingsTable } = await import("../shared/schema");
-      const { eq: eqOp } = await import("drizzle-orm");
-      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
+      const rows = await db.select().from(appSettings).where(eq(appSettings.key, "logoUrl"));
       if (rows.length && rows[0].value) {
         const logoUrl = rows[0].value.split('?')[0];
         if (logoUrl.startsWith('/uploads/')) {
+          const filename = logoUrl.replace('/uploads/', '');
+          const imgRows = await db.select({ mimeType: uploadedImages.mimeType, data: uploadedImages.data }).from(uploadedImages).where(eq(uploadedImages.filename, filename)).limit(1);
+          if (imgRows.length && imgRows[0].data && imgRows[0].data.length > 200) {
+            res.setHeader('Content-Type', imgRows[0].mimeType || 'image/png');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return res.send(imgRows[0].data);
+          }
           return res.redirect(logoUrl);
         }
       }
     } catch {}
     res.sendFile(path.resolve(process.cwd(), "assets", "images", "favicon.png"));
-  });
-  app.get("/favicon.ico", async (_req: Request, res: Response) => {
-    try {
-      const { db: appDb } = await import("./db");
-      const { appSettings: appSettingsTable } = await import("../shared/schema");
-      const { eq: eqOp } = await import("drizzle-orm");
-      const rows = await appDb.select().from(appSettingsTable).where(eqOp(appSettingsTable.key, "logoUrl"));
-      if (rows.length && rows[0].value) {
-        const logoUrl = rows[0].value.split('?')[0];
-        if (logoUrl.startsWith('/uploads/')) {
-          return res.redirect(logoUrl);
-        }
-      }
-    } catch {}
-    res.sendFile(path.resolve(process.cwd(), "assets", "images", "favicon.png"));
-  });
+  }
+  app.get("/favicon.png", serveFavicon);
+  app.get("/favicon.ico", serveFavicon);
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build"), { index: false }));
 
