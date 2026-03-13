@@ -432,50 +432,6 @@ export default function CategoriesScreen() {
 
   const showChildRow = childItems.length > 0;
 
-  /* Breadcrumb */
-  const breadcrumb = navStack.length > 1 ? (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{
-        flexDirection: isRTL ? 'row-reverse' : 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        gap: 4,
-      }}
-    >
-      {navStack.map((cat, i) => (
-        <React.Fragment key={cat.id}>
-          {i > 0 && (
-            <Ionicons
-              name={isRTL ? 'chevron-back' : 'chevron-forward'}
-              size={11}
-              color={colors.textMuted}
-            />
-          )}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setNavStack(prev => prev.slice(0, i + 1));
-              setSelectedType(null);
-              setActiveChild(null);
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: i === navStack.length - 1 ? 'Cairo_700Bold' : 'Cairo_400Regular',
-                fontSize: 11,
-                color: i === navStack.length - 1 ? colors.primary : colors.textMuted,
-              }}
-            >
-              {language === 'ar' ? cat.titleAr : cat.titleEn}
-            </Text>
-          </Pressable>
-        </React.Fragment>
-      ))}
-    </ScrollView>
-  ) : null;
 
   /* Sort / filter bar */
   const sortBar = activeHandle ? (
@@ -685,10 +641,9 @@ export default function CategoriesScreen() {
           )}
         </React.Fragment>
       ) : (
-        <React.Fragment key={navStack.map(c => c.id).join('-')}>
+        <React.Fragment key="level-deep">
           {renderHeader(true)}
 
-          {breadcrumb}
           {circlesRow}
 
           {showChildGrid ? (
