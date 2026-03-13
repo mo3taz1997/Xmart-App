@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet, Platform,
-  ActivityIndicator, Dimensions, Modal, ScrollView,
+  ActivityIndicator, Dimensions, Modal, ScrollView, Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -419,9 +419,32 @@ export default function CollectionScreen() {
           </Pressable>
           <Text style={[styles.title, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{collectionTitle}</Text>
         </View>
-        <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/search'); }}>
-          <Ionicons name="search-outline" size={22} color={colors.text} />
-        </Pressable>
+        <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: 8 }}>
+          <Pressable
+            style={({ pressed }) => ({
+              width: 36, height: 36, borderRadius: 18,
+              backgroundColor: pressed ? 'rgba(36,140,204,0.15)' : 'rgba(36,140,204,0.08)',
+              alignItems: 'center' as const, justifyContent: 'center' as const,
+            })}
+            onPress={async () => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                const langPath = language === 'en' ? '/en' : '';
+                const collectionUrl = `https://xmart.jo${langPath}/collections/${handle}`;
+                await Share.share({
+                  message: `${collectionTitle}\n${collectionUrl}`,
+                  url: collectionUrl,
+                  title: collectionTitle,
+                });
+              } catch (e) {}
+            }}
+          >
+            <Ionicons name="share-social" size={18} color="#248CCC" />
+          </Pressable>
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/search'); }} style={styles.backBtn}>
+            <Ionicons name="search-outline" size={22} color={colors.text} />
+          </Pressable>
+        </View>
       </View>
 
       {isLoading ? (
