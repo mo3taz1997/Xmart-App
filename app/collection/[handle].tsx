@@ -263,8 +263,7 @@ export default function CollectionScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={isRTL ? ({ direction: 'rtl' } as any) : undefined}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexDirection: 'row' }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexDirection: isRTL ? 'row-reverse' : 'row' }}
       >
         {subChildItems.map((child) => {
           const isSelected = activeSubChild?.id === child.id;

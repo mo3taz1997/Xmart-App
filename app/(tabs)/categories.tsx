@@ -425,7 +425,6 @@ export default function CategoriesScreen() {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={isRTL ? ({ direction: 'rtl' } as any) : undefined}
       contentContainerStyle={{
         flexDirection: isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
@@ -550,7 +549,6 @@ export default function CategoriesScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={isRTL ? ({ direction: 'rtl' } as any) : undefined}
             contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
           >
             {childItems.map((child: CategoryItem) => (
