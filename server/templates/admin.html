@@ -1139,10 +1139,11 @@
         <div style="border:1.5px dashed #248CCC;border-radius:10px;padding:14px;background:#f0f8ff;direction:rtl;">
           <div style="font-size:13px;font-weight:700;color:#163259;margin-bottom:12px;">➕ إضافة براند جديد</div>
           <div style="margin-bottom:10px;">
-            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">ابحث عن الماركة (Vendor)</div>
+            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">ابحث عن الكولكشن</div>
             <div style="position:relative;">
-              <input type="text" id="brandVendorSearch" placeholder="ابحث عن اسم الماركة مثل Samsung, Anker..." oninput="onBrandVendorSearch(this.value)" autocomplete="off" style="width:100%;padding:9px 12px;border:1.5px solid #248CCC;border-radius:8px;font-size:13px;box-sizing:border-box;background:#fff;">
-              <div id="brandVendorResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);top:100%;right:0;"></div>
+              <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:9px 12px;border:1.5px solid #248CCC;border-radius:8px;font-size:13px;box-sizing:border-box;background:#fff;">
+              <input type="hidden" id="brandCollHandle" value="">
+              <div id="brandCollResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);top:100%;right:0;"></div>
             </div>
           </div>
           <div id="brandSelectedPreview" style="display:none;background:#fff;border:1.5px solid #b3d7f0;border-radius:10px;padding:12px;margin-bottom:10px;">
@@ -1150,7 +1151,7 @@
               <img id="brandPreviewImg" src="" style="height:50px;max-width:120px;object-fit:contain;background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:4px;">
               <div>
                 <div id="brandPreviewName" style="font-size:14px;font-weight:700;color:#163259;"></div>
-                <div style="font-size:10px;color:#888;margin-top:2px;">تم سحب الصورة تلقائياً من Shopify</div>
+                <div style="font-size:10px;color:#888;margin-top:2px;">تم سحب الصورة تلقائياً من الكولكشن</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -1158,12 +1159,7 @@
               <input type="file" id="brandCustomImgFile" accept="image/*" onchange="onBrandCustomImgUpload(this)" style="font-size:11px;flex:1;">
               <button onclick="clearBrandCustomImg()" id="brandClearCustomBtn" style="display:none;background:none;border:1px solid #e53935;color:#e53935;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;">إزالة</button>
             </div>
-          </div>
-          <input type="hidden" id="brandManualName" value="">
-          <input type="hidden" id="brandManualImg" value="">
-          <input type="hidden" id="brandAutoImg" value="">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div>
+            <div style="margin-bottom:8px;">
               <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">حجم الصورة</div>
               <select id="brandManualSize" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
                 <option value="sm">صغير (24px)</option>
@@ -1171,16 +1167,12 @@
                 <option value="lg">كبير (60px)</option>
               </select>
             </div>
-            <div>
-              <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">الكولكشن المرتبط (اختياري)</div>
-              <div style="position:relative;">
-                <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:7px 10px;border:1px solid #c5d8ea;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff;">
-                <input type="hidden" id="brandCollHandle" value="">
-                <div id="brandCollResults" style="display:none;position:absolute;z-index:99;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.1);top:100%;right:0;"></div>
-              </div>
-            </div>
+            <button onclick="addBrandManually()" style="width:100%;background:#248CCC;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">+ إضافة البراند</button>
           </div>
-          <button onclick="addBrandManually()" style="width:100%;background:#248CCC;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">+ إضافة البراند</button>
+          <input type="hidden" id="brandManualName" value="">
+          <input type="hidden" id="brandManualImg" value="">
+          <input type="hidden" id="brandAutoImg" value="">
+          <input type="hidden" id="brandVendorSearch" value="">
         </div>
       </div>
 
@@ -3996,6 +3988,10 @@ function onBrandCollSearch(q) {
   clearTimeout(_brandCollTimer2);
   const resultsEl = document.getElementById('brandCollResults');
   document.getElementById('brandCollHandle').value = '';
+  document.getElementById('brandManualName').value = '';
+  document.getElementById('brandManualImg').value = '';
+  document.getElementById('brandAutoImg').value = '';
+  document.getElementById('brandSelectedPreview').style.display = 'none';
   if (!q || !q.trim()) { resultsEl.style.display = 'none'; return; }
   _brandCollTimer2 = setTimeout(async () => {
     resultsEl.style.display = '';
@@ -4007,7 +4003,7 @@ function onBrandCollSearch(q) {
         return;
       }
       resultsEl.innerHTML = data.slice(0, 10).map(c => `
-        <div onclick="selectBrandColl('${c.handle}','${(c.titleAr||c.titleEn).replace(/'/g,'')}')"
+        <div onclick="selectBrandColl('${c.handle}','${(c.titleAr||c.titleEn).replace(/'/g,'')}','${(c.imageUrl||'').replace(/'/g,'')}')"
              style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5;direction:rtl;"
              onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
           ${c.imageUrl ? `<img src="${c.imageUrl}" style="width:36px;height:24px;object-fit:cover;border-radius:4px;border:1px solid #eee;">` : '<div style="width:36px;height:24px;background:#eee;border-radius:4px;"></div>'}
@@ -4023,10 +4019,26 @@ function onBrandCollSearch(q) {
   }, 350);
 }
 
-function selectBrandColl(handle, title) {
+function selectBrandColl(handle, title, imageUrl) {
   document.getElementById('brandCollHandle').value = handle;
   document.getElementById('brandCollInput').value = title + ' (' + handle + ')';
   document.getElementById('brandCollResults').style.display = 'none';
+  document.getElementById('brandManualName').value = title;
+  document.getElementById('brandAutoImg').value = imageUrl || '';
+  document.getElementById('brandManualImg').value = imageUrl || '';
+  const preview = document.getElementById('brandSelectedPreview');
+  const previewImg = document.getElementById('brandPreviewImg');
+  const previewName = document.getElementById('brandPreviewName');
+  previewName.textContent = title;
+  if (imageUrl) {
+    previewImg.src = imageUrl;
+    previewImg.style.display = '';
+  } else {
+    previewImg.style.display = 'none';
+  }
+  preview.style.display = '';
+  document.getElementById('brandClearCustomBtn').style.display = 'none';
+  document.getElementById('brandCustomImgFile').value = '';
 }
 
 function onBrandVendorSearch(q) {
@@ -4114,13 +4126,12 @@ function clearBrandCustomImg() {
 }
 
 async function addBrandManually() {
-  const name = document.getElementById('brandManualName').value.trim();
+  const collectionHandle = document.getElementById('brandCollHandle').value.trim();
+  if (!collectionHandle) { showToast(adminLang === 'en' ? 'Please select a collection first' : 'يرجى اختيار كولكشن أولاً', true); return; }
+  const name = document.getElementById('brandManualName').value.trim() || collectionHandle;
   const imageUrl = document.getElementById('brandManualImg').value.trim();
   const size = document.getElementById('brandManualSize').value || 'md';
-  const collectionHandle = document.getElementById('brandCollHandle').value.trim();
-  if (!name && !imageUrl) { showToast(adminLang === 'en' ? 'Please search and select a brand first' : 'يرجى البحث واختيار ماركة أولاً', true); return; }
-  const label = name || 'براند';
-  _brands.push({ name: label, imageUrl, size, collectionHandle });
+  _brands.push({ name, imageUrl, size, collectionHandle });
   renderBrandsList();
   document.getElementById('brandManualName').value = '';
   document.getElementById('brandManualImg').value = '';
