@@ -114,9 +114,10 @@ export function registerAdminRoutes(app: Express) {
     try {
       const { data, filename } = req.body;
       if (!data || !filename) return res.status(400).json({ error: "Missing data or filename" });
-      const ext = path.extname(filename).toLowerCase();
-      const allowed = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
-      if (!allowed.includes(ext)) return res.status(400).json({ error: "Unsupported file type" });
+      let ext = path.extname(filename).toLowerCase();
+      const allowed = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.heic', '.heif', '.svg', '.bmp', '.tiff', '.tif', '.avif', '.jfif'];
+      if (!allowed.includes(ext)) return res.status(400).json({ error: `Unsupported file type: ${ext}. Allowed: ${allowed.join(', ')}` });
+      if (['.heic', '.heif', '.bmp', '.tiff', '.tif', '.jfif'].includes(ext)) ext = '.jpg';
       const base64Data = data.replace(/^data:[^;]+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
       const savedFilename = `img-${Date.now()}${ext}`;
