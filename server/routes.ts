@@ -1009,12 +1009,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          const missingAr = featuredProducts.filter((p: any) => !p.titleAr && p.handle);
+          if (missingAr.length > 0) {
+            try {
+              const arResults = await Promise.all(
+                missingAr.map((p: any) =>
+                  shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: 'AR' })
+                    .then((d: any) => ({ handle: p.handle, titleAr: d?.product?.title || '', descriptionAr: d?.product?.description || '' }))
+                    .catch(() => ({ handle: p.handle, titleAr: '', descriptionAr: '' }))
+                )
+              );
+              const arMap: Record<string, { titleAr: string; descriptionAr: string }> = {};
+              arResults.forEach((r: any) => { if (r.titleAr) arMap[r.handle] = r; });
+              let changed = false;
+              featuredProducts = featuredProducts.map((p: any) => {
+                if (!p.titleAr && arMap[p.handle]) { changed = true; return { ...p, titleAr: arMap[p.handle].titleAr, descriptionAr: arMap[p.handle].descriptionAr }; }
+                return p;
+              });
+              if (changed) {
+                const existingMeta2 = (() => { try { return JSON.parse((section as any).metadata || '{}'); } catch { return {}; } })();
+                const newMeta2 = JSON.stringify({ ...existingMeta2, products: featuredProducts });
+                await db.update(homepageSections).set({ metadata: newMeta2 } as any).where(eq(homepageSections.id, section.id));
+                console.log('[AR enrich] Updated Arabic titles for section:', section.id);
+              }
+            } catch (arErr: any) {
+              console.error('[AR enrich] error:', arErr.message);
+            }
+          }
+
           const slimFeaturedProducts = featuredProducts.map((p: any) => ({
             handle: p.handle,
             titleEn: p.titleEn,
             titleAr: p.titleAr,
+            descriptionAr: p.descriptionAr,
             vendor: p.vendor,
             imageUrl: p.imageUrl,
+            customImageUrl: p.customImageUrl,
+            customTitleAr: p.customTitleAr,
+            customTitleEn: p.customTitleEn,
+            subtitleAr: p.subtitleAr,
+            subtitleEn: p.subtitleEn,
             price: p.price,
             compareAtPrice: p.compareAtPrice,
             currency: p.currency,
@@ -1027,8 +1061,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (parsed.products) {
                 parsed.products = parsed.products.map((p: any) => ({
                   handle: p.handle, titleEn: p.titleEn, titleAr: p.titleAr,
+                  descriptionAr: p.descriptionAr,
                   vendor: p.vendor, imageUrl: p.imageUrl, price: p.price,
                   compareAtPrice: p.compareAtPrice, currency: p.currency,
+                  customImageUrl: p.customImageUrl, customTitleAr: p.customTitleAr,
+                  customTitleEn: p.customTitleEn, subtitleAr: p.subtitleAr, subtitleEn: p.subtitleEn,
                 }));
                 cleanMetadata = JSON.stringify(parsed);
               }
