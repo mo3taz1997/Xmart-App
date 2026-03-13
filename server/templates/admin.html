@@ -1210,7 +1210,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('sectionModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveSection()">حفظ</button>
+      <button class="btn btn-primary" id="sectionSaveBtn" onclick="saveSection()">حفظ</button>
     </div>
   </div>
 </div>
@@ -2070,6 +2070,7 @@ function onSectionTypeChange() {
   document.getElementById('secBrandsWrap').style.display = isBrands ? '' : 'none';
   document.getElementById('secCollectionProductsWrap').style.display = isColProducts ? '' : 'none';
   document.getElementById('secStaticBannerWrap').style.display = isStaticBanner ? '' : 'none';
+  document.getElementById('sectionSaveBtn').style.display = isBrands ? 'none' : '';
   if (isCatPicker) loadCategoryPicker([]);
   if (isMultiCol) loadMultiColTabs([]);
   if (isShowcase) loadShowcaseCols([]);
@@ -3072,6 +3073,7 @@ function editSection(id) {
   document.getElementById('secBrandsWrap').style.display = isBrands ? '' : 'none';
   document.getElementById('secCollectionProductsWrap').style.display = isColProducts ? '' : 'none';
   document.getElementById('secStaticBannerWrap').style.display = isStaticBanner ? '' : 'none';
+  document.getElementById('sectionSaveBtn').style.display = isBrands ? 'none' : '';
   if (isStaticBanner) {
     let meta = {};
     try { meta = JSON.parse(s.metadata || '{}'); } catch {}
@@ -3974,16 +3976,19 @@ function renderBrandsList() {
   }).join('');
 }
 
-function moveBrand(idx, dir) {
+async function moveBrand(idx, dir) {
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= _brands.length) return;
   [_brands[idx], _brands[newIdx]] = [_brands[newIdx], _brands[idx]];
   renderBrandsList();
+  await autoSaveBrandsSection();
 }
 
-function removeBrand(idx) {
+async function removeBrand(idx) {
   _brands.splice(idx, 1);
   renderBrandsList();
+  await autoSaveBrandsSection();
+  showToast(adminLang === 'en' ? 'Brand removed' : 'تم حذف البراند');
 }
 
 let _brandCollTimer2 = null;
@@ -4108,7 +4113,7 @@ function clearBrandCustomImg() {
   showToast(adminLang === 'en' ? 'Restored original image' : 'تم استعادة الصورة الأصلية');
 }
 
-function addBrandManually() {
+async function addBrandManually() {
   const name = document.getElementById('brandManualName').value.trim();
   const imageUrl = document.getElementById('brandManualImg').value.trim();
   const size = document.getElementById('brandManualSize').value || 'md';
@@ -4128,7 +4133,31 @@ function addBrandManually() {
   document.getElementById('brandSelectedPreview').style.display = 'none';
   document.getElementById('brandClearCustomBtn').style.display = 'none';
   document.getElementById('brandCustomImgFile').value = '';
-  showToast('تم إضافة البراند ✓');
+  await autoSaveBrandsSection();
+  showToast(adminLang === 'en' ? 'Brand added and saved' : 'تم إضافة وحفظ البراند ✓');
+}
+
+async function autoSaveBrandsSection() {
+  const editId = document.getElementById('sectionEditId').value;
+  if (!editId) return;
+  const brands = JSON.parse(JSON.stringify(_brands));
+  for (let i = 0; i < brands.length; i++) {
+    if (brands[i].imageUrl) brands[i].imageUrl = await persistImage(brands[i].imageUrl);
+  }
+  const body = {
+    type: 'brands_strip',
+    titleAr: document.getElementById('sectionTitleAr').value,
+    titleEn: document.getElementById('sectionTitleEn').value,
+    language: 'both',
+    sortOrder: parseInt(document.getElementById('sectionSortOrder').value) || 0,
+    visible: document.getElementById('sectionVisible').checked,
+    metadata: { brands },
+  };
+  try {
+    await api('PUT', '/api/admin/sections/' + editId, body);
+  } catch(e) {
+    showToast(adminLang === 'en' ? 'Auto-save failed' : 'فشل الحفظ التلقائي', true);
+  }
 }
 // ────────────────────────────────────────────────────────
 
