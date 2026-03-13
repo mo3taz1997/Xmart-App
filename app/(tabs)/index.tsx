@@ -340,7 +340,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const currentOffset = useRef(0);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const animRef = useRef<RNAnimated.CompositeAnimation | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const layoutY = useRef(-1);
 
   const onStripLayout = useCallback((e: LayoutChangeEvent) => {
@@ -352,12 +352,11 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       if (layoutY.current < 0) return;
       const sy = scrollY.current;
       const inView = layoutY.current < sy + screenHeight * 1.3 && layoutY.current + 80 > sy - screenHeight * 0.3;
-      setIsVisible(inView);
+      if (inView !== isVisible) setIsVisible(inView);
     };
     lazySectionRegistry.add(check);
-    check();
     return () => { lazySectionRegistry.delete(check); };
-  }, [scrollY]);
+  }, [scrollY, isVisible]);
 
   useEffect(() => {
     if (!isVisible) {
