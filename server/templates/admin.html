@@ -4073,17 +4073,27 @@ function selectBrandEditColl(idx, handle, title, imageUrl) {
 
 async function onBrandEditImgUpload(idx, input) {
   if (!input.files || !input.files[0]) return;
-  const fd = new FormData();
-  fd.append('image', input.files[0]);
-  try {
-    const result = await fetch('/api/admin/upload-image', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(adminUser + ':' + adminPass) }, body: fd }).then(r => r.json());
-    if (result.url) {
-      _brands[idx]._pendingCustomImg = result.url;
-      showToast('تم رفع الصورة ✓');
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const resp = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: e.target.result, filename: file.name })
+      });
+      const result = await resp.json();
+      if (result.url) {
+        _brands[idx]._pendingCustomImg = result.url;
+        showToast(adminLang === 'en' ? 'Image uploaded' : 'تم رفع الصورة ✓');
+      } else {
+        showToast(result.error || 'فشل رفع الصورة', true);
+      }
+    } catch {
+      showToast(adminLang === 'en' ? 'Upload failed' : 'فشل رفع الصورة', true);
     }
-  } catch {
-    showToast('فشل رفع الصورة', true);
-  }
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveBrandEdit(idx) {
