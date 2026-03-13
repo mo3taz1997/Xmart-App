@@ -29,8 +29,13 @@ function handleToOffset(handle: string): number {
   return h;
 }
 
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+}
+
 function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOffset }: { freeDelivery: boolean; isRTL: boolean; language: string; colors: typeof Colors.dark; soldCount: number; startOffset: number }) {
-  const badges = React.useMemo(() => {
+  const badge = React.useMemo(() => {
     const items: { icon: string; text: string; color: string }[] = [];
     if (soldCount > 0) {
       const soldText = language === 'ar'
@@ -49,23 +54,14 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
       { icon: 'card-outline', text: language === 'ar' ? 'دفع آمن' : 'Secure Payment', color: BADGE_COLORS[3] },
       { icon: 'wallet-outline', text: language === 'ar' ? 'طرق دفع متنوعة' : 'Multiple Payment Methods', color: BADGE_COLORS[2] },
     );
-    return items;
-  }, [freeDelivery, soldCount, language]);
-
-  const [currentIdx, setCurrentIdx] = useState(() => startOffset % badges.length);
-
-  useEffect(() => {
-    setCurrentIdx(startOffset % badges.length);
-  }, [badges.length]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIdx(prev => (prev + 1) % badges.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [badges.length]);
-
-  const badge = badges[Math.min(currentIdx, badges.length - 1)];
+    const timeSeed = Math.floor(Date.now() / 60000);
+    const rng = seededRandom(startOffset + timeSeed);
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items[0];
+  }, [freeDelivery, soldCount, language, startOffset]);
 
   if (!badge) return null;
 
