@@ -664,9 +664,21 @@ export function registerAdminRoutes(app: Express) {
     return all;
   }
 
+  app.post("/api/admin/refresh-collections", async (_req: Request, res: Response) => {
+    _collectionsCache = null;
+    try {
+      await fetchAllAdminCollections();
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/admin/search-collections", async (req: Request, res: Response) => {
     try {
       const q = ((req.query.q as string) || '').trim().toLowerCase();
+      const refresh = req.query.refresh === '1';
+      if (refresh) _collectionsCache = null;
       let all = await fetchAllAdminCollections();
       if (q) {
         all = all.filter((c: any) =>

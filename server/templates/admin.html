@@ -1139,7 +1139,10 @@
         <div style="border:1.5px dashed #248CCC;border-radius:10px;padding:14px;background:#f0f8ff;direction:rtl;">
           <div style="font-size:13px;font-weight:700;color:#163259;margin-bottom:12px;">➕ إضافة براند جديد</div>
           <div style="margin-bottom:10px;">
-            <div style="font-size:11px;color:#555;margin-bottom:3px;font-weight:600;">ابحث عن الكولكشن</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div style="font-size:11px;color:#555;font-weight:600;">ابحث عن الكولكشن</div>
+              <button onclick="refreshCollectionsCache()" id="refreshCollBtn" style="background:none;border:1px solid #248CCC;color:#248CCC;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;">🔄 تحديث القائمة</button>
+            </div>
             <div style="position:relative;">
               <input type="text" id="brandCollInput" placeholder="ابحث عن كولكشن..." oninput="onBrandCollSearch(this.value)" autocomplete="off" style="width:100%;padding:9px 12px;border:1.5px solid #248CCC;border-radius:8px;font-size:13px;box-sizing:border-box;background:#fff;">
               <input type="hidden" id="brandCollHandle" value="">
@@ -3981,6 +3984,20 @@ async function removeBrand(idx) {
   renderBrandsList();
   await autoSaveBrandsSection();
   showToast(adminLang === 'en' ? 'Brand removed' : 'تم حذف البراند');
+}
+
+async function refreshCollectionsCache() {
+  const btn = document.getElementById('refreshCollBtn');
+  btn.textContent = '⏳ جاري التحديث...';
+  btn.disabled = true;
+  try {
+    await api('POST', '/api/admin/refresh-collections');
+    showToast(adminLang === 'en' ? 'Collections list updated' : 'تم تحديث قائمة الكولكشنات ✓');
+  } catch {
+    showToast(adminLang === 'en' ? 'Failed to refresh' : 'فشل التحديث', true);
+  }
+  btn.textContent = '🔄 تحديث القائمة';
+  btn.disabled = false;
 }
 
 let _brandCollTimer2 = null;
