@@ -4395,11 +4395,34 @@ async function doBulkSubSearch() {
       if (!alreadySelected && !alreadyExists) {
         row.onmouseover = () => row.style.background = '#f5f8ff';
         row.onmouseout = () => row.style.background = '';
-        row.onclick = () => {
-          bulkSubSelected.push({ handle: c.handle, titleAr: c.titleAr || c.handle, titleEn: c.titleEn || '', imageUrl: c.imageUrl || '' });
+        row.onclick = async () => {
+          const item = { handle: c.handle, titleAr: c.titleAr || c.handle, titleEn: c.titleEn || '', imageUrl: c.imageUrl || '' };
+          bulkSubSelected.push(item);
           renderBulkSubSelected();
           updateBulkSubSaveBtn();
-          doBulkSubSearch();
+          document.getElementById('bulkSubSearch').value = '';
+          document.getElementById('bulkSubSearchResults').style.display = 'none';
+          document.getElementById('bulkSubSearch').focus();
+          const parentId = document.getElementById('bulkSubParentId').value;
+          const siblings = catsList.filter(sc => (sc.parentId || null) === (parentId || null));
+          const nextSort = siblings.length > 0 ? Math.max(...siblings.map(s => s.sortOrder || 0)) + 1 : 0;
+          try {
+            let imgUrl = item.imageUrl || null;
+            if (imgUrl) imgUrl = await persistImage(imgUrl);
+            await api('POST', '/api/admin/categories', {
+              parentId,
+              titleAr: item.titleAr,
+              titleEn: item.titleEn || item.titleAr,
+              imageUrl: imgUrl,
+              collectionHandle: item.handle,
+              sortOrder: nextSort + bulkSubSelected.length - 1,
+              visible: true,
+            });
+            showToast(adminLang === 'en' ? `"${item.titleAr}" added` : `تم إضافة "${item.titleAr}"`);
+            await loadCategories();
+          } catch(e) {
+            showToast(adminLang === 'en' ? 'Failed to add' : 'فشل في الإضافة', true);
+          }
         };
       }
       const imgEl = document.createElement('div');
