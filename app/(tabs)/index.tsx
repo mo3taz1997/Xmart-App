@@ -34,34 +34,43 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
   estimatedHeight?: number;
   scrollY: React.MutableRefObject<number>;
 }) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const layoutY = useRef(0);
+  const measuredH = useRef(estimatedHeight);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     layoutY.current = e.nativeEvent.layout.y;
-    const viewportBottom = scrollY.current + screenHeight * 2;
-    if (layoutY.current < viewportBottom) {
-      setIsVisible(true);
+    const h = e.nativeEvent.layout.height;
+    if (h > 10) measuredH.current = h;
+    if (!mounted) {
+      const viewportBottom = scrollY.current + screenHeight * 2;
+      if (layoutY.current < viewportBottom) {
+        setMounted(true);
+      }
     }
-  }, [scrollY]);
+  }, [scrollY, mounted]);
 
   useEffect(() => {
-    if (isVisible) return;
     const check = () => {
-      const viewportBottom = scrollY.current + screenHeight * 1.5;
-      if (layoutY.current >= 0 && layoutY.current < viewportBottom) {
-        setIsVisible(true);
-        lazySectionRegistry.delete(check);
+      if (layoutY.current <= 0) return;
+      const sy = scrollY.current;
+      const top = layoutY.current;
+      const bottom = top + measuredH.current;
+      const inRange = top < sy + screenHeight * 2.5 && bottom > sy - screenHeight * 2;
+      if (inRange && !mounted) {
+        setMounted(true);
+      } else if (!inRange && mounted) {
+        setMounted(false);
       }
     };
     lazySectionRegistry.add(check);
     return () => { lazySectionRegistry.delete(check); };
-  }, [isVisible, scrollY]);
+  }, [mounted, scrollY]);
 
-  if (isVisible) return <>{children}</>;
+  if (mounted) return <View onLayout={onLayout}>{children}</View>;
 
   return (
-    <View onLayout={onLayout} style={{ minHeight: estimatedHeight }} />
+    <View onLayout={onLayout} style={{ minHeight: measuredH.current }} />
   );
 }
 
