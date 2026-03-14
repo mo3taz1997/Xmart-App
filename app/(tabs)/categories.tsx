@@ -256,28 +256,37 @@ export default function CategoriesScreen() {
     refetchOnWindowFocus: true,
   });
 
-  const navCat = navStack.length > 0 ? navStack[navStack.length - 1] : null;
-  const navCatId = navCat?.id ?? null;
+  const currentCategory = navStack.length > 0 ? navStack[navStack.length - 1] : null;
+  const currentCategoryId = currentCategory?.id ?? null;
 
-  const findInTree = useCallback((tree: CategoryItem[], id: string): CategoryItem | null => {
-    for (const c of tree) {
-      if (c.id === id) return c;
-      if (c.children && c.children.length > 0) {
-        const found = findInTree(c.children, id);
-        if (found) return found;
+  const childrenCacheRef = useRef<Record<string, CategoryItem[]>>({});
+
+  const childItems = useMemo(() => {
+    if (!currentCategory) return [];
+    const catId = currentCategory.id;
+    if (currentCategory.children && currentCategory.children.length > 0) {
+      childrenCacheRef.current[catId] = currentCategory.children;
+      return currentCategory.children;
+    }
+    if (categoriesTree) {
+      const search = (nodes: CategoryItem[]): CategoryItem | null => {
+        for (const n of nodes) {
+          if (n.id === catId) return n;
+          if (n.children && n.children.length > 0) {
+            const f = search(n.children);
+            if (f) return f;
+          }
+        }
+        return null;
+      };
+      const live = search(categoriesTree);
+      if (live?.children && live.children.length > 0) {
+        childrenCacheRef.current[catId] = live.children;
+        return live.children;
       }
     }
-    return null;
-  }, []);
-
-  const currentCategory = useMemo(() => {
-    if (!navCat) return null;
-    if (categoriesTree) {
-      const live = findInTree(categoriesTree, navCat.id);
-      if (live) return live;
-    }
-    return navCat;
-  }, [navCatId, categoriesTree, findInTree]);
+    return childrenCacheRef.current[catId] || [];
+  }, [currentCategoryId, categoriesTree]);
 
   const goBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -306,14 +315,13 @@ export default function CategoriesScreen() {
     { key: 'TITLE', label: t('collection.name'), reverse: false },
   ];
 
-  const childItems = currentCategory?.children || [];
   const collectionHandle = currentCategory?.collectionHandle;
   const activeHandle = activeChild?.collectionHandle || collectionHandle;
 
   useEffect(() => {
     setActiveChild(null);
     prevCollProductsRef.current = [];
-  }, [navCatId]);
+  }, [currentCategoryId]);
 
   useEffect(() => {
     if (activeHandle) setRandomSeed(Math.random());
