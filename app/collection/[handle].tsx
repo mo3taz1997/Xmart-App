@@ -481,6 +481,7 @@ export default function CollectionScreen() {
       </View>
 
       {subCatRow}
+      {listHeader}
 
       {isLoading && allProducts.length === 0 ? (
         <View style={styles.loadingWrap}>
@@ -497,14 +498,13 @@ export default function CollectionScreen() {
               <ProductCard {...extractProductData(item)} />
             </View>
           )}
-          ListHeaderComponent={<>
-            {listHeader}
-            {isFetching && !isFetchingNextPage && (
+          ListHeaderComponent={
+            isFetching && !isFetchingNextPage ? (
               <View style={{ paddingVertical: 12, alignItems: 'center' }}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
-            )}
-          </>}
+            ) : null
+          }
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!products.length || showSubRow || !!outOfStockProducts.length}

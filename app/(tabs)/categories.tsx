@@ -533,12 +533,6 @@ export default function CategoriesScreen() {
   const subCircleScrollRef = useRef<ScrollView>(null);
   const subCirclePositions = useRef<Record<string, number>>({});
 
-  const listHeader = (
-    <>
-      {sortBar}
-    </>
-  );
-
   /* If children but no active collection → show children as grid of circles */
   const showChildGrid = childItems.length > 0 && !activeHandle;
 
