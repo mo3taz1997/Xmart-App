@@ -116,7 +116,7 @@ function CatCircleItem({
 
 /* ── Horizontal subcategory circle ── */
 function SubCircle({
-  item, onPress, isSelected, colors, isDark, language, isRTL,
+  item, onPress, isSelected, colors, isDark, language,
 }: {
   item: CategoryItem;
   onPress: () => void;
@@ -124,7 +124,6 @@ function SubCircle({
   colors: typeof Colors.dark;
   isDark: boolean;
   language: string;
-  isRTL?: boolean;
 }) {
   const title = language === 'ar' ? item.titleAr : item.titleEn;
   const imgUrl = resolveImageUrl(item.imageUrl) || item.imageUrl;
@@ -545,7 +544,7 @@ export default function CategoriesScreen() {
           )
       ) : (
         <>
-          {/* ── Fixed: circles row + sort/filter bar ── */}
+          {/* ── Fixed: circles row ── */}
           {childItems.length > 0 && (
             <View style={{
               paddingTop: 10,
@@ -557,7 +556,8 @@ export default function CategoriesScreen() {
                 ref={subCircleScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+                style={isRTL ? { direction: 'rtl' } : undefined}
+                contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
               >
                 {childItems.map((child: CategoryItem) => (
                   <View
@@ -585,14 +585,21 @@ export default function CategoriesScreen() {
                       colors={colors}
                       isDark={isDark}
                       language={language}
-                      isRTL={isRTL}
                     />
                   </View>
                 ))}
               </ScrollView>
             </View>
           )}
-          <View style={[styles.sortBar, { flexDirection: isRTL ? 'row-reverse' : 'row', borderBottomColor: colors.border + '44', display: activeHandle ? 'flex' : 'none' }]}>
+
+          {/* ── Fixed: sort/filter bar — always mounted, visibility toggled ── */}
+          {activeHandle ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={isRTL ? { direction: 'rtl' } : undefined}
+              contentContainerStyle={[styles.sortBar, { borderBottomColor: colors.border + '44' }]}
+            >
               <Pressable
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowSort(true); }}
                 style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: sortIdx > 0 ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: sortIdx > 0 ? colors.primary : colors.border }]}
@@ -643,7 +650,8 @@ export default function CategoriesScreen() {
                   )}
                 </Pressable>
               )}
-          </View>
+            </ScrollView>
+          ) : null}
 
           {/* ── Scrollable: products or child grid ── */}
           {showChildGrid ? (

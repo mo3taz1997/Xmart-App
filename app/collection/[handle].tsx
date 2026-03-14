@@ -284,7 +284,8 @@ export default function CollectionScreen() {
         ref={subScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+        style={isRTL ? { direction: 'rtl' } : undefined}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
       >
         {subChildItems.map((child, childIdx) => {
           const isSelected = activeSubChild?.id === child.id;
