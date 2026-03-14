@@ -218,6 +218,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.push({ available: false });
       }
 
+      if (req.query.productType) {
+        filters.push({ productType: req.query.productType as string });
+      }
+      if (req.query.productVendor) {
+        filters.push({ productVendor: req.query.productVendor as string });
+      }
+
       const data = await shopifyFetch(QUERIES.COLLECTION_PRODUCTS, {
         handle,
         first,
@@ -265,10 +272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/collections/:handle/filters", async (req: Request, res: Response) => {
     try {
       const { handle } = req.params;
-      const lang = ((req.query.lang as string) || "AR").toUpperCase();
-      const language = lang === 'EN' ? 'EN' : 'AR';
-      const cacheKey = `col-filters-${handle}-${language}`;
-      const cached = getCached(cacheKey, 5 * 60 * 1000);
+      const cacheKey = `col-filters-${handle}`;
+      const cached = getCached(cacheKey, 10 * 60 * 1000);
       if (cached) return res.json(cached);
 
       const types = new Set<string>();
@@ -281,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           handle,
           first: 250,
           after,
-          language,
+          language: 'EN',
         });
         if (!data.collection) break;
         const edges = data.collection.products.edges;
@@ -294,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = {
-        types: Array.from(types).sort((a, b) => a.localeCompare(b, 'ar')),
+        types: Array.from(types).sort((a, b) => a.localeCompare(b)),
         vendors: Array.from(vendors).sort((a, b) => a.localeCompare(b)),
       };
       setCache(cacheKey, result);
@@ -319,12 +324,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const language = lang === 'EN' ? 'EN' : 'AR';
       const availableFilter = req.query.available as string | undefined;
 
+      const queryParts: string[] = [];
+      if (query) queryParts.push(query);
+      if (req.query.productType) queryParts.push(`product_type:"${req.query.productType}"`);
+      if (req.query.productVendor) queryParts.push(`vendor:"${req.query.productVendor}"`);
+      const finalQuery = queryParts.join(' ') || undefined;
+
       const data = await shopifyFetch(QUERIES.PRODUCTS, {
         first,
         after,
         sortKey,
         reverse,
-        query: query || undefined,
+        query: finalQuery,
         language,
       });
 

@@ -128,7 +128,7 @@ export default function CollectionScreen() {
   useEffect(() => { setRandomSeed(Math.random()); }, [activeProductHandle]);
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['collection', activeProductHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0],
+    queryKey: ['collection', activeProductHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0, selectedType, selectedVendor],
     queryFn: async ({ pageParam }) => {
       const sort = SORT_OPTIONS[sortIdx];
       const params: Record<string, string> = {
@@ -138,6 +138,8 @@ export default function CollectionScreen() {
       };
       if (!isAll) params.available = 'true';
       if (pageParam) params.after = pageParam;
+      if (selectedType) params.productType = selectedType;
+      if (selectedVendor) params.productVendor = selectedVendor;
 
       if (isAll) {
         params.pageInfo = 'true';
@@ -171,10 +173,10 @@ export default function CollectionScreen() {
   }, [currentProducts]);
 
   const { data: filtersData } = useQuery({
-    queryKey: ['collection-filters', activeProductHandle, language],
-    queryFn: () => api.getCollectionFilters(activeProductHandle, language),
+    queryKey: ['collection-filters', activeProductHandle],
+    queryFn: () => api.getCollectionFilters(activeProductHandle),
     enabled: !!activeProductHandle && !isAll,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const localTypes = useMemo(() => {
@@ -224,19 +226,11 @@ export default function CollectionScreen() {
     enabled: !!activeProductHandle && !isAll,
   });
 
-  const products = useMemo(() => {
-    let list = allProducts;
-    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
-    if (selectedVendor) list = list.filter((p: any) => p.vendor === selectedVendor);
-    return list;
-  }, [allProducts, selectedType, selectedVendor]);
+  const products = allProducts;
 
   const outOfStockProducts = useMemo(() => {
-    let all = (oosData?.products || []).filter((p: any) => p.availableForSale === false);
-    if (selectedType) all = all.filter((p: any) => p.productType === selectedType);
-    if (selectedVendor) all = all.filter((p: any) => p.vendor === selectedVendor);
-    return all;
-  }, [oosData, selectedType, selectedVendor]);
+    return (oosData?.products || []).filter((p: any) => p.availableForSale === false);
+  }, [oosData]);
 
   const collectionTitle = isAll ? t('collection.allProducts') : (data?.pages?.[0]?.collection?.title || '');
 

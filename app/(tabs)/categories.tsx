@@ -387,7 +387,7 @@ export default function CategoriesScreen() {
   }, [activeHandle]);
 
   const { data: collectionData, isLoading: collLoading, isFetching: collFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['category-products', activeHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0],
+    queryKey: ['category-products', activeHandle, sortIdx, language, sortIdx === 0 ? randomSeed : 0, selectedType, selectedVendor],
     queryFn: async ({ pageParam }) => {
       const sort = SORT_OPTIONS[sortIdx];
       const params: Record<string, string> = {
@@ -397,6 +397,8 @@ export default function CategoriesScreen() {
         available: 'true',
       };
       if (pageParam) params.after = pageParam;
+      if (selectedType) params.productType = selectedType;
+      if (selectedVendor) params.productVendor = selectedVendor;
       return api.getCollectionProducts(activeHandle as string, params, language);
     },
     initialPageParam: null as string | null,
@@ -426,10 +428,10 @@ export default function CategoriesScreen() {
   }, [currentCollProducts]);
 
   const { data: filtersData } = useQuery({
-    queryKey: ['collection-filters', activeHandle, language],
-    queryFn: () => api.getCollectionFilters(activeHandle as string, language),
+    queryKey: ['collection-filters', activeHandle],
+    queryFn: () => api.getCollectionFilters(activeHandle as string),
     enabled: !!activeHandle,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const availableTypes: string[] = filtersData?.types || [];
@@ -460,13 +462,10 @@ export default function CategoriesScreen() {
   const { getAvailability: getCatAvailability } = useStockStatus(allCatProducts);
 
   const collProducts = useMemo(() => {
-    let list = allCollProducts
+    return allCollProducts
       .map((p: any) => ({ ...p, availableForSale: getCatAvailability(p.handle, p.availableForSale) }))
       .filter((p: any) => p.availableForSale !== false);
-    if (selectedType) list = list.filter((p: any) => p.productType === selectedType);
-    if (selectedVendor) list = list.filter((p: any) => p.vendor === selectedVendor);
-    return list;
-  }, [allCollProducts, selectedType, selectedVendor, getCatAvailability]);
+  }, [allCollProducts, getCatAvailability]);
 
   const outOfStockProducts = useMemo(() => {
     let all = [...(outOfStockData?.products || []), ...allCollProducts]
@@ -474,10 +473,8 @@ export default function CategoriesScreen() {
       .filter((p: any) => p.availableForSale === false);
     const seen = new Set<string>();
     all = all.filter(p => { if (seen.has(p.handle)) return false; seen.add(p.handle); return true; });
-    if (selectedType) all = all.filter((p: any) => p.productType === selectedType);
-    if (selectedVendor) all = all.filter((p: any) => p.vendor === selectedVendor);
     return all;
-  }, [outOfStockData, allCollProducts, selectedType, selectedVendor, getCatAvailability]);
+  }, [outOfStockData, allCollProducts, getCatAvailability]);
 
   /* ── Header bar ── */
   const renderHeader = (showBack: boolean) => (
