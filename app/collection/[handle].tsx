@@ -374,6 +374,7 @@ export default function CollectionScreen() {
   /* ── Sort / filter chips ── */
   const listHeader = (
     <>
+      {subCatRow}
       <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <ScrollView
           horizontal
@@ -479,8 +480,6 @@ export default function CollectionScreen() {
           </Pressable>
         </View>
       </View>
-
-      {subCatRow}
 
       {isLoading && allProducts.length === 0 ? (
         <View style={styles.loadingWrap}>

@@ -533,9 +533,57 @@ export default function CategoriesScreen() {
   const subCircleScrollRef = useRef<ScrollView>(null);
   const subCirclePositions = useRef<Record<string, number>>({});
 
-  /* List header: sort bar only */
+  const circlesRowEl = navStack.length > 0 && childItems.length > 0 ? (
+    <View style={{
+      paddingTop: 12,
+      paddingBottom: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border + '55',
+    }}>
+      <ScrollView
+        ref={subCircleScrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+      >
+        {childItems.map((child: CategoryItem) => (
+          <View
+            key={child.id}
+            onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
+          >
+            <SubCircle
+              item={child}
+              onPress={() => {
+                if (child.children && child.children.length > 0) {
+                  drillDown(child);
+                } else if (activeChild?.id === child.id && sortIdx === 0) {
+                  setRandomSeed(Math.random());
+                } else {
+                  setActiveChild(child);
+                  const pos = subCirclePositions.current[child.id];
+                  if (pos !== undefined) {
+                    setTimeout(() => {
+                      subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
+                    }, 50);
+                  }
+                }
+              }}
+              isSelected={activeChild?.id === child.id}
+              colors={colors}
+              isDark={isDark}
+              language={language}
+              isRTL={isRTL}
+            />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
+
   const listHeader = (
     <>
+      {circlesRowEl}
       {sortBar}
     </>
   );
@@ -550,54 +598,6 @@ export default function CategoriesScreen() {
       <PageBackground isDark={isDark} />
 
       {renderHeader(navStack.length > 0)}
-
-      {navStack.length > 0 && childItems.length > 0 && (
-        <View style={{
-          paddingTop: 12,
-          paddingBottom: 8,
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: colors.border + '55',
-        }}>
-          <ScrollView
-            ref={subCircleScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-            contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-          >
-            {childItems.map((child: CategoryItem) => (
-              <View
-                key={child.id}
-                onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
-              >
-                <SubCircle
-                  item={child}
-                  onPress={() => {
-                    if (child.children && child.children.length > 0) {
-                      drillDown(child);
-                    } else if (activeChild?.id === child.id && sortIdx === 0) {
-                      setRandomSeed(Math.random());
-                    } else {
-                      setActiveChild(child);
-                      const pos = subCirclePositions.current[child.id];
-                      if (pos !== undefined) {
-                        setTimeout(() => {
-                          subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                        }, 50);
-                      }
-                    }
-                  }}
-                  isSelected={activeChild?.id === child.id}
-                  colors={colors}
-                  isDark={isDark}
-                  language={language}
-                  isRTL={isRTL}
-                />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
 
       {navStack.length === 0 ? (
           isLoading ? (
