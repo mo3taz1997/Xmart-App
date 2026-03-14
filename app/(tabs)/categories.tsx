@@ -551,12 +551,12 @@ export default function CategoriesScreen() {
               paddingBottom: 6,
               borderBottomWidth: StyleSheet.hairlineWidth,
               borderBottomColor: colors.border + '55',
+              direction: isRTL ? 'rtl' : 'ltr',
             }}>
               <ScrollView
                 ref={subCircleScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={isRTL ? { direction: 'rtl' } : undefined}
                 contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
               >
                 {childItems.map((child: CategoryItem) => (
@@ -678,31 +678,24 @@ export default function CategoriesScreen() {
             <FlatList
               key="products-grid"
               data={collProducts}
-              keyExtractor={(item: any, i) => (item.handle || item.id) + i}
+              keyExtractor={(item: any) => item.handle || item.id}
               numColumns={PRODUCT_COLUMNS}
-              columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row', opacity: (collFetching && !isFetchingNextPage && collProducts.length > 0) ? 0.5 : 1 }}
+              columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
               renderItem={({ item }) => (
                 <View style={{ width: (width - 24) / PRODUCT_COLUMNS, padding: 4 }}>
                   <ProductCard {...extractProductData(item)} />
                 </View>
               )}
-              ListHeaderComponent={
-                collFetching && !isFetchingNextPage ? (
-                  <View style={{ paddingVertical: 10, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  </View>
-                ) : null
-              }
               contentContainerStyle={{ paddingBottom: 110 }}
               showsVerticalScrollIndicator={false}
               scrollEnabled={!!collProducts.length || !!outOfStockProducts.length}
               onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
               onEndReachedThreshold={0.5}
-              initialNumToRender={6}
-              maxToRenderPerBatch={6}
-              windowSize={5}
-              removeClippedSubviews={true}
-              ListFooterComponent={() => (
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              windowSize={7}
+              removeClippedSubviews={false}
+              ListFooterComponent={
                 <>
                   {isFetchingNextPage && (
                     <View style={{ paddingVertical: 20, alignItems: 'center' }}>
@@ -728,7 +721,7 @@ export default function CategoriesScreen() {
                     </>
                   )}
                 </>
-              )}
+              }
               ListEmptyComponent={
                 <View style={[styles.center, { paddingVertical: 48 }]}>
                   <View style={[styles.emptyIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.06)' }]}>

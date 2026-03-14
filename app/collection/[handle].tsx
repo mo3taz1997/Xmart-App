@@ -280,11 +280,11 @@ export default function CollectionScreen() {
           </Text>
         </Pressable>
       )}
+      <View style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
       <ScrollView
         ref={subScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={isRTL ? { direction: 'rtl' } : undefined}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
       >
         {subChildItems.map((child, childIdx) => {
@@ -367,6 +367,7 @@ export default function CollectionScreen() {
           );
         })}
       </ScrollView>
+      </View>
     </View>
   ) : null;
 
