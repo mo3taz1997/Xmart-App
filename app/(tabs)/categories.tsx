@@ -256,7 +256,28 @@ export default function CategoriesScreen() {
     refetchOnWindowFocus: true,
   });
 
-  const currentCategory = navStack.length > 0 ? navStack[navStack.length - 1] : null;
+  const navCat = navStack.length > 0 ? navStack[navStack.length - 1] : null;
+  const navCatId = navCat?.id ?? null;
+
+  const findInTree = useCallback((tree: CategoryItem[], id: string): CategoryItem | null => {
+    for (const c of tree) {
+      if (c.id === id) return c;
+      if (c.children && c.children.length > 0) {
+        const found = findInTree(c.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, []);
+
+  const currentCategory = useMemo(() => {
+    if (!navCat) return null;
+    if (categoriesTree) {
+      const live = findInTree(categoriesTree, navCat.id);
+      if (live) return live;
+    }
+    return navCat;
+  }, [navCatId, categoriesTree, findInTree]);
 
   const goBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -292,7 +313,7 @@ export default function CategoriesScreen() {
   useEffect(() => {
     setActiveChild(null);
     prevCollProductsRef.current = [];
-  }, [currentCategory]);
+  }, [navCatId]);
 
   useEffect(() => {
     if (activeHandle) setRandomSeed(Math.random());

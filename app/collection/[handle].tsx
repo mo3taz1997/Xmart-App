@@ -98,10 +98,20 @@ export default function CollectionScreen() {
     return findCategoryByHandle(categoriesTree as CatNode[], handle as string);
   }, [categoriesTree, handle]);
 
-  /* Current node in sub-nav */
-  const currentSubNode = subNavStack.length > 0
-    ? subNavStack[subNavStack.length - 1]
-    : matchedCat;
+  /* Current node in sub-nav — always look up from live tree to prevent stale children */
+  const currentSubNode = useMemo(() => {
+    if (subNavStack.length === 0) return matchedCat;
+    const stale = subNavStack[subNavStack.length - 1];
+    if (!stale || !categoriesTree) return stale || matchedCat;
+    const findById = (nodes: CatNode[], id: string): CatNode | null => {
+      for (const n of nodes) {
+        if (n.id === id) return n;
+        if (n.children) { const f = findById(n.children, id); if (f) return f; }
+      }
+      return null;
+    };
+    return findById(categoriesTree as CatNode[], stale.id) || stale;
+  }, [subNavStack, matchedCat, categoriesTree]);
 
   const subChildItems: CatNode[] = currentSubNode?.children || [];
   const showSubRow = subChildItems.length > 0;
