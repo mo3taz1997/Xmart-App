@@ -284,7 +284,7 @@ export default function CollectionScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
-          flexGrow: 1,
+          minWidth: width,
           justifyContent: isRTL ? 'flex-end' : 'flex-start',
           paddingHorizontal: 12,
           gap: 10,
@@ -295,7 +295,7 @@ export default function CollectionScreen() {
           }
         }}
       >
-        {subChildItems.map((child) => {
+        {(isRTL ? [...subChildItems].reverse() : subChildItems).map((child) => {
           const isSelected = activeSubChild?.id === child.id;
           const title = language === 'ar' ? child.titleAr : child.titleEn;
           const imgUrl = child.imageUrl?.startsWith('http')

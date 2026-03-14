@@ -141,6 +141,7 @@ function SubCircleRow({
   isRTL: boolean;
 }) {
   const ref = useRef<ScrollView>(null);
+  const displayItems = isRTL ? [...items].reverse() : items;
 
   return (
     <View style={{ paddingTop: 10, paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border + '55' }}>
@@ -149,7 +150,7 @@ function SubCircleRow({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
-          flexGrow: 1,
+          minWidth: width,
           justifyContent: isRTL ? 'flex-end' : 'flex-start',
           paddingHorizontal: 12,
           gap: 8,
@@ -160,7 +161,7 @@ function SubCircleRow({
           }
         }}
       >
-        {items.map((child) => {
+        {displayItems.map((child) => {
           const selected = activeId === child.id;
           const title = language === 'ar' ? child.titleAr : child.titleEn;
           const imgUrl = resolveImageUrl(child.imageUrl) || child.imageUrl;
