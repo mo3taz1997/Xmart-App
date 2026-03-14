@@ -261,14 +261,13 @@ export default function CategoriesScreen() {
 
   const childrenCacheRef = useRef<Record<string, CategoryItem[]>>({});
 
-  const childItems = useMemo(() => {
-    if (!currentCategory) return [];
+  let childItems: CategoryItem[] = [];
+  if (currentCategory) {
     const catId = currentCategory.id;
     if (currentCategory.children && currentCategory.children.length > 0) {
+      childItems = currentCategory.children;
       childrenCacheRef.current[catId] = currentCategory.children;
-      return currentCategory.children;
-    }
-    if (categoriesTree) {
+    } else if (categoriesTree) {
       const search = (nodes: CategoryItem[]): CategoryItem | null => {
         for (const n of nodes) {
           if (n.id === catId) return n;
@@ -281,12 +280,14 @@ export default function CategoriesScreen() {
       };
       const live = search(categoriesTree);
       if (live?.children && live.children.length > 0) {
+        childItems = live.children;
         childrenCacheRef.current[catId] = live.children;
-        return live.children;
       }
     }
-    return childrenCacheRef.current[catId] || [];
-  }, [currentCategoryId, categoriesTree]);
+    if (childItems.length === 0) {
+      childItems = childrenCacheRef.current[catId] || [];
+    }
+  }
 
   const goBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -459,9 +460,6 @@ export default function CategoriesScreen() {
 
   /* ══════ LEVEL 1+: sub-categories circles + products ══════ */
 
-  const showChildRow = childItems.length > 0;
-
-
   /* Sort / filter bar */
   const sortBar = activeHandle ? (
     <View style={[styles.sortBar, { flexDirection: isRTL ? 'row-reverse' : 'row', borderBottomColor: colors.border + '44' }]}>
@@ -535,54 +533,6 @@ export default function CategoriesScreen() {
   const subCircleScrollRef = useRef<ScrollView>(null);
   const subCirclePositions = useRef<Record<string, number>>({});
 
-  const circlesRow = showChildRow ? (
-    <View style={{
-      paddingTop: 12,
-      paddingBottom: 8,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border + '55',
-    }}>
-      <ScrollView
-        ref={subCircleScrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-      >
-        {childItems.map((child: CategoryItem) => (
-          <View
-            key={child.id}
-            onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
-          >
-            <SubCircle
-              item={child}
-              onPress={() => {
-                if (child.children && child.children.length > 0) {
-                  drillDown(child);
-                } else if (activeChild?.id === child.id && sortIdx === 0) {
-                  setRandomSeed(Math.random());
-                } else {
-                  setActiveChild(child);
-                  const pos = subCirclePositions.current[child.id];
-                  if (pos !== undefined) {
-                    setTimeout(() => {
-                      subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                    }, 50);
-                  }
-                }
-              }}
-              isSelected={activeChild?.id === child.id}
-              colors={colors}
-              isDark={isDark}
-              language={language}
-              isRTL={isRTL}
-            />
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  ) : null;
-
   /* List header: sort bar only */
   const listHeader = (
     <>
@@ -591,7 +541,7 @@ export default function CategoriesScreen() {
   );
 
   /* If children but no active collection → show children as grid of circles */
-  const showChildGrid = showChildRow && !activeHandle;
+  const showChildGrid = childItems.length > 0 && !activeHandle;
 
   const cats: CategoryItem[] = categoriesTree || [];
 
@@ -601,7 +551,53 @@ export default function CategoriesScreen() {
 
       {renderHeader(navStack.length > 0)}
 
-      {navStack.length > 0 && circlesRow}
+      {navStack.length > 0 && childItems.length > 0 && (
+        <View style={{
+          paddingTop: 12,
+          paddingBottom: 8,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border + '55',
+        }}>
+          <ScrollView
+            ref={subCircleScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+          >
+            {childItems.map((child: CategoryItem) => (
+              <View
+                key={child.id}
+                onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
+              >
+                <SubCircle
+                  item={child}
+                  onPress={() => {
+                    if (child.children && child.children.length > 0) {
+                      drillDown(child);
+                    } else if (activeChild?.id === child.id && sortIdx === 0) {
+                      setRandomSeed(Math.random());
+                    } else {
+                      setActiveChild(child);
+                      const pos = subCirclePositions.current[child.id];
+                      if (pos !== undefined) {
+                        setTimeout(() => {
+                          subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
+                        }, 50);
+                      }
+                    }
+                  }}
+                  isSelected={activeChild?.id === child.id}
+                  colors={colors}
+                  isDark={isDark}
+                  language={language}
+                  isRTL={isRTL}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {navStack.length === 0 ? (
           isLoading ? (
