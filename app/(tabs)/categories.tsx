@@ -594,11 +594,8 @@ export default function CategoriesScreen() {
 
           {/* ── Fixed: sort/filter bar — always mounted, visibility toggled ── */}
           {activeHandle ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={isRTL ? { direction: 'rtl' } : undefined}
-              contentContainerStyle={[styles.sortBar, { borderBottomColor: colors.border + '44' }]}
+            <View
+              style={[styles.sortBar, { flexDirection: isRTL ? 'row-reverse' : 'row', borderBottomColor: colors.border + '44' }]}
             >
               <Pressable
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowSort(true); }}
@@ -614,43 +611,39 @@ export default function CategoriesScreen() {
                   <Ionicons name="chevron-down" size={11} color={colors.textSecondary} />
                 )}
               </Pressable>
-              {availableTypes.length > 1 && (
-                <Pressable
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowFilter(true); }}
-                  style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: selectedType ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: selectedType ? colors.primary : colors.border }]}
-                >
-                  <Ionicons name="options-outline" size={13} color={selectedType ? colors.primary : colors.textSecondary} />
-                  <Text style={[styles.chipTxt, { color: selectedType ? colors.primary : colors.textSecondary, maxWidth: 100 }]} numberOfLines={1}>
-                    {selectedType ? getTypeLabel(selectedType) : (language === 'ar' ? 'النوع' : 'Type')}
-                  </Text>
-                  {selectedType ? (
-                    <Pressable onPress={(e) => { e.stopPropagation(); setSelectedType(null); }} hitSlop={8}>
-                      <Ionicons name="close-circle" size={14} color={colors.primary} />
-                    </Pressable>
-                  ) : (
-                    <Ionicons name="chevron-down" size={11} color={colors.textSecondary} />
-                  )}
-                </Pressable>
-              )}
-              {availableVendors.length > 1 && (
-                <Pressable
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowVendorFilter(true); }}
-                  style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: selectedVendor ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: selectedVendor ? colors.primary : colors.border }]}
-                >
-                  <Ionicons name="storefront-outline" size={13} color={selectedVendor ? colors.primary : colors.textSecondary} />
-                  <Text style={[styles.chipTxt, { color: selectedVendor ? colors.primary : colors.textSecondary, maxWidth: 100 }]} numberOfLines={1}>
-                    {selectedVendor ?? (language === 'ar' ? 'الماركة' : 'Brand')}
-                  </Text>
-                  {selectedVendor ? (
-                    <Pressable onPress={(e) => { e.stopPropagation(); setSelectedVendor(null); }} hitSlop={8}>
-                      <Ionicons name="close-circle" size={14} color={colors.primary} />
-                    </Pressable>
-                  ) : (
-                    <Ionicons name="chevron-down" size={11} color={colors.textSecondary} />
-                  )}
-                </Pressable>
-              )}
-            </ScrollView>
+              <Pressable
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowFilter(true); }}
+                style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: selectedType ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: selectedType ? colors.primary : colors.border }]}
+              >
+                <Ionicons name="options-outline" size={13} color={selectedType ? colors.primary : colors.textSecondary} />
+                <Text style={[styles.chipTxt, { color: selectedType ? colors.primary : colors.textSecondary }]} numberOfLines={1}>
+                  {selectedType ? getTypeLabel(selectedType) : (language === 'ar' ? 'النوع' : 'Type')}
+                </Text>
+                {selectedType ? (
+                  <Pressable onPress={(e) => { e.stopPropagation(); setSelectedType(null); }} hitSlop={8}>
+                    <Ionicons name="close-circle" size={14} color={colors.primary} />
+                  </Pressable>
+                ) : (
+                  <Ionicons name="chevron-down" size={11} color={colors.textSecondary} />
+                )}
+              </Pressable>
+              <Pressable
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowVendorFilter(true); }}
+                style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: selectedVendor ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: selectedVendor ? colors.primary : colors.border }]}
+              >
+                <Ionicons name="storefront-outline" size={13} color={selectedVendor ? colors.primary : colors.textSecondary} />
+                <Text style={[styles.chipTxt, { color: selectedVendor ? colors.primary : colors.textSecondary }]} numberOfLines={1}>
+                  {selectedVendor ?? (language === 'ar' ? 'الماركة' : 'Brand')}
+                </Text>
+                {selectedVendor ? (
+                  <Pressable onPress={(e) => { e.stopPropagation(); setSelectedVendor(null); }} hitSlop={8}>
+                    <Ionicons name="close-circle" size={14} color={colors.primary} />
+                  </Pressable>
+                ) : (
+                  <Ionicons name="chevron-down" size={11} color={colors.textSecondary} />
+                )}
+              </Pressable>
+            </View>
           ) : null}
 
           {/* ── Scrollable: products or child grid ── */}
