@@ -570,10 +570,12 @@ export default function CategoriesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + webTopInset }]}>
       <PageBackground isDark={isDark} />
 
+      {renderHeader(navStack.length > 0)}
+
+      {navStack.length > 0 && circlesRow}
+
       {navStack.length === 0 ? (
-        <React.Fragment key="level0">
-          {renderHeader(false)}
-          {isLoading ? (
+          isLoading ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={colors.primary} />
             </View>
@@ -638,15 +640,8 @@ export default function CategoriesScreen() {
                 ) : null
               }
             />
-          )}
-        </React.Fragment>
-      ) : (
-        <React.Fragment key="level-deep">
-          {renderHeader(true)}
-
-          {circlesRow}
-
-          {showChildGrid ? (
+          )
+      ) : showChildGrid ? (
             <FlatList
               key="child-circle-grid"
               data={childItems}
@@ -740,7 +735,7 @@ export default function CategoriesScreen() {
             />
           )}
 
-          {/* Sort modal */}
+      {/* Sort modal */}
           <Modal visible={showSort} transparent animationType="slide" onRequestClose={() => setShowSort(false)}>
             <Pressable style={styles.overlay} onPress={() => setShowSort(false)}>
               <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
@@ -816,8 +811,6 @@ export default function CategoriesScreen() {
               </View>
             </Pressable>
           </Modal>
-        </React.Fragment>
-      )}
     </View>
   );
 }
