@@ -246,7 +246,6 @@ export default function CollectionScreen() {
   }
 
   const subScrollRef = React.useRef<ScrollView>(null);
-  const subItemPositions = React.useRef<Record<string, number>>({});
 
   /* ── Sub-categories row ── */
   const subCatRow = showSubRow ? (
@@ -284,14 +283,9 @@ export default function CollectionScreen() {
         ref={subScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        onContentSizeChange={(contentWidth) => {
-          if (isRTL && contentWidth > width) {
-            subScrollRef.current?.scrollToEnd({ animated: false });
-          }
-        }}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
       >
-        {subChildItems.map((child) => {
+        {(isRTL ? [...subChildItems].reverse() : subChildItems).map((child) => {
           const isSelected = activeSubChild?.id === child.id;
           const title = language === 'ar' ? child.titleAr : child.titleEn;
           const imgUrl = child.imageUrl?.startsWith('http')
@@ -303,9 +297,6 @@ export default function CollectionScreen() {
           return (
             <Pressable
               key={child.id}
-              onLayout={(e) => {
-                subItemPositions.current[child.id] = e.nativeEvent.layout.x;
-              }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setSelectedType(null);
@@ -313,16 +304,7 @@ export default function CollectionScreen() {
                   setSubNavStack(prev => [...prev, child]);
                   setActiveSubChild(null);
                 } else {
-                  const newChild = activeSubChild?.id === child.id ? null : child;
-                  setActiveSubChild(newChild);
-                  if (newChild) {
-                    const pos = subItemPositions.current[child.id];
-                    if (pos !== undefined) {
-                      setTimeout(() => {
-                        subScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                      }, 50);
-                    }
-                  }
+                  setActiveSubChild(activeSubChild?.id === child.id ? null : child);
                 }
               }}
               style={({ pressed }) => ({

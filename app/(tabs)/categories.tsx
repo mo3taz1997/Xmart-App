@@ -462,7 +462,6 @@ export default function CategoriesScreen() {
   /* Sort / filter bar — always rendered, content updates in place */
 
   const subCircleScrollRef = useRef<ScrollView>(null);
-  const subCirclePositions = useRef<Record<string, number>>({});
 
   /* If children but no active collection → show children as grid of circles */
   const showChildGrid = childItems.length > 0 && !activeHandle;
@@ -556,41 +555,26 @@ export default function CategoriesScreen() {
                 ref={subCircleScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                onContentSizeChange={(contentWidth) => {
-                  if (isRTL && contentWidth > width) {
-                    subCircleScrollRef.current?.scrollToEnd({ animated: false });
-                  }
-                }}
                 contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
               >
-                {childItems.map((child: CategoryItem) => (
-                  <View
+                {(isRTL ? [...childItems].reverse() : childItems).map((child: CategoryItem) => (
+                  <SubCircle
                     key={child.id}
-                    onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
-                  >
-                    <SubCircle
-                      item={child}
-                      onPress={() => {
-                        if (child.children && child.children.length > 0) {
-                          drillDown(child);
-                        } else if (activeChild?.id === child.id && sortIdx === 0) {
-                          setRandomSeed(Math.random());
-                        } else {
-                          setActiveChild(child);
-                          const pos = subCirclePositions.current[child.id];
-                          if (pos !== undefined) {
-                            setTimeout(() => {
-                              subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                            }, 50);
-                          }
-                        }
-                      }}
-                      isSelected={activeChild?.id === child.id}
-                      colors={colors}
-                      isDark={isDark}
-                      language={language}
-                    />
-                  </View>
+                    item={child}
+                    onPress={() => {
+                      if (child.children && child.children.length > 0) {
+                        drillDown(child);
+                      } else if (activeChild?.id === child.id && sortIdx === 0) {
+                        setRandomSeed(Math.random());
+                      } else {
+                        setActiveChild(child);
+                      }
+                    }}
+                    isSelected={activeChild?.id === child.id}
+                    colors={colors}
+                    isDark={isDark}
+                    language={language}
+                  />
                 ))}
               </ScrollView>
             </View>
