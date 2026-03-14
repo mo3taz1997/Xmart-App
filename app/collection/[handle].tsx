@@ -558,7 +558,7 @@ export default function CollectionScreen() {
 
       <Modal visible={showSort} transparent animationType="slide" onRequestClose={() => setShowSort(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowSort(false)}>
-          <View style={styles.modalContent}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>{t('collection.sortBy')}</Text>
             {SORT_OPTIONS.slice(1).map((opt, j) => {
               const i = j + 1;
@@ -575,13 +575,13 @@ export default function CollectionScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
       <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowFilter(false)}>
-          <View style={[styles.modalContent, { maxHeight: '50%' }]}>
+          <Pressable style={[styles.modalContent, { maxHeight: '50%' }]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>{language === 'ar' ? 'فلترة حسب النوع' : 'Filter by Type'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} onStartShouldSetResponder={() => true}>
               <Pressable
@@ -607,13 +607,13 @@ export default function CollectionScreen() {
               ))}
               <View style={{ height: 8 }} />
             </ScrollView>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
       <Modal visible={showVendorFilter} transparent animationType="slide" onRequestClose={() => setShowVendorFilter(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowVendorFilter(false)}>
-          <View style={[styles.modalContent, { maxHeight: '55%' }]}>
+          <Pressable style={[styles.modalContent, { maxHeight: '55%' }]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>{language === 'ar' ? 'فلترة حسب الماركة' : 'Filter by Brand'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} onStartShouldSetResponder={() => true}>
               <Pressable
@@ -639,7 +639,7 @@ export default function CollectionScreen() {
               ))}
               <View style={{ height: 8 }} />
             </ScrollView>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>

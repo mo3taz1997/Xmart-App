@@ -761,7 +761,7 @@ export default function CategoriesScreen() {
       {/* Sort modal */}
           <Modal visible={showSort} transparent animationType="slide" onRequestClose={() => setShowSort(false)}>
             <Pressable style={styles.overlay} onPress={() => setShowSort(false)}>
-              <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+              <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
                 <View style={styles.sheetHandle} />
                 <Text style={[styles.sheetTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>{t('collection.sortBy')}</Text>
                 {SORT_OPTIONS.slice(1).map((opt, j) => {
@@ -777,14 +777,14 @@ export default function CategoriesScreen() {
                     </Pressable>
                   );
                 })}
-              </View>
+              </Pressable>
             </Pressable>
           </Modal>
 
           {/* Filter modal */}
           <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
             <Pressable style={styles.overlay} onPress={() => setShowFilter(false)}>
-              <View style={[styles.sheet, { backgroundColor: colors.surface, maxHeight: '50%' }]}>
+              <Pressable style={[styles.sheet, { backgroundColor: colors.surface, maxHeight: '50%' }]} onPress={(e) => e.stopPropagation()}>
                 <View style={styles.sheetHandle} />
                 <Text style={[styles.sheetTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
                   {language === 'ar' ? 'فلترة حسب النوع' : 'Filter by Type'}
@@ -804,14 +804,14 @@ export default function CategoriesScreen() {
                   ))}
                   <View style={{ height: 8 }} />
                 </ScrollView>
-              </View>
+              </Pressable>
             </Pressable>
           </Modal>
 
           {/* Vendor filter modal */}
           <Modal visible={showVendorFilter} transparent animationType="slide" onRequestClose={() => setShowVendorFilter(false)}>
             <Pressable style={styles.overlay} onPress={() => setShowVendorFilter(false)}>
-              <View style={[styles.sheet, { backgroundColor: colors.surface, maxHeight: '55%' }]}>
+              <Pressable style={[styles.sheet, { backgroundColor: colors.surface, maxHeight: '55%' }]} onPress={(e) => e.stopPropagation()}>
                 <View style={styles.sheetHandle} />
                 <Text style={[styles.sheetTitle, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>
                   {language === 'ar' ? 'فلترة حسب الماركة' : 'Filter by Brand'}
@@ -831,7 +831,7 @@ export default function CategoriesScreen() {
                   ))}
                   <View style={{ height: 8 }} />
                 </ScrollView>
-              </View>
+              </Pressable>
             </Pressable>
           </Modal>
     </View>
