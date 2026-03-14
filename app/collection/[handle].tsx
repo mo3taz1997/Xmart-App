@@ -254,8 +254,6 @@ export default function CollectionScreen() {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border + '55',
       paddingVertical: 10,
-      backgroundColor: colors.background,
-      zIndex: 2,
     }}>
       {subNavStack.length > 0 && (
         <Pressable
@@ -286,8 +284,7 @@ export default function CollectionScreen() {
         ref={subScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexDirection: isRTL ? 'row-reverse' : 'row' }}
       >
         {subChildItems.map((child, childIdx) => {
           const isSelected = activeSubChild?.id === child.id;
@@ -326,9 +323,8 @@ export default function CollectionScreen() {
               style={({ pressed }) => ({
                 alignItems: 'center',
                 opacity: pressed ? 0.75 : 1,
-                transform: [{ scale: pressed ? 0.94 : 1 }],
                 width: 72,
-                ...(isRTL ? { transform: [{ scaleX: -1 }, { scale: pressed ? 0.94 : 1 }] } : {}),
+                transform: [{ scale: pressed ? 0.94 : 1 }],
               })}
             >
               <View style={{
@@ -376,7 +372,7 @@ export default function CollectionScreen() {
   /* ── Sort / filter chips ── */
   const listHeader = (
     <>
-      <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: colors.background, zIndex: 2 }]}>
+      <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

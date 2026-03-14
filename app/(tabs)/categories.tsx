@@ -135,7 +135,7 @@ function SubCircle({
       style={({ pressed }) => ({
         alignItems: 'center',
         opacity: pressed ? 0.75 : 1,
-        transform: isRTL ? [{ scaleX: -1 }, { scale: pressed ? 0.94 : 1 }] : [{ scale: pressed ? 0.94 : 1 }],
+        transform: [{ scale: pressed ? 0.94 : 1 }],
         width: Math.round(width * 0.2),
       })}
     >
@@ -431,8 +431,6 @@ export default function CategoriesScreen() {
         {
           flexDirection: isRTL ? 'row-reverse' : 'row',
           borderBottomColor: colors.border + '55',
-          backgroundColor: colors.background,
-          zIndex: 3,
         },
       ]}
     >
@@ -552,8 +550,6 @@ export default function CategoriesScreen() {
             <View style={{
               paddingTop: 10,
               paddingBottom: 6,
-              backgroundColor: colors.background,
-              zIndex: 2,
               borderBottomWidth: StyleSheet.hairlineWidth,
               borderBottomColor: colors.border + '55',
             }}>
@@ -561,8 +557,7 @@ export default function CategoriesScreen() {
                 ref={subCircleScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-                contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+                contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
               >
                 {childItems.map((child: CategoryItem) => (
                   <View
@@ -597,8 +592,7 @@ export default function CategoriesScreen() {
               </ScrollView>
             </View>
           )}
-          {activeHandle && (
-            <View style={[styles.sortBar, { flexDirection: isRTL ? 'row-reverse' : 'row', borderBottomColor: colors.border + '44', backgroundColor: colors.background, zIndex: 2 }]}>
+          <View style={[styles.sortBar, { flexDirection: isRTL ? 'row-reverse' : 'row', borderBottomColor: colors.border + '44', display: activeHandle ? 'flex' : 'none' }]}>
               <Pressable
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowSort(true); }}
                 style={[styles.chip, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: sortIdx > 0 ? colors.primary + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(22,50,89,0.04)'), borderColor: sortIdx > 0 ? colors.primary : colors.border }]}
@@ -649,8 +643,7 @@ export default function CategoriesScreen() {
                   )}
                 </Pressable>
               )}
-            </View>
-          )}
+          </View>
 
           {/* ── Scrollable: products or child grid ── */}
           {showChildGrid ? (
