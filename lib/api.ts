@@ -43,6 +43,8 @@ export const api = {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request("GET", addLang(`/api/collections/${handle}/products${qs}`, lang));
   },
+  getCollectionFilters: (handle: string, lang?: string) =>
+    request("GET", addLang(`/api/collections/${handle}/filters`, lang)),
   getProducts: (params?: Record<string, string>, lang?: string) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request("GET", addLang(`/api/products${qs}`, lang));

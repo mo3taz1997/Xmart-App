@@ -425,17 +425,15 @@ export default function CategoriesScreen() {
     }
   }, [currentCollProducts]);
 
-  const availableTypes = useMemo(() => {
-    const types = new Set<string>();
-    allCollProducts.forEach((p: any) => { if (p.productType) types.add(p.productType); });
-    return Array.from(types).sort((a, b) => a.localeCompare(b, 'ar'));
-  }, [allCollProducts]);
+  const { data: filtersData } = useQuery({
+    queryKey: ['collection-filters', activeHandle, language],
+    queryFn: () => api.getCollectionFilters(activeHandle as string, language),
+    enabled: !!activeHandle,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const availableVendors = useMemo(() => {
-    const vendors = new Set<string>();
-    allCollProducts.forEach((p: any) => { if (p.vendor) vendors.add(p.vendor); });
-    return Array.from(vendors).sort((a, b) => a.localeCompare(b));
-  }, [allCollProducts]);
+  const availableTypes: string[] = filtersData?.types || [];
+  const availableVendors: string[] = filtersData?.vendors || [];
 
   const [typeTranslations, setTypeTranslations] = useState<Record<string, string>>({});
   useEffect(() => {

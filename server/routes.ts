@@ -262,6 +262,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/collections/:handle/filters", async (req: Request, res: Response) => {
+    try {
+      const { handle } = req.params;
+      const lang = ((req.query.lang as string) || "AR").toUpperCase();
+      const language = lang === 'EN' ? 'EN' : 'AR';
+      const cacheKey = `col-filters-${handle}-${language}`;
+      const cached = getCached(cacheKey, 5 * 60 * 1000);
+      if (cached) return res.json(cached);
+
+      const types = new Set<string>();
+      const vendors = new Set<string>();
+      let after: string | undefined;
+      let hasMore = true;
+
+      while (hasMore) {
+        const data = await shopifyFetch(QUERIES.COLLECTION_FILTERS, {
+          handle,
+          first: 250,
+          after,
+          language,
+        });
+        if (!data.collection) break;
+        const edges = data.collection.products.edges;
+        for (const e of edges) {
+          if (e.node.productType) types.add(e.node.productType);
+          if (e.node.vendor) vendors.add(e.node.vendor);
+        }
+        hasMore = data.collection.products.pageInfo.hasNextPage;
+        after = data.collection.products.pageInfo.endCursor;
+      }
+
+      const result = {
+        types: Array.from(types).sort((a, b) => a.localeCompare(b, 'ar')),
+        vendors: Array.from(vendors).sort((a, b) => a.localeCompare(b)),
+      };
+      setCache(cacheKey, result);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching collection filters:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
       const first = parseInt(req.query.first as string) || 20;

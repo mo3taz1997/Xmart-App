@@ -162,6 +162,16 @@ export const QUERIES = {
     }
   `,
 
+  COLLECTION_FILTERS: `
+    query GetCollectionFilters($handle: String!, $first: Int!, $after: String, $language: LanguageCode) @inContext(language: $language) {
+      collection(handle: $handle) {
+        products(first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { productType vendor } }
+        }
+      }
+    }
+  `,
   COLLECTION_PRODUCTS: `
     query GetCollectionProducts($handle: String!, $first: Int!, $after: String, $sortKey: ProductCollectionSortKeys, $reverse: Boolean, $filters: [ProductFilter!], $language: LanguageCode) @inContext(language: $language) {
       collection(handle: $handle) {

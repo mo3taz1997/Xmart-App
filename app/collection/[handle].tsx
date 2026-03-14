@@ -170,17 +170,27 @@ export default function CollectionScreen() {
     }
   }, [currentProducts]);
 
-  const availableTypes = useMemo(() => {
+  const { data: filtersData } = useQuery({
+    queryKey: ['collection-filters', activeProductHandle, language],
+    queryFn: () => api.getCollectionFilters(activeProductHandle, language),
+    enabled: !!activeProductHandle && !isAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const localTypes = useMemo(() => {
     const types = new Set<string>();
     allProducts.forEach((p: any) => { if (p.productType) types.add(p.productType); });
     return Array.from(types).sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allProducts]);
 
-  const availableVendors = useMemo(() => {
+  const localVendors = useMemo(() => {
     const vendors = new Set<string>();
     allProducts.forEach((p: any) => { if (p.vendor) vendors.add(p.vendor); });
     return Array.from(vendors).sort((a, b) => a.localeCompare(b));
   }, [allProducts]);
+
+  const availableTypes: string[] = isAll ? localTypes : (filtersData?.types || localTypes);
+  const availableVendors: string[] = isAll ? localVendors : (filtersData?.vendors || localVendors);
 
   const [typeTranslations, setTypeTranslations] = React.useState<Record<string, string>>({});
 
