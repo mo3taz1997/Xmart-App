@@ -919,9 +919,9 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
                 source={{ uri: banner.imageUrl }}
                 style={[bannerStyles.image, { width: bannerImageWidth, height: imgH }]}
                 contentFit="contain"
-                transition={300}
+                transition={0}
                 cachePolicy="memory-disk"
-                recyclingKey={`banner-${i}`}
+                recyclingKey={`banner-img-${banner.imageUrl}`}
                 priority="high"
                 onLoad={(e: any) => onImageLoad(banner.imageUrl, e)}
               />
@@ -1180,7 +1180,7 @@ export default function HomeScreen() {
                   imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
                 }));
                 if (resolvedBanners.length === 0) return null;
-                return <PromoBannerSlider banners={resolvedBanners} />;
+                return <PromoBannerSlider key={`banner-slider-${s.id}`} banners={resolvedBanners} />;
               }
               if (s.type === 'static_banner') {
                 return <StaticBannerSection section={s} colors={colors} isRTL={isRTL} />;
