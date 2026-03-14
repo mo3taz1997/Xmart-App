@@ -140,73 +140,88 @@ function SubCircleRow({
   language: string;
   isRTL: boolean;
 }) {
+  const ref = useRef<ScrollView>(null);
+
   return (
     <View style={{ paddingTop: 10, paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border + '55' }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 12, gap: 8 }}>
-          {items.map((child) => {
-            const selected = activeId === child.id;
-            const title = language === 'ar' ? child.titleAr : child.titleEn;
-            const imgUrl = resolveImageUrl(child.imageUrl) || child.imageUrl;
+      <ScrollView
+        ref={ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: isRTL ? 'flex-end' : 'flex-start',
+          paddingHorizontal: 12,
+          gap: 8,
+        }}
+        onContentSizeChange={(cw) => {
+          if (isRTL && cw > width) {
+            ref.current?.scrollToEnd({ animated: false });
+          }
+        }}
+      >
+        {items.map((child) => {
+          const selected = activeId === child.id;
+          const title = language === 'ar' ? child.titleAr : child.titleEn;
+          const imgUrl = resolveImageUrl(child.imageUrl) || child.imageUrl;
 
-            return (
-              <Pressable
-                key={child.id}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (child.children && child.children.length > 0) {
-                    onDrill(child);
-                  } else if (selected && sortIdx === 0) {
-                    onReshuffle();
-                  } else {
-                    onSelect(child);
-                  }
-                }}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  opacity: pressed ? 0.75 : 1,
-                  transform: [{ scale: pressed ? 0.94 : 1 }],
-                  width: SUB_CIRCLE_WIDTH,
-                })}
-              >
-                <View style={{
-                  width: SUB_CIRCLE_SIZE,
-                  height: SUB_CIRCLE_SIZE,
-                  borderRadius: SUB_CIRCLE_SIZE / 2,
-                  overflow: 'hidden',
-                  borderWidth: selected ? 2.5 : 1.5,
-                  borderColor: selected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
-                  backgroundColor: '#FFFFFF',
-                }}>
-                  {imgUrl ? (
-                    <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' } as any} contentFit="cover" />
-                  ) : (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="grid-outline" size={22} color={selected ? colors.primary : colors.textMuted} />
-                    </View>
-                  )}
-                </View>
-                <Text
-                  style={{
-                    fontFamily: selected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
-                    fontSize: 10,
-                    color: selected ? colors.primary : colors.textSecondary,
-                    textAlign: 'center',
-                    marginTop: 4,
-                    width: SUB_CIRCLE_WIDTH - 2,
-                    lineHeight: 14,
-                  }}
-                  numberOfLines={2}
-                >
-                  {title}
-                </Text>
-                {selected && (
-                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
+          return (
+            <Pressable
+              key={child.id}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (child.children && child.children.length > 0) {
+                  onDrill(child);
+                } else if (selected && sortIdx === 0) {
+                  onReshuffle();
+                } else {
+                  onSelect(child);
+                }
+              }}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                opacity: pressed ? 0.75 : 1,
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+                width: SUB_CIRCLE_WIDTH,
+              })}
+            >
+              <View style={{
+                width: SUB_CIRCLE_SIZE,
+                height: SUB_CIRCLE_SIZE,
+                borderRadius: SUB_CIRCLE_SIZE / 2,
+                overflow: 'hidden',
+                borderWidth: selected ? 2.5 : 1.5,
+                borderColor: selected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
+                backgroundColor: '#FFFFFF',
+              }}>
+                {imgUrl ? (
+                  <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' } as any} contentFit="cover" />
+                ) : (
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="grid-outline" size={22} color={selected ? colors.primary : colors.textMuted} />
+                  </View>
                 )}
-              </Pressable>
-            );
-          })}
-        </View>
+              </View>
+              <Text
+                style={{
+                  fontFamily: selected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
+                  fontSize: 10,
+                  color: selected ? colors.primary : colors.textSecondary,
+                  textAlign: 'center',
+                  marginTop: 4,
+                  width: SUB_CIRCLE_WIDTH - 2,
+                  lineHeight: 14,
+                }}
+                numberOfLines={2}
+              >
+                {title}
+              </Text>
+              {selected && (
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
+              )}
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </View>
   );

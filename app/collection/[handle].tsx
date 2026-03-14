@@ -245,6 +245,8 @@ export default function CollectionScreen() {
     };
   }
 
+  const subScrollRef = React.useRef<ScrollView>(null);
+
   /* ── Sub-categories row ── */
   const subCatRow = showSubRow ? (
     <View style={{
@@ -277,76 +279,89 @@ export default function CollectionScreen() {
           </Text>
         </Pressable>
       )}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 12, gap: 10 }}>
-          {subChildItems.map((child) => {
-            const isSelected = activeSubChild?.id === child.id;
-            const title = language === 'ar' ? child.titleAr : child.titleEn;
-            const imgUrl = child.imageUrl?.startsWith('http')
-              ? child.imageUrl
-              : child.imageUrl
-                ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${child.imageUrl}`
-                : null;
+      <ScrollView
+        ref={subScrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: isRTL ? 'flex-end' : 'flex-start',
+          paddingHorizontal: 12,
+          gap: 10,
+        }}
+        onContentSizeChange={(cw) => {
+          if (isRTL && cw > width) {
+            subScrollRef.current?.scrollToEnd({ animated: false });
+          }
+        }}
+      >
+        {subChildItems.map((child) => {
+          const isSelected = activeSubChild?.id === child.id;
+          const title = language === 'ar' ? child.titleAr : child.titleEn;
+          const imgUrl = child.imageUrl?.startsWith('http')
+            ? child.imageUrl
+            : child.imageUrl
+              ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${child.imageUrl}`
+              : null;
 
-            return (
-              <Pressable
-                key={child.id}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedType(null);
-                  if (child.children && child.children.length > 0) {
-                    setSubNavStack(prev => [...prev, child]);
-                    setActiveSubChild(null);
-                  } else {
-                    setActiveSubChild(activeSubChild?.id === child.id ? null : child);
-                  }
-                }}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  opacity: pressed ? 0.75 : 1,
-                  width: 72,
-                  transform: [{ scale: pressed ? 0.94 : 1 }],
-                })}
-              >
-                <View style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
-                  overflow: 'hidden',
-                  borderWidth: isSelected ? 2.5 : 1.5,
-                  borderColor: isSelected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
-                  backgroundColor: isDark ? '#1e2e45' : '#e8f0fa',
-                }}>
-                  {imgUrl ? (
-                    <Image
-                      source={{ uri: imgUrl }}
-                      style={{ width: '100%', height: '100%' } as any}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="grid-outline" size={22} color={isSelected ? colors.primary : colors.textMuted} />
-                    </View>
-                  )}
-                </View>
-                <Text style={{
-                  fontFamily: isSelected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
-                  fontSize: 10,
-                  color: isSelected ? colors.primary : colors.textSecondary,
-                  textAlign: 'center',
-                  marginTop: 4,
-                  width: 70,
-                  lineHeight: 14,
-                }} numberOfLines={2}>
-                  {title}
-                </Text>
-                {isSelected && (
-                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
+          return (
+            <Pressable
+              key={child.id}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedType(null);
+                if (child.children && child.children.length > 0) {
+                  setSubNavStack(prev => [...prev, child]);
+                  setActiveSubChild(null);
+                } else {
+                  setActiveSubChild(activeSubChild?.id === child.id ? null : child);
+                }
+              }}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                opacity: pressed ? 0.75 : 1,
+                width: 72,
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+              })}
+            >
+              <View style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                overflow: 'hidden',
+                borderWidth: isSelected ? 2.5 : 1.5,
+                borderColor: isSelected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
+                backgroundColor: isDark ? '#1e2e45' : '#e8f0fa',
+              }}>
+                {imgUrl ? (
+                  <Image
+                    source={{ uri: imgUrl }}
+                    style={{ width: '100%', height: '100%' } as any}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="grid-outline" size={22} color={isSelected ? colors.primary : colors.textMuted} />
+                  </View>
                 )}
-              </Pressable>
-            );
-          })}
-        </View>
+              </View>
+              <Text style={{
+                fontFamily: isSelected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
+                fontSize: 10,
+                color: isSelected ? colors.primary : colors.textSecondary,
+                textAlign: 'center',
+                marginTop: 4,
+                width: 70,
+                lineHeight: 14,
+              }} numberOfLines={2}>
+                {title}
+              </Text>
+              {isSelected && (
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
+              )}
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </View>
   ) : null;
