@@ -254,6 +254,8 @@ export default function CollectionScreen() {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border + '55',
       paddingVertical: 10,
+      backgroundColor: colors.background,
+      zIndex: 2,
     }}>
       {subNavStack.length > 0 && (
         <Pressable
@@ -374,7 +376,7 @@ export default function CollectionScreen() {
   /* ── Sort / filter chips ── */
   const listHeader = (
     <>
-      <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <View style={[styles.chipRow, { flexDirection: isRTL ? 'row-reverse' : 'row', backgroundColor: colors.background, zIndex: 2 }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
