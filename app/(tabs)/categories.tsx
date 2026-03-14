@@ -116,7 +116,7 @@ function CatCircleItem({
 
 /* ── Horizontal subcategory circle ── */
 function SubCircle({
-  item, onPress, isSelected, colors, isDark, language,
+  item, onPress, isSelected, colors, isDark, language, inverted,
 }: {
   item: CategoryItem;
   onPress: () => void;
@@ -124,6 +124,7 @@ function SubCircle({
   colors: typeof Colors.dark;
   isDark: boolean;
   language: string;
+  inverted?: boolean;
 }) {
   const title = language === 'ar' ? item.titleAr : item.titleEn;
   const imgUrl = resolveImageUrl(item.imageUrl) || item.imageUrl;
@@ -134,7 +135,7 @@ function SubCircle({
       style={({ pressed }) => ({
         alignItems: 'center',
         opacity: pressed ? 0.75 : 1,
-        transform: [{ scale: pressed ? 0.94 : 1 }],
+        transform: inverted ? [{ scaleX: -1 }, { scale: pressed ? 0.94 : 1 }] : [{ scale: pressed ? 0.94 : 1 }],
         width: Math.round(width * 0.2),
       })}
     >
@@ -551,44 +552,35 @@ export default function CategoriesScreen() {
               paddingBottom: 6,
               borderBottomWidth: StyleSheet.hairlineWidth,
               borderBottomColor: colors.border + '55',
-              direction: isRTL ? 'rtl' : 'ltr',
             }}>
-              <ScrollView
-                ref={subCircleScrollRef}
+              <FlatList
+                ref={subCircleScrollRef as any}
+                data={childItems}
                 horizontal
+                inverted={isRTL}
                 showsHorizontalScrollIndicator={false}
+                keyExtractor={(item: CategoryItem) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-              >
-                {childItems.map((child: CategoryItem) => (
-                  <View
-                    key={child.id}
-                    onLayout={(e) => { subCirclePositions.current[child.id] = e.nativeEvent.layout.x; }}
-                  >
-                    <SubCircle
-                      item={child}
-                      onPress={() => {
-                        if (child.children && child.children.length > 0) {
-                          drillDown(child);
-                        } else if (activeChild?.id === child.id && sortIdx === 0) {
-                          setRandomSeed(Math.random());
-                        } else {
-                          setActiveChild(child);
-                          const pos = subCirclePositions.current[child.id];
-                          if (pos !== undefined) {
-                            setTimeout(() => {
-                              subCircleScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                            }, 50);
-                          }
-                        }
-                      }}
-                      isSelected={activeChild?.id === child.id}
-                      colors={colors}
-                      isDark={isDark}
-                      language={language}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
+                renderItem={({ item: child }: { item: CategoryItem }) => (
+                  <SubCircle
+                    item={child}
+                    inverted={isRTL}
+                    onPress={() => {
+                      if (child.children && child.children.length > 0) {
+                        drillDown(child);
+                      } else if (activeChild?.id === child.id && sortIdx === 0) {
+                        setRandomSeed(Math.random());
+                      } else {
+                        setActiveChild(child);
+                      }
+                    }}
+                    isSelected={activeChild?.id === child.id}
+                    colors={colors}
+                    isDark={isDark}
+                    language={language}
+                  />
+                )}
+              />
             </View>
           )}
 

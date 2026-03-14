@@ -280,14 +280,15 @@ export default function CollectionScreen() {
           </Text>
         </Pressable>
       )}
-      <View style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
-      <ScrollView
-        ref={subScrollRef}
+      <FlatList
+        ref={subScrollRef as any}
+        data={subChildItems}
         horizontal
+        inverted={isRTL}
         showsHorizontalScrollIndicator={false}
+        keyExtractor={(child: any) => child.id}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
-      >
-        {subChildItems.map((child, childIdx) => {
+        renderItem={({ item: child }: { item: any }) => {
           const isSelected = activeSubChild?.id === child.id;
           const title = language === 'ar' ? child.titleAr : child.titleEn;
           const imgUrl = child.imageUrl?.startsWith('http')
@@ -298,10 +299,6 @@ export default function CollectionScreen() {
 
           return (
             <Pressable
-              key={child.id}
-              onLayout={(e) => {
-                subItemPositions.current[child.id] = e.nativeEvent.layout.x;
-              }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setSelectedType(null);
@@ -311,21 +308,13 @@ export default function CollectionScreen() {
                 } else {
                   const newChild = activeSubChild?.id === child.id ? null : child;
                   setActiveSubChild(newChild);
-                  if (newChild) {
-                    const pos = subItemPositions.current[child.id];
-                    if (pos !== undefined) {
-                      setTimeout(() => {
-                        subScrollRef.current?.scrollTo({ x: Math.max(0, pos - 20), animated: true });
-                      }, 50);
-                    }
-                  }
                 }
               }}
               style={({ pressed }) => ({
                 alignItems: 'center',
                 opacity: pressed ? 0.75 : 1,
                 width: 72,
-                transform: [{ scale: pressed ? 0.94 : 1 }],
+                transform: isRTL ? [{ scaleX: -1 }, { scale: pressed ? 0.94 : 1 }] : [{ scale: pressed ? 0.94 : 1 }],
               })}
             >
               <View style={{
@@ -365,9 +354,8 @@ export default function CollectionScreen() {
               )}
             </Pressable>
           );
-        })}
-      </ScrollView>
-      </View>
+        }}
+      />
     </View>
   ) : null;
 

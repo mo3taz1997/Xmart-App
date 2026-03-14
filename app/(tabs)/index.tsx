@@ -55,12 +55,9 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
       if (layoutY.current <= 0) return;
       const sy = scrollY.current;
       const top = layoutY.current;
-      const bottom = top + measuredH.current;
-      const inRange = top < sy + screenHeight * 2.5 && bottom > sy - screenHeight * 2;
+      const inRange = top < sy + screenHeight * 2.5;
       if (inRange && !mounted) {
         setMounted(true);
-      } else if (!inRange && mounted) {
-        setMounted(false);
       }
     };
     lazySectionRegistry.add(check);
