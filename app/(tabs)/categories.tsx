@@ -114,67 +114,101 @@ function CatCircleItem({
   );
 }
 
-/* ── Horizontal subcategory circle ── */
-function SubCircle({
-  item, onPress, isSelected, colors, isDark, language,
+const SUB_CIRCLE_SIZE = 56;
+const SUB_CIRCLE_WIDTH = 72;
+
+function SubCircleRow({
+  items,
+  activeId,
+  onSelect,
+  onDrill,
+  onReshuffle,
+  sortIdx,
+  colors,
+  isDark,
+  language,
+  isRTL,
 }: {
-  item: CategoryItem;
-  onPress: () => void;
-  isSelected: boolean;
+  items: CategoryItem[];
+  activeId: string | null;
+  onSelect: (item: CategoryItem) => void;
+  onDrill: (item: CategoryItem) => void;
+  onReshuffle: () => void;
+  sortIdx: number;
   colors: typeof Colors.dark;
   isDark: boolean;
   language: string;
+  isRTL: boolean;
 }) {
-  const title = language === 'ar' ? item.titleAr : item.titleEn;
-  const imgUrl = resolveImageUrl(item.imageUrl) || item.imageUrl;
-
   return (
-    <Pressable
-      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
-      style={({ pressed }) => ({
-        alignItems: 'center',
-        opacity: pressed ? 0.75 : 1,
-        transform: [{ scale: pressed ? 0.94 : 1 }],
-        width: Math.round(width * 0.2),
-      })}
-    >
-      <View
-        style={{
-          width: Math.round(width * 0.15),
-          height: Math.round(width * 0.15),
-          borderRadius: Math.round(width * 0.075),
-          overflow: 'hidden',
-          borderWidth: isSelected ? 2.5 : 1.5,
-          borderColor: isSelected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
-          backgroundColor: '#FFFFFF',
-        }}
-      >
-        {imgUrl ? (
-          <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' } as any} contentFit="cover" />
-        ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="grid-outline" size={22} color={isSelected ? colors.primary : colors.textMuted} />
-          </View>
-        )}
-      </View>
-      <Text
-        style={{
-          fontFamily: isSelected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
-          fontSize: 10,
-          color: isSelected ? colors.primary : colors.textSecondary,
-          textAlign: 'center',
-          marginTop: 4,
-          width: Math.round(width * 0.19),
-          lineHeight: 14,
-        }}
-        numberOfLines={2}
-      >
-        {title}
-      </Text>
-      {isSelected && (
-        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
-      )}
-    </Pressable>
+    <View style={{ paddingTop: 10, paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border + '55' }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 12, gap: 8 }}>
+          {items.map((child) => {
+            const selected = activeId === child.id;
+            const title = language === 'ar' ? child.titleAr : child.titleEn;
+            const imgUrl = resolveImageUrl(child.imageUrl) || child.imageUrl;
+
+            return (
+              <Pressable
+                key={child.id}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (child.children && child.children.length > 0) {
+                    onDrill(child);
+                  } else if (selected && sortIdx === 0) {
+                    onReshuffle();
+                  } else {
+                    onSelect(child);
+                  }
+                }}
+                style={({ pressed }) => ({
+                  alignItems: 'center',
+                  opacity: pressed ? 0.75 : 1,
+                  transform: [{ scale: pressed ? 0.94 : 1 }],
+                  width: SUB_CIRCLE_WIDTH,
+                })}
+              >
+                <View style={{
+                  width: SUB_CIRCLE_SIZE,
+                  height: SUB_CIRCLE_SIZE,
+                  borderRadius: SUB_CIRCLE_SIZE / 2,
+                  overflow: 'hidden',
+                  borderWidth: selected ? 2.5 : 1.5,
+                  borderColor: selected ? colors.primary : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(22,50,89,0.1)'),
+                  backgroundColor: '#FFFFFF',
+                }}>
+                  {imgUrl ? (
+                    <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' } as any} contentFit="cover" />
+                  ) : (
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="grid-outline" size={22} color={selected ? colors.primary : colors.textMuted} />
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={{
+                    fontFamily: selected ? 'Cairo_700Bold' : 'Cairo_600SemiBold',
+                    fontSize: 10,
+                    color: selected ? colors.primary : colors.textSecondary,
+                    textAlign: 'center',
+                    marginTop: 4,
+                    width: SUB_CIRCLE_WIDTH - 2,
+                    lineHeight: 14,
+                  }}
+                  numberOfLines={2}
+                >
+                  {title}
+                </Text>
+                {selected && (
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary, marginTop: 2 }} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -461,8 +495,6 @@ export default function CategoriesScreen() {
 
   /* Sort / filter bar — always rendered, content updates in place */
 
-  const subCircleScrollRef = useRef<ScrollView>(null);
-
   /* If children but no active collection → show children as grid of circles */
   const showChildGrid = childItems.length > 0 && !activeHandle;
 
@@ -543,41 +575,19 @@ export default function CategoriesScreen() {
           )
       ) : (
         <>
-          {/* ── Fixed: circles row ── */}
           {childItems.length > 0 && (
-            <View style={{
-              paddingTop: 10,
-              paddingBottom: 6,
-              borderBottomWidth: StyleSheet.hairlineWidth,
-              borderBottomColor: colors.border + '55',
-            }}>
-              <ScrollView
-                ref={subCircleScrollRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-              >
-                {(isRTL ? [...childItems].reverse() : childItems).map((child: CategoryItem) => (
-                  <SubCircle
-                    key={child.id}
-                    item={child}
-                    onPress={() => {
-                      if (child.children && child.children.length > 0) {
-                        drillDown(child);
-                      } else if (activeChild?.id === child.id && sortIdx === 0) {
-                        setRandomSeed(Math.random());
-                      } else {
-                        setActiveChild(child);
-                      }
-                    }}
-                    isSelected={activeChild?.id === child.id}
-                    colors={colors}
-                    isDark={isDark}
-                    language={language}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            <SubCircleRow
+              items={childItems}
+              activeId={activeChild?.id ?? null}
+              onSelect={setActiveChild}
+              onDrill={drillDown}
+              onReshuffle={() => setRandomSeed(Math.random())}
+              sortIdx={sortIdx}
+              colors={colors}
+              isDark={isDark}
+              language={language}
+              isRTL={isRTL}
+            />
           )}
 
           {/* ── Fixed: sort/filter bar — always mounted, visibility toggled ── */}
