@@ -142,6 +142,15 @@ function SubCircleRow({
 }) {
   const ref = useRef<ScrollView>(null);
   const displayItems = isRTL ? [...items].reverse() : items;
+  const itemIds = items.map(i => i.id).join(',');
+
+  useEffect(() => {
+    if (isRTL) {
+      setTimeout(() => ref.current?.scrollToEnd({ animated: false }), 50);
+    } else {
+      ref.current?.scrollTo({ x: 0, animated: false });
+    }
+  }, [itemIds, isRTL]);
 
   return (
     <View style={{ paddingTop: 10, paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border + '55' }}>

@@ -246,6 +246,15 @@ export default function CollectionScreen() {
   }
 
   const subScrollRef = React.useRef<ScrollView>(null);
+  const subChildIds = subChildItems.map(i => i.id).join(',');
+
+  React.useEffect(() => {
+    if (isRTL) {
+      setTimeout(() => subScrollRef.current?.scrollToEnd({ animated: false }), 50);
+    } else {
+      subScrollRef.current?.scrollTo({ x: 0, animated: false });
+    }
+  }, [subChildIds, isRTL]);
 
   /* ── Sub-categories row ── */
   const subCatRow = showSubRow ? (
