@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 8,
+      "versionCode": 9,
       "permissions": [],
       "blockedPermissions": [
         "android.permission.CAMERA",
