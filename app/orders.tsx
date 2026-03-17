@@ -85,7 +85,8 @@ function getStatusTranslation(status: string, fulfillmentStatus: string, cancele
   if (canceled) return t('orders.statusCanceled');
   
   const fulfill = (fulfillmentStatus || '').toUpperCase();
-  if (fulfill === 'FULFILLED') return t('orders.statusCompleted');
+  const financial = (status || '').toUpperCase();
+  if (fulfill === 'FULFILLED' && financial === 'PAID') return t('orders.statusCompleted');
   
   return t('orders.statusProcessing');
 }
@@ -94,7 +95,8 @@ function getStatusColor(financialStatus: string, fulfillmentStatus: string, canc
   if (canceled) return '#EF5350'; // Red
   
   const fulfill = (fulfillmentStatus || '').toUpperCase();
-  if (fulfill === 'FULFILLED') return colors.success || '#4CAF50'; // Green
+  const financial = (financialStatus || '').toUpperCase();
+  if (fulfill === 'FULFILLED' && financial === 'PAID') return colors.success || '#4CAF50'; // Green
   
   return '#FFA726'; // Orange
 }
