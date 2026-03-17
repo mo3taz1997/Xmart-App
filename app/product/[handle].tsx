@@ -509,7 +509,7 @@ export default function ProductDetailScreen() {
   };
   const logoUrl = resolveUrl(isDark ? (rawLogoDarkUrl || rawLogoUrl) : rawLogoUrl);
 
-  const { data: product, isLoading } = useQuery({
+  const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', handle, language],
     queryFn: () => api.getProduct(handle as string, language),
     enabled: !!handle,
@@ -627,10 +627,37 @@ export default function ProductDetailScreen() {
     });
   }, [product?.handle]);
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!product || isError) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <PageBackground isDark={isDark} />
+        <View style={{ position: 'absolute', top: insets.top + webTopInset + 8, left: isRTL ? undefined : 12, right: isRTL ? 12 : undefined, zIndex: 10 }}>
+          <Pressable onPress={goBack} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={20} color={colors.text} />
+          </Pressable>
+        </View>
+        <View style={{ alignItems: 'center', gap: 12, paddingHorizontal: 32 }}>
+          <Ionicons name="alert-circle-outline" size={56} color={colors.textMuted} />
+          <Text style={{ fontFamily: 'Cairo_700Bold', fontSize: 18, color: colors.text, textAlign: 'center' }}>
+            {language === 'ar' ? 'المنتج غير متوفر' : 'Product not available'}
+          </Text>
+          <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 14, color: colors.textMuted, textAlign: 'center' }}>
+            {language === 'ar' ? 'هذا المنتج لم يعد متوفراً أو تم إزالته' : 'This product is no longer available or has been removed'}
+          </Text>
+          <Pressable onPress={goBack} style={{ marginTop: 8, backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10 }}>
+            <Text style={{ fontFamily: 'Cairo_600SemiBold', fontSize: 14, color: '#fff' }}>
+              {language === 'ar' ? 'رجوع' : 'Go Back'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
