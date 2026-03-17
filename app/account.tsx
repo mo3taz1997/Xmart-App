@@ -13,7 +13,7 @@ import PageBackground from '@/components/PageBackground';
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
-  const { customer, updateCustomer, refreshCustomer } = useAuth();
+  const { customer, updateCustomer, refreshCustomer, deleteAccount } = useAuth();
   const { isRTL, language } = useLanguage();
   const { colors, isDark } = useTheme();
 
@@ -26,6 +26,7 @@ export default function AccountScreen() {
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -270,6 +271,81 @@ export default function AccountScreen() {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={styles.saveBtnText}>{t('تغيير كلمة المرور', 'Change Password')}</Text>
+                )}
+              </Pressable>
+            </View>
+
+            <View style={[styles.section, { backgroundColor: colors.card, marginTop: 16 }]}>
+              <Text style={[styles.sectionTitle, { color: '#F44336', textAlign, writingDirection }]}>
+                {t('حذف الحساب', 'Delete Account')}
+              </Text>
+              <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 13, color: colors.textMuted, textAlign, writingDirection, marginBottom: 16, lineHeight: 20 }}>
+                {t(
+                  'سيتم حذف حسابك وجميع بياناتك الشخصية بشكل نهائي. هذا الإجراء لا يمكن التراجع عنه.',
+                  'Your account and all personal data will be permanently deleted. This action cannot be undone.'
+                )}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  Alert.alert(
+                    t('حذف الحساب', 'Delete Account'),
+                    t(
+                      'هل أنت متأكد أنك تريد حذف حسابك؟ سيتم حذف جميع بياناتك بشكل نهائي ولا يمكن استعادتها.',
+                      'Are you sure you want to delete your account? All your data will be permanently deleted and cannot be recovered.'
+                    ),
+                    [
+                      { text: t('إلغاء', 'Cancel'), style: 'cancel' },
+                      {
+                        text: t('حذف نهائي', 'Delete Permanently'),
+                        style: 'destructive',
+                        onPress: () => {
+                          Alert.alert(
+                            t('تأكيد الحذف', 'Confirm Deletion'),
+                            t('هل أنت متأكد تماماً؟ لا يمكن التراجع عن هذا.', 'Are you absolutely sure? This cannot be undone.'),
+                            [
+                              { text: t('إلغاء', 'Cancel'), style: 'cancel' },
+                              {
+                                text: t('نعم، احذف حسابي', 'Yes, Delete My Account'),
+                                style: 'destructive',
+                                onPress: async () => {
+                                  setDeletingAccount(true);
+                                  try {
+                                    await deleteAccount();
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                    router.replace('/');
+                                  } catch (err: any) {
+                                    Alert.alert(
+                                      t('خطأ', 'Error'),
+                                      t('حدث خطأ أثناء حذف الحساب. حاول مرة أخرى.', 'An error occurred while deleting your account. Please try again.')
+                                    );
+                                  } finally {
+                                    setDeletingAccount(false);
+                                  }
+                                },
+                              },
+                            ]
+                          );
+                        },
+                      },
+                    ]
+                  );
+                }}
+                disabled={deletingAccount}
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  {
+                    backgroundColor: '#F44336',
+                    opacity: pressed ? 0.9 : 1,
+                  },
+                ]}
+              >
+                {deletingAccount ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="trash-outline" size={18} color="#fff" />
+                    <Text style={styles.saveBtnText}>{t('حذف الحساب', 'Delete Account')}</Text>
+                  </View>
                 )}
               </Pressable>
             </View>

@@ -32,7 +32,13 @@ export async function shopifyAdminFetch(endpoint: string, method: string = 'GET'
     throw new Error(`Shopify Admin API error: ${response.status} - ${text}`);
   }
 
-  return response.json();
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return {};
+  }
+
+  const text = await response.text();
+  if (!text || text.trim() === '') return {};
+  return JSON.parse(text);
 }
 
 export async function shopifyAdminGraphQL(query: string, variables?: any): Promise<any> {

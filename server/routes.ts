@@ -834,6 +834,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/customer", async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+
+      const data = await shopifyFetch(QUERIES.GET_CUSTOMER, {
+        customerAccessToken: token,
+        language: 'EN',
+      });
+
+      if (!data.customer) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+
+      const customerId = data.customer.id;
+      const numericId = extractNumericId(customerId);
+      console.log(`[Customer] Deleting customer ${data.customer.email} (ID: ${numericId})`);
+
+      try {
+        await shopifyAdminFetch(`customers/${numericId}.json`, 'DELETE');
+        console.log(`[Customer] Successfully deleted customer ${numericId}`);
+      } catch (adminErr: any) {
+        if (adminErr.message?.includes('422') || adminErr.message?.includes('orders')) {
+          console.log(`[Customer] Customer has orders, redacting personal data instead`);
+          await shopifyAdminFetch(`customers/${numericId}.json`, 'PUT', {
+            customer: {
+              id: parseInt(numericId),
+              first_name: 'Deleted',
+              last_name: 'User',
+              email: `deleted-${numericId}@deleted.xmart.me`,
+              phone: '',
+              note: 'Account deleted by user request',
+              tags: 'account-deleted',
+            }
+          });
+        } else {
+          throw adminErr;
+        }
+      }
+
+      try {
+        const { pool } = await import('./db');
+        await pool.query('DELETE FROM users WHERE email = $1 OR shopify_customer_id = $2', [data.customer.email, customerId]);
+        await pool.query('DELETE FROM customer_addresses WHERE customer_id = $1', [customerId]);
+        await pool.query('DELETE FROM orders WHERE customer_id = $1', [customerId]);
+      } catch (dbErr: any) {
+        console.error('[Customer] DB cleanup error (non-fatal):', dbErr.message);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting customer:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.put("/api/customer/update", async (req: Request, res: Response) => {
     try {
       const token = req.headers.authorization?.replace("Bearer ", "");
