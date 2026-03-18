@@ -806,7 +806,7 @@ export default function ProductDetailScreen() {
     } catch (e) {}
   };
 
-  const displayTitle = product.title;
+  const displayTitle = (language === 'ar' && product.titleEn) ? product.titleEn : product.title;
   const displayVendor = product.vendor;
 
   const brandCollection = product.vendor && collections
@@ -997,7 +997,7 @@ export default function ProductDetailScreen() {
             </View>
             <View style={[styles.descDivider, { backgroundColor: colors.border }]} />
             <HtmlDescription
-              html={product.descriptionHtml || product.description}
+              html={(language === 'ar' && product.descriptionHtmlEn) ? product.descriptionHtmlEn : (product.descriptionHtml || product.description)}
               colors={colors}
               isRTL={isRTL}
             />

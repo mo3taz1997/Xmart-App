@@ -369,10 +369,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { handle } = req.params;
       const lang = ((req.query.lang as string) || "AR").toUpperCase();
       const language = lang === 'EN' ? 'EN' : 'AR';
-      const data = await shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language });
-      const product = data.product;
+      const [primaryData, enData] = await Promise.all([
+        shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language }),
+        language !== 'EN' ? shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language: 'EN' }).catch(() => null) : Promise.resolve(null),
+      ]);
+      const product = primaryData.product;
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
+      }
+      if (enData?.product) {
+        product.titleEn = enData.product.title;
+        product.descriptionEn = enData.product.description;
+        product.descriptionHtmlEn = enData.product.descriptionHtml;
       }
       res.json(product);
     } catch (error: any) {
