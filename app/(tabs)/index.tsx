@@ -1233,16 +1233,7 @@ export default function HomeScreen() {
               return <SelectedCategoriesSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
             };
 
-            const alwaysEager = idx < 3 || s.type === 'static_banner' || s.type === 'banner_slider' || s.type === 'brands_strip';
-            if (alwaysEager) {
-              return <React.Fragment key={s.id}>{renderSection()}</React.Fragment>;
-            }
-
-            return (
-              <LazySection key={s.id} scrollY={scrollYRef} estimatedHeight={280}>
-                {renderSection()}
-              </LazySection>
-            );
+            return <React.Fragment key={s.id}>{renderSection()}</React.Fragment>;
           })
         }
 
