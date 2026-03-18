@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Platform, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Platform, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -120,8 +120,7 @@ export default function AccountScreen() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-        <Pressable style={{ flex: 1 }} onPress={() => { if (Platform.OS !== 'web') Keyboard.dismiss(); }}>
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
             <View style={[styles.section, { backgroundColor: colors.card }]}>
               <Text style={[styles.sectionTitle, { color: colors.text, textAlign, writingDirection }]}>
                 {t('المعلومات الشخصية', 'Personal Information')}
@@ -350,7 +349,6 @@ export default function AccountScreen() {
               </Pressable>
             </View>
           </ScrollView>
-        </Pressable>
       </KeyboardAvoidingView>
     </View>
   );
