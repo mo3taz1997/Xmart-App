@@ -88,6 +88,13 @@ function resolveAssetUrl(url: string | null | undefined): string | null {
   return `https://${DOMAIN}${url}`;
 }
 
+function optimizeShopifyImage(url: string | null | undefined, size: number = 400): string | null {
+  if (!url) return null;
+  if (!url.includes('cdn.shopify.com')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${size}&quality=75`;
+}
+
 
 function JordanFlagBadge() {
   const expandAnim = useRef(new RNAnimated.Value(0)).current;
@@ -541,7 +548,8 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
               const price = item.priceRange?.minVariantPrice?.amount || '0';
               const currency = item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
               const compareAt = item.compareAtPriceRange?.minVariantPrice?.amount;
-              const imgUrl = item.images?.edges?.[0]?.node?.url || null;
+              const rawImgUrl = item.images?.edges?.[0]?.node?.url || null;
+              const imgUrl = optimizeShopifyImage(rawImgUrl, 400);
               return (
                 <View key={item.id || item.handle} style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
                   <ProductCard
