@@ -638,7 +638,7 @@ const CollectionShowcaseSection = React.memo(function CollectionShowcaseSection(
           const res = await api.getCollectionProducts(handle, { first: '10', available: 'true' }, language);
           const prods = (res?.products || []).filter((p: any) => p.availableForSale !== false);
           const urls = prods
-            .map((p: any) => p.images?.edges?.[0]?.node?.url || p.featuredImage?.url)
+            .map((p: any) => optimizeShopifyImage(p.images?.edges?.[0]?.node?.url || p.featuredImage?.url, 200))
             .filter(Boolean);
           return { handle, urls };
         } catch { return { handle, urls: [] as string[] }; }
@@ -823,7 +823,11 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
   const [maxBannerHeight, setMaxBannerHeight] = useState(fallbackH);
   const heightsRef = useRef<Record<string, number>>({});
 
+  const prevBannersKey = useRef('');
   useEffect(() => {
+    const key = JSON.stringify(banners.map(b => b.imageUrl));
+    if (key === prevBannersKey.current) return;
+    prevBannersKey.current = key;
     heightsRef.current = {};
     setMaxBannerHeight(fallbackH);
     banners.forEach((b) => {
@@ -1203,10 +1207,10 @@ export default function HomeScreen() {
                   imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
                 }));
                 if (resolvedBanners.length === 0) return null;
-                return <PromoBannerSlider key={`banner-slider-${s.id}`} banners={resolvedBanners} />;
+                return <PromoBannerSlider key={`banner-slider-${s.id}-${language}`} banners={resolvedBanners} />;
               }
               if (s.type === 'static_banner') {
-                return <StaticBannerSection section={s} colors={colors} isRTL={isRTL} />;
+                return <StaticBannerSection key={`static-banner-${s.id}-${language}`} section={s} colors={colors} isRTL={isRTL} />;
               }
               if (s.type === 'brands_strip') {
                 return <BrandsStripSection section={s} isDark={isDark} />;
@@ -1337,11 +1341,12 @@ const FeaturedProductsSection = React.memo(function FeaturedProductsSection({ se
     return Math.round((1 - now / orig) * 100);
   };
 
-  const p1 = products[0];
-  const p2 = products[1];
-  const p3 = products[2];
-  const p4 = products[3];
-  const p5 = products[4];
+  const optProducts = products.map((p: any) => ({ ...p, imageUrl: optimizeShopifyImage(p.imageUrl, 600) || p.imageUrl }));
+  const p1 = optProducts[0];
+  const p2 = optProducts[1];
+  const p3 = optProducts[2];
+  const p4 = optProducts[3];
+  const p5 = optProducts[4];
 
   const overlayBottom = (p: any, small = false) => (
     <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: small ? 8 : 12, paddingBottom: small ? 8 : 12, paddingTop: small ? 20 : 30, background: undefined }}>
@@ -1498,7 +1503,8 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
           const price = p.priceRange?.minVariantPrice?.amount || p.price || '0';
           const currency = p.priceRange?.minVariantPrice?.currencyCode || p.currency || 'JOD';
           const compareAt = p.compareAtPriceRange?.minVariantPrice?.amount || p.compareAtPrice;
-          const imgUrl = p.images?.edges?.[0]?.node?.url || p.imageUrl || p.image || null;
+          const rawImg = p.images?.edges?.[0]?.node?.url || p.imageUrl || p.image || null;
+          const imgUrl = optimizeShopifyImage(rawImg, 400);
           return (
             <View style={{ width: CARD_W_CP }}>
               <ProductCard

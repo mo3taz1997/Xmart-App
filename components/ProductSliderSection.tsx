@@ -7,6 +7,13 @@ import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
+function optimizeShopifyImage(url: string | null | undefined, size: number = 400): string | null {
+  if (!url) return null;
+  if (!url.includes('cdn.shopify.com')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${size}&quality=75`;
+}
+
 interface Props {
   section: any;
   language: string;
@@ -148,7 +155,7 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
               <View style={{ width: CARD_W * 0.56, height: CARD_H, backgroundColor: IMG_BG }}>
                 {(p.customImageUrl || p.imageUrl) ? (
                   <Image
-                    source={{ uri: p.customImageUrl || p.imageUrl }}
+                    source={{ uri: optimizeShopifyImage(p.customImageUrl || p.imageUrl, 600) || p.customImageUrl || p.imageUrl }}
                     style={{ width: "100%", height: "100%" }}
                     contentFit="contain"
                     transition={200}
