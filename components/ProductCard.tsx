@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useWishlist } from '@/contexts/WishlistContext';
@@ -63,43 +64,66 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
   }, [freeDelivery, soldCount, language, startOffset]);
 
   const [idx, setIdx] = React.useState(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  const advanceIdx = React.useCallback(() => {
+    setIdx(prev => (prev + 1) % items.length);
+  }, [items.length]);
 
   React.useEffect(() => {
     if (items.length <= 1) return;
-    const delay = 4000 + (startOffset % 5) * 500;
+    const delay = 3000 + (startOffset % 5) * 400;
     const timer = setInterval(() => {
-      setIdx(prev => (prev + 1) % items.length);
+      translateY.value = withTiming(-18, { duration: 250, easing: Easing.in(Easing.ease) });
+      opacity.value = withTiming(0, { duration: 250 }, () => {
+        runOnJS(advanceIdx)();
+        translateY.value = 18;
+        opacity.value = 0;
+        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.ease) });
+        opacity.value = withTiming(1, { duration: 250 });
+      });
     }, delay);
     return () => clearInterval(timer);
   }, [items.length, startOffset]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
 
   const badge = items[idx];
   if (!badge) return null;
 
   return (
     <View style={{
-      flexDirection: isRTL ? 'row-reverse' : 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingVertical: 4,
-      paddingHorizontal: 6,
-      backgroundColor: badge.color + '0A',
-      borderRadius: 6,
       marginTop: 4,
       overflow: 'hidden',
+      borderRadius: 6,
+      height: 26,
     }}>
-      <Ionicons name={badge.icon as any} size={11} color={badge.color} />
-      <Text
-        style={{
-          fontFamily: 'Cairo_600SemiBold',
-          fontSize: 9,
-          color: badge.color,
-          writingDirection: isRTL ? 'rtl' : 'ltr',
-        }}
-        numberOfLines={1}
-      >
-        {badge.text}
-      </Text>
+      <Animated.View style={[{
+        flexDirection: isRTL ? 'row-reverse' : 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingVertical: 4,
+        paddingHorizontal: 6,
+        backgroundColor: badge.color + '0A',
+        borderRadius: 6,
+      }, animStyle]}>
+        <Ionicons name={badge.icon as any} size={11} color={badge.color} />
+        <Text
+          style={{
+            fontFamily: 'Cairo_600SemiBold',
+            fontSize: 9,
+            color: badge.color,
+            writingDirection: isRTL ? 'rtl' : 'ltr',
+          }}
+          numberOfLines={1}
+        >
+          {badge.text}
+        </Text>
+      </Animated.View>
     </View>
   );
 }
