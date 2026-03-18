@@ -35,34 +35,45 @@ function seededRandom(seed: number) {
 }
 
 function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOffset }: { freeDelivery: boolean; isRTL: boolean; language: string; colors: typeof Colors.dark; soldCount: number; startOffset: number }) {
-  const badge = React.useMemo(() => {
-    const items: { icon: string; text: string; color: string }[] = [];
+  const items = React.useMemo(() => {
+    const list: { icon: string; text: string; color: string }[] = [];
     if (soldCount > 0) {
       const soldText = language === 'ar'
         ? `تم بيعه ${soldCount} مرة مؤخراً`
         : `Sold ${soldCount} times recently`;
-      items.push({ icon: 'trending-up-outline', text: soldText, color: '#D84315' });
+      list.push({ icon: 'trending-up-outline', text: soldText, color: '#D84315' });
     }
     if (freeDelivery) {
-      items.push({ icon: 'car-outline', text: language === 'ar' ? 'توصيل مجاني' : 'Free Delivery', color: BADGE_COLORS[1] });
+      list.push({ icon: 'car-outline', text: language === 'ar' ? 'توصيل مجاني' : 'Free Delivery', color: BADGE_COLORS[1] });
     } else {
-      items.push({ icon: 'flash-outline', text: language === 'ar' ? 'توصيل سريع' : 'Fast Delivery', color: BADGE_COLORS[2] });
+      list.push({ icon: 'flash-outline', text: language === 'ar' ? 'توصيل سريع' : 'Fast Delivery', color: BADGE_COLORS[2] });
     }
-    items.push(
+    list.push(
       { icon: 'shield-checkmark-outline', text: language === 'ar' ? 'منتج أصلي 100%' : '100% Authentic', color: BADGE_COLORS[0] },
       { icon: 'ribbon-outline', text: language === 'ar' ? 'كفالة حقيقية' : 'Genuine Warranty', color: BADGE_COLORS[1] },
       { icon: 'card-outline', text: language === 'ar' ? 'دفع آمن' : 'Secure Payment', color: BADGE_COLORS[3] },
       { icon: 'wallet-outline', text: language === 'ar' ? 'طرق دفع متنوعة' : 'Multiple Payment Methods', color: BADGE_COLORS[2] },
     );
-    const timeSeed = Math.floor(Date.now() / 60000);
-    const rng = seededRandom(startOffset + timeSeed);
-    for (let i = items.length - 1; i > 0; i--) {
+    const rng = seededRandom(startOffset);
+    for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
-      [items[i], items[j]] = [items[j], items[i]];
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    return items[0];
+    return list;
   }, [freeDelivery, soldCount, language, startOffset]);
 
+  const [idx, setIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    if (items.length <= 1) return;
+    const delay = 3000 + (startOffset % 5) * 400;
+    const timer = setInterval(() => {
+      setIdx(prev => (prev + 1) % items.length);
+    }, delay);
+    return () => clearInterval(timer);
+  }, [items.length, startOffset]);
+
+  const badge = items[idx];
   if (!badge) return null;
 
   return (
