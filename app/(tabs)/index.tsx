@@ -1410,18 +1410,22 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
   const sectionTitle = (language === 'ar' ? section.titleAr : section.titleEn) || '';
   const viewAllLabel = language === 'ar' ? 'عرض الكل' : 'View All';
 
+  const prefetchedProducts: any[] = section.collectionProducts || [];
+
   const { data, isLoading } = useQuery({
     queryKey: ['collectionProducts', collectionHandle, language],
     queryFn: () => api.getCollectionProducts(collectionHandle, { first: '12', available: 'true' }, language),
-    enabled: !!collectionHandle,
+    enabled: !!collectionHandle && prefetchedProducts.length === 0,
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 10,
   });
 
-  const products: any[] = ((data as any)?.products || []).filter((p: any) => p.availableForSale === true);
+  const products: any[] = prefetchedProducts.length > 0
+    ? prefetchedProducts.filter((p: any) => p.availableForSale !== false)
+    : ((data as any)?.products || []).filter((p: any) => p.availableForSale === true);
 
   if (!collectionHandle) return null;
-  if (isLoading) return (
+  if (isLoading && prefetchedProducts.length === 0) return (
     <View style={{ height: 210, justifyContent: 'center', alignItems: 'center' }}>
       <ActivityIndicator color={colors.primary} />
     </View>

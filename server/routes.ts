@@ -1060,7 +1060,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try { multiTabs = JSON.parse((section as any).metadata).tabs || []; } catch {}
           }
 
-          // Parse collection_showcase collections
+          let collectionProducts: any[] = [];
+          if (section.type === 'collection_products' && (section as any).metadata) {
+            try {
+              const cpMeta = JSON.parse((section as any).metadata);
+              const cpHandle = cpMeta.collectionHandle;
+              if (cpHandle) {
+                const cpLang = lang === 'en' ? 'EN' : 'AR';
+                const cpData = await shopifyFetch(QUERIES.COLLECTION_PRODUCTS, {
+                  handle: cpHandle, first: 12, language: cpLang, filters: [{ available: true }],
+                }).catch(() => null);
+                if (cpData?.collection?.products?.edges) {
+                  collectionProducts = cpData.collection.products.edges.map((e: any) => e.node);
+                }
+              }
+            } catch {}
+          }
+
           let showcaseCollections: any[] = [];
           if (section.type === 'collection_showcase' && (section as any).metadata) {
             try { showcaseCollections = JSON.parse((section as any).metadata).collections || []; } catch {}
@@ -1179,6 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             selectedCategories,
             tabs: multiTabs,
             showcaseCollections,
+            collectionProducts,
             featuredProducts: slimFeaturedProducts,
             brands,
             banners: banners.map((b) => ({
