@@ -551,23 +551,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (results.products.length > 0) {
-        try {
-          const handles = results.products.map((p: any) => p.handle).filter(Boolean).slice(0, 20);
-          if (handles.length > 0) {
-            const handleFilter = handles.map((h: string) => `handle:${h}`).join(' OR ');
-            const stockData = await shopifyFetch(`query CheckStock($query: String!) { products(first: 50, query: $query) { edges { node { handle availableForSale } } } }`, { query: handleFilter });
-            const stockMap: Record<string, boolean> = {};
-            (stockData.products?.edges || []).forEach((e: any) => { stockMap[e.node.handle] = e.node.availableForSale; });
-            results.products = results.products.map((p: any) => ({
-              ...p,
-              availableForSale: p.handle in stockMap ? stockMap[p.handle] : p.availableForSale,
-            }));
-          }
-        } catch (stockErr: any) {
-          console.warn("[Search] Stock verification failed:", stockErr.message);
-        }
-      }
       res.json(results);
     } catch (error: any) {
       console.error("Error searching products:", error.message);

@@ -791,9 +791,6 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
     conditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${paramIdx})
       OR tsv_en @@ to_tsquery('english', $${paramIdx})
-      OR similarity(title, $${paramIdx + 1}) > 0.1
-      OR similarity(COALESCE(title_ar,''), $${paramIdx + 1}) > 0.1
-      OR similarity(COALESCE(vendor,''), $${paramIdx + 1}) > 0.08
       OR title ILIKE $${paramIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${paramIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${paramIdx + 2}
@@ -842,9 +839,6 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
     baseConditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${baseParamIdx})
       OR tsv_en @@ to_tsquery('english', $${baseParamIdx})
-      OR similarity(title, $${baseParamIdx + 1}) > 0.1
-      OR similarity(COALESCE(title_ar,''), $${baseParamIdx + 1}) > 0.1
-      OR similarity(COALESCE(vendor,''), $${baseParamIdx + 1}) > 0.08
       OR title ILIKE $${baseParamIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${baseParamIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${baseParamIdx + 2}
@@ -866,13 +860,11 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
   const rankExpr = `(
     COALESCE(ts_rank_cd(tsv_en, to_tsquery('english', $1)), 0) * 3.0 +
     COALESCE(ts_rank_cd(tsv_ar, to_tsquery('simple', $1)), 0) * 3.0 +
-    GREATEST(similarity(title, $2), similarity(COALESCE(title_ar,''), $2)) * 2.5 +
-    similarity(COALESCE(vendor,''), $2) * 8.0 +
     CASE WHEN LOWER(COALESCE(vendor,'')) = LOWER($2) THEN 20.0
          WHEN COALESCE(vendor,'') ILIKE $3 THEN 12.0
          WHEN title ILIKE $2 THEN 10.0
          WHEN COALESCE(title_ar,'') ILIKE $2 THEN 10.0
-         WHEN title ILIKE $3 AND LENGTH($2) >= 4 AND LOWER(title) NOT LIKE '%' || LOWER($2) || 's%' THEN 2.0
+         WHEN title ILIKE $3 AND LENGTH($2) >= 4 THEN 2.0
          WHEN COALESCE(title_ar,'') ILIKE $3 THEN 2.0
          ELSE 0 END +
     CASE WHEN available_for_sale THEN 1.0 ELSE -3.0 END +
