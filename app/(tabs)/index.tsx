@@ -170,6 +170,8 @@ const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection(
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        directionalLockEnabled
         contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: 'row' }}
         style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}
       >
@@ -306,6 +308,8 @@ function MultiCollectionTabBar({ tabs, activeIdx, onSelect, colors, isDark, isRT
         ref={tabScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        directionalLockEnabled
         contentContainerStyle={{
           paddingHorizontal: 16,
           gap: 8,
@@ -504,6 +508,7 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
       <RNAnimated.View style={{ opacity: contentOpacity }}>
         {isLoading ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled directionalLockEnabled
             contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
             {[0, 1, 2].map((i) => (
               <View key={i} style={{
@@ -526,6 +531,8 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
             ref={productsScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            directionalLockEnabled
             contentContainerStyle={{
               paddingHorizontal: 16,
               gap: 10,
@@ -886,6 +893,8 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
+        nestedScrollEnabled
+        directionalLockEnabled
         style={{ transform: [{ scaleX }] }}
         onScrollBeginDrag={() => { isBusy.current = true; }}
         onScrollEndDrag={(e) => {
@@ -1460,6 +1469,8 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
         horizontal
         inverted={isRTL}
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        directionalLockEnabled
         keyExtractor={(item: any, i: number) => item.handle || String(i)}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         initialNumToRender={4}
