@@ -1170,7 +1170,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical={false}
         overScrollMode="never"
-        removeClippedSubviews={Platform.OS !== 'web'}
         onScroll={handleScroll}
         scrollEventThrottle={32}
         refreshControl={
@@ -1222,12 +1221,13 @@ export default function HomeScreen() {
               return <SelectedCategoriesSection section={s} language={language} colors={colors} isDark={isDark} isRTL={isRTL} />;
             };
 
-            if (idx < 3) {
+            const alwaysEager = idx < 3 || s.type === 'static_banner' || s.type === 'banner_slider' || s.type === 'brands_strip';
+            if (alwaysEager) {
               return <React.Fragment key={s.id}>{renderSection()}</React.Fragment>;
             }
 
             return (
-              <LazySection key={s.id} scrollY={scrollYRef} estimatedHeight={s.type === 'brands_strip' ? 60 : 280}>
+              <LazySection key={s.id} scrollY={scrollYRef} estimatedHeight={280}>
                 {renderSection()}
               </LazySection>
             );
