@@ -695,35 +695,6 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.get("/api/admin/search-products", async (req: Request, res: Response) => {
-    try {
-      const q = ((req.query.q as string) || '').trim();
-      if (!q || q.length < 1) return res.json([]);
-      const activeQuery = `${q} status:active`;
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: activeQuery, first: 12 });
-      const products: any[] = data.products.edges.map((e: any) => mapAdminProduct(e.node));
-      const result = products.map((p: any) => {
-        const price = p.priceRange?.minVariantPrice?.amount || '0';
-        const compareAt = p.compareAtPriceRange?.minVariantPrice?.amount || null;
-        return {
-          handle: p.handle,
-          titleEn: p.title,
-          titleAr: p.title,
-          imageUrl: p.images?.edges?.[0]?.node?.url || null,
-          price,
-          compareAtPrice: compareAt && parseFloat(compareAt) > parseFloat(price) ? compareAt : null,
-          currency: p.priceRange?.minVariantPrice?.currencyCode || 'JOD',
-          description: p.description || '',
-          descriptionAr: p.description || '',
-        };
-      });
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error searching products:", error.message);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   app.get("/api/admin/suggested-products", async (_req: Request, res: Response) => {
     try {
       const all = await db.select().from(suggestedProducts).orderBy(asc(suggestedProducts.sortOrder));

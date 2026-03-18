@@ -1086,66 +1086,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch {}
           }
 
-          // Parse featured_products / product_slider
           let featuredProducts: any[] = [];
           if ((section.type === 'featured_products' || section.type === 'product_slider') && (section as any).metadata) {
             try { featuredProducts = JSON.parse((section as any).metadata).products || []; } catch {}
-
-            // Auto-enrich: fetch vendor from Shopify for products missing it
-            const missingVendor = featuredProducts.filter((p: any) => !p.vendor && p.handle);
-            if (missingVendor.length > 0) {
-              try {
-                const vendorResults = await Promise.all(
-                  missingVendor.map((p: any) =>
-                    shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: 'EN' })
-                      .then((d: any) => ({ handle: p.handle, vendor: d?.product?.vendor || '' }))
-                      .catch(() => ({ handle: p.handle, vendor: '' }))
-                  )
-                );
-                const vendorMap: Record<string, string> = {};
-                vendorResults.forEach((r: any) => { if (r.vendor) vendorMap[r.handle] = r.vendor; });
-                let changed = false;
-                featuredProducts = featuredProducts.map((p: any) => {
-                  if (!p.vendor && vendorMap[p.handle]) { changed = true; return { ...p, vendor: vendorMap[p.handle] }; }
-                  return p;
-                });
-                if (changed) {
-                  const existingMeta = (() => { try { return JSON.parse((section as any).metadata || '{}'); } catch { return {}; } })();
-                  const newMeta = JSON.stringify({ ...existingMeta, products: featuredProducts });
-                  await db.update(homepageSections).set({ metadata: newMeta } as any).where(eq(homepageSections.id, section.id));
-                  console.log('[Vendor enrich] Updated vendors for section:', section.id, vendorMap);
-                }
-              } catch (enrichErr: any) {
-                console.error('[Vendor enrich] error:', enrichErr.message);
-              }
-            }
           }
 
-          const missingAr = featuredProducts.filter((p: any) => !p.titleAr && p.handle);
-          if (missingAr.length > 0) {
+          if (featuredProducts.length > 0) {
             try {
-              const arResults = await Promise.all(
-                missingAr.map((p: any) =>
-                  shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: 'AR' })
-                    .then((d: any) => ({ handle: p.handle, titleAr: d?.product?.title || '', descriptionAr: d?.product?.description || '' }))
-                    .catch(() => ({ handle: p.handle, titleAr: '', descriptionAr: '' }))
+              const enrichResults = await Promise.all(
+                featuredProducts.map((p: any) =>
+                  p.handle
+                    ? Promise.all([
+                        shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: 'EN' }).catch(() => null),
+                        shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: 'AR' }).catch(() => null),
+                      ]).then(([en, ar]: any[]) => ({
+                        handle: p.handle,
+                        titleEn: en?.product?.title || null,
+                        titleAr: ar?.product?.title || null,
+                        descriptionAr: ar?.product?.description || null,
+                        vendor: en?.product?.vendor || null,
+                        imageUrl: en?.product?.images?.edges?.[0]?.node?.url || null,
+                        price: en?.product?.priceRange?.minVariantPrice?.amount || null,
+                        compareAtPrice: en?.product?.compareAtPriceRange?.minVariantPrice?.amount || null,
+                        currency: en?.product?.priceRange?.minVariantPrice?.currencyCode || null,
+                        availableForSale: en?.product?.availableForSale ?? null,
+                      }))
+                    : Promise.resolve(null)
                 )
               );
-              const arMap: Record<string, { titleAr: string; descriptionAr: string }> = {};
-              arResults.forEach((r: any) => { if (r.titleAr) arMap[r.handle] = r; });
               let changed = false;
               featuredProducts = featuredProducts.map((p: any) => {
-                if (!p.titleAr && arMap[p.handle]) { changed = true; return { ...p, titleAr: arMap[p.handle].titleAr, descriptionAr: arMap[p.handle].descriptionAr }; }
+                const fresh = enrichResults.find((r: any) => r && r.handle === p.handle);
+                if (!fresh) return p;
+                const updates: any = {};
+                if (fresh.titleEn && fresh.titleEn !== p.titleEn) updates.titleEn = fresh.titleEn;
+                if (fresh.titleAr && fresh.titleAr !== p.titleAr) updates.titleAr = fresh.titleAr;
+                if (fresh.descriptionAr && fresh.descriptionAr !== p.descriptionAr) updates.descriptionAr = fresh.descriptionAr;
+                if (fresh.vendor && fresh.vendor !== p.vendor) updates.vendor = fresh.vendor;
+                if (fresh.price && fresh.price !== p.price) updates.price = fresh.price;
+                if (fresh.compareAtPrice !== undefined && fresh.compareAtPrice !== p.compareAtPrice) updates.compareAtPrice = fresh.compareAtPrice;
+                if (fresh.currency && fresh.currency !== p.currency) updates.currency = fresh.currency;
+                if (fresh.imageUrl && !p.customImageUrl && fresh.imageUrl !== p.imageUrl) updates.imageUrl = fresh.imageUrl;
+                if (Object.keys(updates).length > 0) { changed = true; return { ...p, ...updates }; }
                 return p;
               });
               if (changed) {
-                const existingMeta2 = (() => { try { return JSON.parse((section as any).metadata || '{}'); } catch { return {}; } })();
-                const newMeta2 = JSON.stringify({ ...existingMeta2, products: featuredProducts });
-                await db.update(homepageSections).set({ metadata: newMeta2 } as any).where(eq(homepageSections.id, section.id));
-                console.log('[AR enrich] Updated Arabic titles for section:', section.id);
+                const existingMeta3 = (() => { try { return JSON.parse((section as any).metadata || '{}'); } catch { return {}; } })();
+                const newMeta3 = JSON.stringify({ ...existingMeta3, products: featuredProducts });
+                await db.update(homepageSections).set({ metadata: newMeta3 } as any).where(eq(homepageSections.id, section.id));
+                console.log('[Product enrich] Updated product data for section:', section.id);
               }
-            } catch (arErr: any) {
-              console.error('[AR enrich] error:', arErr.message);
+            } catch (enrichErr: any) {
+              console.error('[Product enrich] error:', enrichErr.message);
             }
           }
 
