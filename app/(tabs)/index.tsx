@@ -36,34 +36,25 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
 }) {
   const [mounted, setMounted] = useState(false);
   const layoutY = useRef(0);
-  const measuredH = useRef(estimatedHeight);
-  const hasBeenMounted = useRef(false);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     layoutY.current = e.nativeEvent.layout.y;
-    const h = e.nativeEvent.layout.height;
-    if (h > 10) measuredH.current = h;
     if (!mounted) {
       const viewportBottom = scrollY.current + screenHeight * 2;
       if (layoutY.current < viewportBottom) {
         setMounted(true);
-        hasBeenMounted.current = true;
       }
     }
   }, [scrollY, mounted]);
 
   useEffect(() => {
+    if (mounted) return;
     const check = () => {
       if (layoutY.current <= 0) return;
       const sy = scrollY.current;
       const top = layoutY.current;
-      const bottom = top + measuredH.current;
-      const inRange = top < sy + screenHeight * 2.5 && bottom > sy - screenHeight * 2;
-      if (inRange && !mounted) {
+      if (top < sy + screenHeight * 2.5) {
         setMounted(true);
-        hasBeenMounted.current = true;
-      } else if (!inRange && mounted) {
-        setMounted(false);
       }
     };
     lazySectionRegistry.add(check);
@@ -72,9 +63,8 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
 
   if (mounted) return <View onLayout={onLayout}>{children}</View>;
 
-  const placeholderH = hasBeenMounted.current ? measuredH.current : estimatedHeight;
   return (
-    <View onLayout={onLayout} style={{ height: hasBeenMounted.current ? placeholderH : undefined, minHeight: hasBeenMounted.current ? undefined : placeholderH }} />
+    <View onLayout={onLayout} style={{ minHeight: estimatedHeight }} />
   );
 }
 
