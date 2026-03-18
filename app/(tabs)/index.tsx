@@ -345,11 +345,9 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const doubled = [...brands, ...brands, ...brands];
 
   const translateX = useRef(new RNAnimated.Value(0)).current;
-  const currentOffset = useRef(0);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
   useEffect(() => {
-    const listener = translateX.addListener(({ value }) => { currentOffset.current = value; });
     const anim = RNAnimated.loop(
       RNAnimated.timing(translateX, {
         toValue: -totalW,
@@ -359,13 +357,13 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       })
     );
     anim.start();
-    return () => { anim.stop(); translateX.removeListener(listener); };
+    return () => { anim.stop(); };
   }, [totalW]);
 
   const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
 
   const handleTap = (locX: number) => {
-    const offset = Math.abs(currentOffset.current);
+    const offset = Math.abs((translateX as any).__getValue?.() ?? (translateX as any)._value ?? 0);
     const tapInStrip = locX + offset;
     let acc = 0;
     for (let i = 0; i < doubled.length; i++) {
@@ -892,7 +890,7 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
+        scrollEventThrottle={64}
         nestedScrollEnabled
         directionalLockEnabled
         style={{ transform: [{ scaleX }] }}
@@ -1033,7 +1031,10 @@ export default function HomeScreen() {
   const resolvedHeroBanners = heroBanners.map((b: any) => ({ ...b, imageUrl: resolveUrl(b.imageUrl) || b.imageUrl }));
   const resolvedMidBanners = midBanners.map((b: any) => ({ ...b, imageUrl: resolveUrl(b.imageUrl) || b.imageUrl }));
 
+  const prefetchDoneRef = useRef(false);
   useEffect(() => {
+    if (!homepage || prefetchDoneRef.current) return;
+    prefetchDoneRef.current = true;
     const priorityUrls: string[] = [];
     const deferredUrls: string[] = [];
     resolvedHeroBanners.forEach((b: any) => { if (b.imageUrl) priorityUrls.push(b.imageUrl); });
@@ -1068,10 +1069,15 @@ export default function HomeScreen() {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const lastSearchVisible = useRef(false);
 
+  const lazyThrottleRef = useRef(0);
   const handleScroll = useCallback((e: any) => {
     const y = e.nativeEvent.contentOffset.y;
     scrollYRef.current = y;
-    notifyLazySections();
+    const now = Date.now();
+    if (now - lazyThrottleRef.current > 200) {
+      lazyThrottleRef.current = now;
+      notifyLazySections();
+    }
     const shouldShow = y > 50;
     if (shouldShow !== lastSearchVisible.current) {
       lastSearchVisible.current = shouldShow;
@@ -1164,8 +1170,9 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical={false}
         overScrollMode="never"
+        removeClippedSubviews={Platform.OS !== 'web'}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
+        scrollEventThrottle={32}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1475,8 +1482,8 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
         contentContainerStyle={{ paddingHorizontal: 16 }}
         initialNumToRender={4}
         maxToRenderPerBatch={4}
-        windowSize={7}
-        removeClippedSubviews={false}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS !== 'web'}
         ItemSeparatorComponent={FlatListGap10}
         renderItem={({ item: p }: { item: any }) => {
           const title = language === 'ar' ? (p.titleAr || p.title) : (p.titleEn || p.title);

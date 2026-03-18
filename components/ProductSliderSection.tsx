@@ -84,9 +84,9 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
         nestedScrollEnabled
         directionalLockEnabled
         keyExtractor={(item: any, i: number) => item.handle || String(i)}
-        windowSize={5}
-        maxToRenderPerBatch={3}
-        removeClippedSubviews={false}
+        windowSize={3}
+        maxToRenderPerBatch={2}
+        removeClippedSubviews={true}
         onScrollBeginDrag={() => { isUserScrolling.current = true; }}
         onMomentumScrollEnd={(e: any) => {
           isUserScrolling.current = false;
