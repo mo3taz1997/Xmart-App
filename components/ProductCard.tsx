@@ -131,6 +131,13 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
+function optimizeShopifyImage(url: string | null | undefined, size: number = 400): string | null {
+  if (!url) return null;
+  if (!url.includes('cdn.shopify.com')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${size}&quality=75`;
+}
+
 interface ProductCardProps {
   handle: string;
   title: string;
@@ -287,7 +294,7 @@ function ProductCard({
     >
       <View style={[styles.imageContainer, { aspectRatio: 1, height: undefined }]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={0} cachePolicy="memory-disk" recyclingKey={handle} placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkv6IuGgAAAABJRU5ErkJggg==' }} />
+          <Image source={{ uri: optimizeShopifyImage(imageUrl, 400) || imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={0} cachePolicy="memory-disk" recyclingKey={handle} placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkv6IuGgAAAABJRU5ErkJggg==' }} />
         ) : (
           <View style={styles.placeholderImage}>
             <Ionicons name="image-outline" size={40} color={colors.textMuted} />
