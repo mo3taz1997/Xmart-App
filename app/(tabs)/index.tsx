@@ -21,7 +21,7 @@ import { tabEvents } from '@/lib/tabEvents';
 import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useNotifications } from '@/contexts/NotificationContext';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, cancelAnimation, Easing as ReanimatedEasing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation, Easing as ReanimatedEasing } from 'react-native-reanimated';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -353,20 +353,19 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const doubled = [...brands, ...brands, ...brands, ...brands];
 
   const tx = useSharedValue(0);
+  const animStarted = useRef(false);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
   useEffect(() => {
-    const startLoop = () => {
-      tx.value = 0;
-      tx.value = withTiming(-totalW, { duration: totalW * 35, easing: ReanimatedEasing.linear }, (finished) => {
-        if (finished) {
-          tx.value = 0;
-          startLoop();
-        }
-      });
-    };
-    startLoop();
-    return () => { cancelAnimation(tx); };
+    if (animStarted.current && totalW > 0) return;
+    animStarted.current = true;
+    tx.value = 0;
+    tx.value = withRepeat(
+      withTiming(-totalW, { duration: totalW * 35, easing: ReanimatedEasing.linear }),
+      -1,
+      false
+    );
+    return () => { cancelAnimation(tx); animStarted.current = false; };
   }, [totalW]);
 
   const animStyle = useAnimatedStyle(() => ({
