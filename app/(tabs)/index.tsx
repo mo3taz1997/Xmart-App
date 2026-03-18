@@ -21,6 +21,7 @@ import { tabEvents } from '@/lib/tabEvents';
 import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useNotifications } from '@/contexts/NotificationContext';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing as ReanimatedEasing } from 'react-native-reanimated';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -351,26 +352,26 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const maxH = brands.reduce((m: number, b: any) => Math.max(m, BRAND_SIZES[b.size]?.h ?? 40), 0);
   const doubled = [...brands, ...brands, ...brands];
 
-  const translateX = useRef(new RNAnimated.Value(0)).current;
+  const tx = useSharedValue(0);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
   useEffect(() => {
-    const anim = RNAnimated.loop(
-      RNAnimated.timing(translateX, {
-        toValue: -totalW,
-        duration: totalW * 30,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
+    tx.value = 0;
+    tx.value = withRepeat(
+      withTiming(-totalW, { duration: totalW * 30, easing: ReanimatedEasing.linear }),
+      -1,
+      false
     );
-    anim.start();
-    return () => { anim.stop(); };
   }, [totalW]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }],
+  }));
 
   const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
 
   const handleTap = (locX: number) => {
-    const offset = Math.abs((translateX as any).__getValue?.() ?? (translateX as any)._value ?? 0);
+    const offset = Math.abs(tx.value);
     const tapInStrip = locX + offset;
     let acc = 0;
     for (let i = 0; i < doubled.length; i++) {
@@ -415,7 +416,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
         touchStart.current = null;
       }}
     >
-      <RNAnimated.View style={{ flexDirection: 'row', transform: [{ translateX }] }} pointerEvents="none">
+      <Animated.View style={[{ flexDirection: 'row' }, animStyle]} pointerEvents="none">
         {doubled.map((brand: any, i: number) => {
           const sz = BRAND_SIZES[brand.size] ?? BRAND_SIZES.md;
           return (
@@ -452,7 +453,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
             </View>
           );
         })}
-      </RNAnimated.View>
+      </Animated.View>
     </View>
   );
 });
