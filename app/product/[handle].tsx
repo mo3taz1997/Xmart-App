@@ -399,49 +399,25 @@ function RatingBadge({ ratingValue, ratingCount, colors, isRTL }: { ratingValue:
 
 function TrustBadges({ colors, language, isRTL, price }: { colors: typeof Colors.dark; language: string; isRTL: boolean; price: number }) {
   const badges = React.useMemo(() => getTrustBadges(price), [price]);
-  const anims = useRef(badges.map(() => new RNAnimated.Value(0))).current;
-  const pulseAnims = useRef(badges.map(() => new RNAnimated.Value(1))).current;
-
-  useEffect(() => {
-    const stagger = badges.map((_, i) =>
-      RNAnimated.timing(anims[i], { toValue: 1, duration: 500, delay: i * 120, useNativeDriver: true })
-    );
-    RNAnimated.parallel(stagger).start(() => {
-      badges.forEach((_, i) => {
-        RNAnimated.loop(
-          RNAnimated.sequence([
-            RNAnimated.timing(pulseAnims[i], { toValue: 1.06, duration: 1500, delay: i * 400, useNativeDriver: true }),
-            RNAnimated.timing(pulseAnims[i], { toValue: 1, duration: 1500, useNativeDriver: true }),
-          ])
-        ).start();
-      });
-    });
-  }, []);
 
   return (
     <View style={[trustStyles.row, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-      {badges.map((badge, i) => {
-        const opacity = anims[i];
-        const translateY = anims[i].interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
-        return (
-          <RNAnimated.View
-            key={badge.icon}
-            style={[trustStyles.card, {
-              backgroundColor: badge.bg,
-              borderColor: badge.color + '30',
-              opacity,
-              transform: [{ translateY }, { scale: pulseAnims[i] }],
-            }]}
-          >
-            <View style={[trustStyles.iconCircle, { backgroundColor: badge.color + '20' }]}>
-              <Ionicons name={badge.icon} size={18} color={badge.color} />
-            </View>
-            <Text style={[trustStyles.text, { color: badge.color }]}>
-              {language === 'ar' ? badge.labelAr : badge.labelEn}
-            </Text>
-          </RNAnimated.View>
-        );
-      })}
+      {badges.map((badge) => (
+        <View
+          key={badge.icon}
+          style={[trustStyles.card, {
+            backgroundColor: badge.bg,
+            borderColor: badge.color + '30',
+          }]}
+        >
+          <View style={[trustStyles.iconCircle, { backgroundColor: badge.color + '20' }]}>
+            <Ionicons name={badge.icon} size={18} color={badge.color} />
+          </View>
+          <Text style={[trustStyles.text, { color: badge.color }]}>
+            {language === 'ar' ? badge.labelAr : badge.labelEn}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
