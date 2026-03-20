@@ -987,7 +987,7 @@
       </div>
       <div class="form-group" id="secCategoryPickerWrap" style="display:none;">
         <label>اختر الأقسام</label>
-        <div id="secCategoryChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-bottom:6px;"></div>
+        <div id="secCategoryChips" style="display:flex;flex-direction:column;gap:4px;min-height:0;margin-bottom:6px;"></div>
         <input type="text" id="secCategorySearch" placeholder="ابحث عن مجموعة بالعربي أو الإنجليزي..." oninput="filterCategoryPicker(this.value)" style="width:100%;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;direction:rtl;box-sizing:border-box;" autocomplete="off">
         <div id="secCategoryPickerList" style="margin-top:4px;border:1px solid #eee;border-radius:8px;max-height:220px;overflow-y:auto;display:none;"></div>
       </div>
@@ -2018,7 +2018,8 @@ function renderSectionsList() {
             ${section.type === 'product_grid' ? (adminLang === 'en' ? 'Auto-displays products from Shopify' : 'سيعرض المنتجات تلقائياً من Shopify') : ''}
             ${section.type === 'selected_categories' ? (() => {
               try {
-                const ids = JSON.parse(section.metadata || '{}').categoryIds || [];
+                const meta = JSON.parse(section.metadata || '{}');
+                const ids = meta.collectionHandles || meta.categoryIds || [];
                 return adminLang === 'en' ? `⭕ Displays ${ids.length} selected categories as circles — click edit to change` : `⭕ يعرض ${ids.length} قسم محدد على شكل دوائر — اضغط تعديل لتغيير الأقسام`;
               } catch { return adminLang === 'en' ? '⭕ Selected Categories (circles)' : '⭕ أقسام محددة (دوائر)'; }
             })() : ''}
@@ -2103,14 +2104,33 @@ function renderColChips() {
   const chipsEl = document.getElementById('secCategoryChips');
   if (!chipsEl) return;
   if (_selectedCollections.size === 0) { chipsEl.innerHTML = ''; return; }
-  chipsEl.innerHTML = Array.from(_selectedCollections.values()).map(c => {
+  const items = Array.from(_selectedCollections.values());
+  chipsEl.innerHTML = items.map((c, idx) => {
     const name = adminLang === 'en' ? (c.titleEn || c.titleAr || c.handle) : (c.titleAr || c.titleEn || c.handle);
-    const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : '';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f4ff;color:#163259;border:1px solid #b3d7f0;border-radius:20px;padding:3px 10px 3px 6px;font-size:12px;cursor:default;">
-      ${img}<span>${name}</span>
-      <span onclick="removeColSelection('${c.handle}')" style="cursor:pointer;color:#999;margin-right:2px;font-size:15px;line-height:1;" title="إزالة">×</span>
-    </span>`;
+    const img = c.imageUrl ? `<img src="${resolveImageUrl(c.imageUrl)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : '<div style="width:28px;height:28px;border-radius:50%;background:#dce8f4;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">📂</div>';
+    const upBtn = idx > 0 ? `<span onclick="moveColSelection('${c.handle}',-1)" style="cursor:pointer;color:#248CCC;font-size:16px;line-height:1;padding:0 2px;" title="${adminLang==='en'?'Move up':'تحريك لأعلى'}">▲</span>` : '<span style="color:#ddd;font-size:16px;line-height:1;padding:0 2px;">▲</span>';
+    const dnBtn = idx < items.length - 1 ? `<span onclick="moveColSelection('${c.handle}',1)" style="cursor:pointer;color:#248CCC;font-size:16px;line-height:1;padding:0 2px;" title="${adminLang==='en'?'Move down':'تحريك لأسفل'}">▼</span>` : '<span style="color:#ddd;font-size:16px;line-height:1;padding:0 2px;">▼</span>';
+    return `<div style="display:flex;align-items:center;gap:8px;background:#f8fbff;border:1px solid #dce8f4;border-radius:10px;padding:6px 10px;font-size:13px;">
+      <span style="background:#163259;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${idx + 1}</span>
+      ${img}
+      <span style="flex:1;color:#163259;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</span>
+      <div style="display:flex;flex-direction:column;gap:0;">${upBtn}${dnBtn}</div>
+      <span onclick="removeColSelection('${c.handle}')" style="cursor:pointer;color:#e53935;font-size:18px;line-height:1;flex-shrink:0;" title="${adminLang==='en'?'Remove':'إزالة'}">×</span>
+    </div>`;
   }).join('');
+}
+
+function moveColSelection(handle, direction) {
+  const entries = Array.from(_selectedCollections.entries());
+  const idx = entries.findIndex(([h]) => h === handle);
+  if (idx < 0) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= entries.length) return;
+  const temp = entries[idx];
+  entries[idx] = entries[newIdx];
+  entries[newIdx] = temp;
+  _selectedCollections = new Map(entries);
+  renderColChips();
 }
 
 function removeColSelection(handle) {
