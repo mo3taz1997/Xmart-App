@@ -201,7 +201,7 @@ const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection(
       >
         {cats.map((cat: any) => {
           const catTitle = (language === 'ar' ? cat.titleAr : cat.titleEn) || '';
-          const imgUrl = resolveAssetUrl(cat.imageUrl) || cat.imageUrl;
+          const imgUrl = optimizeShopifyImage(cat.imageUrl, circleSize * 2) || resolveAssetUrl(cat.imageUrl) || cat.imageUrl;
           return (
             <Pressable
               key={cat.id}
@@ -871,7 +871,7 @@ const CollectionShowcaseSection = React.memo(function CollectionShowcaseSection(
             alignItems: 'center', justifyContent: 'center',
           }}>
             {activeCol?.imageUrl ? (
-              <Image source={{ uri: activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="contain" cachePolicy="memory-disk" transition={0} />
+              <Image source={{ uri: optimizeShopifyImage(activeCol.imageUrl, Math.round(circleSize * 2)) || activeCol.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="contain" cachePolicy="memory-disk" transition={0} />
             ) : (
               <Ionicons name="grid-outline" size={52} color={colors.primary} />
             )}

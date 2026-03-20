@@ -36,6 +36,13 @@ function toAbsoluteUrl(url: string | null | undefined, req: Request): string | n
   return url;
 }
 
+function optimizeShopifyCdn(url: string | null, size: number = 400): string | null {
+  if (!url) return null;
+  if (!url.includes('cdn.shopify.com')) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}width=${size}&quality=75`;
+}
+
 const imgCache = new Map<string, { buf: Buffer; ts: number }>();
 const IMG_CACHE_TTL = 600_000;
 
@@ -1096,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       id: h,
                       titleAr: ar?.title || en.title,
                       titleEn: en.title,
-                      imageUrl: en.image?.url || ar?.image?.url || null,
+                      imageUrl: optimizeShopifyCdn(en.image?.url || ar?.image?.url || null, 200),
                       collectionHandle: h,
                     } : null;
                   })
@@ -1137,6 +1144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 if (cpData?.collection?.products?.edges) {
                   collectionProducts = cpData.collection.products.edges.map((e: any) => {
                     const n = e.node;
+                    const firstImg = n.images?.edges?.[0]?.node;
                     return {
                       handle: n.handle,
                       title: n.title,
@@ -1144,7 +1152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       availableForSale: n.availableForSale,
                       priceRange: n.priceRange,
                       compareAtPriceRange: n.compareAtPriceRange,
-                      images: n.images ? { edges: (n.images.edges || []).slice(0, 1) } : undefined,
+                      images: firstImg ? { edges: [{ node: { ...firstImg, url: optimizeShopifyCdn(firstImg.url, 400) } }] } : undefined,
                     };
                   });
                 }
@@ -1187,7 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         titleAr: ar?.product?.title || null,
                         descriptionAr: ar?.product?.description || null,
                         vendor: en?.product?.vendor || null,
-                        imageUrl: en?.product?.images?.edges?.[0]?.node?.url || null,
+                        imageUrl: optimizeShopifyCdn(en?.product?.images?.edges?.[0]?.node?.url || null, 600),
                         price: en?.product?.priceRange?.minVariantPrice?.amount || null,
                         compareAtPrice: en?.product?.compareAtPriceRange?.minVariantPrice?.amount || null,
                         currency: en?.product?.priceRange?.minVariantPrice?.currencyCode || null,
