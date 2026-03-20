@@ -6,6 +6,7 @@ import { db } from "./db";
 import { homepageSections, homepageBanners, appSettings, orders, orderItems, notifications, categories, suggestedProducts, pushTokens } from "../shared/schema";
 import { asc, desc, eq, sql, inArray } from "drizzle-orm";
 import { advancedSearch, getAutocompleteSuggestions, trackSearch, syncProductIndex, startPeriodicSync, getSearchAnalytics, quickStockRefresh, batchStockStatus } from "./search-engine";
+import sharp from "sharp";
 
 function fixCheckoutUrl(cart: any): any {
   if (cart?.checkoutUrl && cart.checkoutUrl.startsWith('http://')) {
@@ -35,7 +36,60 @@ function toAbsoluteUrl(url: string | null | undefined, req: Request): string | n
   return url;
 }
 
+const imgCache = new Map<string, { buf: Buffer; ts: number }>();
+const IMG_CACHE_TTL = 600_000;
+
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  app.get("/api/img", async (req: Request, res: Response) => {
+    try {
+      const src = req.query.src as string;
+      const w = Math.min(parseInt(req.query.w as string) || 800, 1200);
+      const q = Math.min(parseInt(req.query.q as string) || 70, 90);
+
+      if (!src || !src.startsWith('/uploads/')) {
+        return res.status(400).json({ error: 'Invalid src' });
+      }
+
+      const cacheKey = `${src}_${w}_${q}`;
+      const cached = imgCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < IMG_CACHE_TTL) {
+        res.set('Content-Type', 'image/webp');
+        res.set('Cache-Control', 'public, max-age=2592000, immutable');
+        return res.send(cached.buf);
+      }
+
+      const domain = process.env.SHOPIFY_STORE_DOMAIN ? 'dashboard.xmart.me' : 'localhost';
+      const imgUrl = `https://${domain}${src}`;
+      const resp = await fetch(imgUrl);
+      if (!resp.ok) return res.status(404).json({ error: 'Image not found' });
+
+      const arrayBuf = await resp.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+
+      const optimized = await sharp(buffer)
+        .resize(w, undefined, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: q })
+        .toBuffer();
+
+      imgCache.set(cacheKey, { buf: optimized, ts: Date.now() });
+
+      if (imgCache.size > 100) {
+        const now = Date.now();
+        for (const [k, v] of imgCache) {
+          if (now - v.ts > IMG_CACHE_TTL) imgCache.delete(k);
+        }
+      }
+
+      res.set('Content-Type', 'image/webp');
+      res.set('Cache-Control', 'public, max-age=2592000, immutable');
+      res.send(optimized);
+    } catch (e: any) {
+      console.error('Image optimization error:', e.message);
+      res.status(500).json({ error: 'Failed to optimize image' });
+    }
+  });
+
   app.get("/api/collections", async (req: Request, res: Response) => {
     try {
       const lang = ((req.query.lang as string) || "AR").toUpperCase();

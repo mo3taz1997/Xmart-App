@@ -95,6 +95,23 @@ function optimizeShopifyImage(url: string | null | undefined, size: number = 400
   return `${url}${separator}width=${size}&quality=75`;
 }
 
+function optimizeBannerImage(url: string | null | undefined, w: number = 800): string | null {
+  if (!url) return null;
+  if (url.startsWith('/uploads/') && DOMAIN) {
+    return `https://${DOMAIN}/api/img?src=${encodeURIComponent(url)}&w=${w}&q=70`;
+  }
+  if (url.includes('/uploads/') && url.startsWith('http')) {
+    try {
+      const u = new URL(url);
+      const path = u.pathname;
+      if (path.startsWith('/uploads/')) {
+        return `https://${DOMAIN}/api/img?src=${encodeURIComponent(path)}&w=${w}&q=70`;
+      }
+    } catch {}
+  }
+  return url;
+}
+
 
 function JordanFlagBadge() {
   const expandAnim = useRef(new RNAnimated.Value(0)).current;
@@ -1289,7 +1306,7 @@ export default function HomeScreen() {
               if (s.type === 'banner_slider') {
                 const resolvedBanners = (s.banners || []).map((b: any) => ({
                   ...b,
-                  imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
+                  imageUrl: optimizeBannerImage(b.imageUrl, Math.round(width)) || resolveUrl(b.imageUrl) || b.imageUrl,
                 }));
                 if (resolvedBanners.length === 0) return null;
                 return <PromoBannerSlider key={`banner-slider-${s.id}-${language}`} banners={resolvedBanners} />;
@@ -1342,6 +1359,8 @@ const StaticBannerSection = React.memo(function StaticBannerSection({ section, c
 
   const imageUrl = React.useMemo(() => {
     if (!rawImageUrl) return '';
+    const optimized = optimizeBannerImage(rawImageUrl, Math.round(width));
+    if (optimized) return optimized;
     if (rawImageUrl.startsWith('http')) return rawImageUrl;
     const host = process.env.EXPO_PUBLIC_DOMAIN;
     if (!host) return rawImageUrl;
