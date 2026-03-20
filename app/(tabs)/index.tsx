@@ -196,7 +196,8 @@ const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection(
         showsHorizontalScrollIndicator={false}
         nestedScrollEnabled
         directionalLockEnabled
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: 'row' }}
+        style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}
       >
         {cats.map((cat: any) => {
           const catTitle = (language === 'ar' ? cat.titleAr : cat.titleEn) || '';
@@ -208,7 +209,7 @@ const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection(
                 alignItems: 'center',
                 opacity: pressed ? 0.7 : 1,
                 width: circleSize + 12,
-                transform: [{ scale: pressed ? 0.95 : 1 }],
+                transform: [{ scaleX: isRTL ? -1 : 1 }, { scale: pressed ? 0.95 : 1 }],
               })}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

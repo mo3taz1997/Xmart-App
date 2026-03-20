@@ -2087,15 +2087,18 @@ function loadCategoryPicker(preSelectedHandles) {
   const listEl = document.getElementById('secCategoryPickerList');
   if (searchEl) searchEl.value = '';
   if (listEl) { listEl.style.display = 'none'; listEl.innerHTML = ''; }
-  // Pre-load selected collections info
   if (preSelectedHandles && preSelectedHandles.length > 0) {
-    Promise.all(preSelectedHandles.map(h =>
+    const results = new Array(preSelectedHandles.length);
+    Promise.all(preSelectedHandles.map((h, i) =>
       api('GET', `/api/admin/search-collections?q=${encodeURIComponent(h)}`).then(items => {
         const match = items.find(c => c.handle === h);
-        if (match) _selectedCollections.set(h, match);
-        else _selectedCollections.set(h, { handle: h, titleAr: h, titleEn: h, imageUrl: null });
-      }).catch(() => { _selectedCollections.set(h, { handle: h, titleAr: h, titleEn: h, imageUrl: null }); })
-    )).then(() => renderColChips());
+        results[i] = match || { handle: h, titleAr: h, titleEn: h, imageUrl: null };
+      }).catch(() => { results[i] = { handle: h, titleAr: h, titleEn: h, imageUrl: null }; })
+    )).then(() => {
+      _selectedCollections = new Map();
+      results.forEach(c => _selectedCollections.set(c.handle, c));
+      renderColChips();
+    });
   }
   renderColChips();
 }
