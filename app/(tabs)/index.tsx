@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import ProductSliderSection from '@/components/ProductSliderSection';
 import {
   View, Text, ScrollView, FlatList, Pressable, StyleSheet, Dimensions,
-  RefreshControl, Platform, ActivityIndicator,
+  RefreshControl, Platform, ActivityIndicator, PanResponder,
   Animated as RNAnimated, Easing, LayoutChangeEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -353,20 +353,78 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const doubled = [...brands, ...brands, ...brands, ...brands];
 
   const tx = useSharedValue(0);
-  const animStarted = useRef(false);
+  const isDraggingAnim = useSharedValue(false);
+  const dragStartTx = useRef(0);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const totalWRef = useRef(totalW);
+  totalWRef.current = totalW;
 
-  useEffect(() => {
-    if (animStarted.current && totalW > 0) return;
-    animStarted.current = true;
+  const startFullLoop = useCallback(() => {
     tx.value = 0;
     tx.value = withRepeat(
       withTiming(-totalW, { duration: totalW * 35, easing: ReanimatedEasing.linear }),
       -1,
       false
     );
-    return () => { cancelAnimation(tx); animStarted.current = false; };
   }, [totalW]);
+
+  const resumeFromCurrent = useCallback(() => {
+    if (isDraggingAnim.value) return;
+    const tw = totalWRef.current;
+    let current = tx.value % tw;
+    if (current > 0) current -= tw;
+    if (current === 0) current = 0;
+    const remaining = Math.abs(-tw - current);
+    const duration = remaining * 35;
+    tx.value = current;
+    tx.value = withTiming(-tw, { duration, easing: ReanimatedEasing.linear }, (finished) => {
+      'worklet';
+      if (finished && !isDraggingAnim.value) {
+        tx.value = 0;
+        tx.value = withRepeat(
+          withTiming(-tw, { duration: tw * 35, easing: ReanimatedEasing.linear }),
+          -1,
+          false
+        );
+      }
+    });
+  }, [totalW]);
+
+  useEffect(() => {
+    startFullLoop();
+    return () => {
+      cancelAnimation(tx);
+      if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    };
+  }, [totalW]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponderCapture: (_, gs) =>
+      Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 8,
+    onPanResponderGrant: () => {
+      isDraggingAnim.value = true;
+      if (resumeTimer.current) clearTimeout(resumeTimer.current);
+      cancelAnimation(tx);
+      dragStartTx.current = tx.value;
+    },
+    onPanResponderMove: (_, gs) => {
+      const tw = totalWRef.current;
+      let newVal = dragStartTx.current + gs.dx;
+      newVal = newVal % tw;
+      if (newVal > 0) newVal -= tw;
+      tx.value = newVal;
+    },
+    onPanResponderRelease: () => {
+      isDraggingAnim.value = false;
+      resumeTimer.current = setTimeout(() => resumeFromCurrent(), 2000);
+    },
+    onPanResponderTerminate: () => {
+      isDraggingAnim.value = false;
+      resumeTimer.current = setTimeout(() => resumeFromCurrent(), 2000);
+    },
+  }), [totalW]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }],
@@ -406,6 +464,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       paddingVertical: vPad,
       overflow: 'hidden',
     }}
+      {...panResponder.panHandlers}
       onTouchStart={(e) => {
         touchStart.current = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, time: Date.now() };
       }}
