@@ -378,7 +378,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
     let startVal = (from ?? 0) % tw;
     if (startVal > 0) startVal -= tw;
     const distance = Math.abs(-tw - startVal);
-    const speed = 30;
+    const speed = 50;
     const firstDur = (distance / speed) * 1000;
     const fullDur = (tw / speed) * 1000;
 
@@ -431,7 +431,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponderCapture: (_, gs) =>
-      Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 8,
+      Math.abs(gs.dx) > Math.abs(gs.dy) && Math.abs(gs.dx) > 4,
     onPanResponderGrant: () => {
       isUserActive.current = true;
       stopAll();
