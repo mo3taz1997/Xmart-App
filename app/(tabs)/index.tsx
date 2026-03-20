@@ -21,7 +21,6 @@ import { tabEvents } from '@/lib/tabEvents';
 import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useNotifications } from '@/contexts/NotificationContext';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation, Easing as ReanimatedEasing } from 'react-native-reanimated';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -350,96 +349,73 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
 
   const totalW = brands.reduce((sum: number, b: any) => sum + (BRAND_SIZES[b.size]?.w ?? 130), 0);
   const maxH = brands.reduce((m: number, b: any) => Math.max(m, BRAND_SIZES[b.size]?.h ?? 40), 0);
-  const doubled = [...brands, ...brands, ...brands, ...brands];
+  const copies = [...brands, ...brands, ...brands, ...brands, ...brands];
 
-  const tx = useSharedValue(0);
-  const isDraggingAnim = useSharedValue(false);
-  const dragStartTx = useRef(0);
-  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const translateX = useRef(new RNAnimated.Value(0)).current;
+  const currentPos = useRef(0);
+  const isUserActive = useRef(false);
+  const dragStartVal = useRef(0);
+  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeAnim = useRef<RNAnimated.CompositeAnimation | null>(null);
+  const touchInfo = useRef<{ x: number; y: number; time: number } | null>(null);
   const totalWRef = useRef(totalW);
   totalWRef.current = totalW;
 
-  const startFullLoop = useCallback(() => {
-    tx.value = 0;
-    tx.value = withRepeat(
-      withTiming(-totalW, { duration: totalW * 35, easing: ReanimatedEasing.linear }),
-      -1,
-      false
-    );
-  }, [totalW]);
+  useEffect(() => {
+    const id = translateX.addListener(({ value }) => { currentPos.current = value; });
+    return () => translateX.removeListener(id);
+  }, [translateX]);
 
-  const resumeFromCurrent = useCallback(() => {
-    if (isDraggingAnim.value) return;
+  const stopAll = useCallback(() => {
+    activeAnim.current?.stop();
+    activeAnim.current = null;
+    if (resumeTimeout.current) { clearTimeout(resumeTimeout.current); resumeTimeout.current = null; }
+  }, []);
+
+  const startAutoScroll = useCallback((from?: number) => {
+    if (isUserActive.current) return;
     const tw = totalWRef.current;
-    let current = tx.value % tw;
-    if (current > 0) current -= tw;
-    if (current === 0) current = 0;
-    const remaining = Math.abs(-tw - current);
-    const duration = remaining * 35;
-    tx.value = current;
-    tx.value = withTiming(-tw, { duration, easing: ReanimatedEasing.linear }, (finished) => {
-      'worklet';
-      if (finished && !isDraggingAnim.value) {
-        tx.value = 0;
-        tx.value = withRepeat(
-          withTiming(-tw, { duration: tw * 35, easing: ReanimatedEasing.linear }),
-          -1,
-          false
+    let startVal = (from ?? 0) % tw;
+    if (startVal > 0) startVal -= tw;
+    const distance = Math.abs(-tw - startVal);
+    const speed = 30;
+    const firstDur = (distance / speed) * 1000;
+    const fullDur = (tw / speed) * 1000;
+
+    translateX.setValue(startVal);
+    const first = RNAnimated.timing(translateX, {
+      toValue: -tw, duration: firstDur, easing: Easing.linear, useNativeDriver: true,
+    });
+    activeAnim.current = first;
+    first.start(({ finished }) => {
+      if (finished && !isUserActive.current) {
+        translateX.setValue(0);
+        const loop = RNAnimated.loop(
+          RNAnimated.timing(translateX, {
+            toValue: -tw, duration: fullDur, easing: Easing.linear, useNativeDriver: true,
+          })
         );
+        activeAnim.current = loop;
+        loop.start();
       }
     });
-  }, [totalW]);
+  }, [translateX]);
 
   useEffect(() => {
-    startFullLoop();
-    return () => {
-      cancelAnimation(tx);
-      if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    };
+    startAutoScroll(0);
+    return () => stopAll();
   }, [totalW]);
 
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponderCapture: (_, gs) =>
-      Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 8,
-    onPanResponderGrant: () => {
-      isDraggingAnim.value = true;
-      if (resumeTimer.current) clearTimeout(resumeTimer.current);
-      cancelAnimation(tx);
-      dragStartTx.current = tx.value;
-    },
-    onPanResponderMove: (_, gs) => {
-      const tw = totalWRef.current;
-      let newVal = dragStartTx.current + gs.dx;
-      newVal = newVal % tw;
-      if (newVal > 0) newVal -= tw;
-      tx.value = newVal;
-    },
-    onPanResponderRelease: () => {
-      isDraggingAnim.value = false;
-      resumeTimer.current = setTimeout(() => resumeFromCurrent(), 2000);
-    },
-    onPanResponderTerminate: () => {
-      isDraggingAnim.value = false;
-      resumeTimer.current = setTimeout(() => resumeFromCurrent(), 2000);
-    },
-  }), [totalW]);
+  const brandWidths = copies.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
 
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.value }],
-  }));
-
-  const brandWidths = doubled.map((b: any) => BRAND_SIZES[b.size]?.w ?? 130);
-
-  const handleTap = (locX: number) => {
-    const offset = Math.abs(tx.value);
+  const handleTap = useCallback((locX: number) => {
+    const offset = Math.abs(currentPos.current);
     const tapInStrip = locX + offset;
     let acc = 0;
-    for (let i = 0; i < doubled.length; i++) {
+    for (let i = 0; i < copies.length; i++) {
       acc += brandWidths[i];
       if (tapInStrip < acc) {
-        const brand = doubled[i];
+        const brand = copies[i];
         if (brand.collectionHandle) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push(`/collection/${brand.collectionHandle}`);
@@ -450,7 +426,47 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
         return;
       }
     }
-  };
+  }, [brands]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponderCapture: (_, gs) =>
+      Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 8,
+    onPanResponderGrant: () => {
+      isUserActive.current = true;
+      stopAll();
+      translateX.stopAnimation(val => {
+        dragStartVal.current = val;
+        translateX.setOffset(val);
+        translateX.setValue(0);
+      });
+    },
+    onPanResponderMove: (_, gs) => {
+      translateX.setValue(gs.dx);
+    },
+    onPanResponderRelease: (_, gs) => {
+      translateX.flattenOffset();
+      isUserActive.current = false;
+      RNAnimated.decay(translateX, {
+        velocity: gs.vx,
+        deceleration: 0.997,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          resumeTimeout.current = setTimeout(() => {
+            translateX.stopAnimation(val => startAutoScroll(val));
+          }, 2000);
+        }
+      });
+    },
+    onPanResponderTerminate: () => {
+      translateX.flattenOffset();
+      isUserActive.current = false;
+      translateX.stopAnimation(val => {
+        resumeTimeout.current = setTimeout(() => startAutoScroll(val), 2000);
+      });
+    },
+  }), [totalW, translateX, startAutoScroll, stopAll]);
 
   const vPad = Math.max(4, Math.round((48 - maxH) / 2) + 4);
 
@@ -466,21 +482,21 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
     }}
       {...panResponder.panHandlers}
       onTouchStart={(e) => {
-        touchStart.current = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, time: Date.now() };
+        touchInfo.current = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, time: Date.now() };
       }}
       onTouchEnd={(e) => {
-        if (!touchStart.current) return;
-        const dx = Math.abs(e.nativeEvent.locationX - touchStart.current.x);
-        const dy = Math.abs(e.nativeEvent.locationY - touchStart.current.y);
-        const dt = Date.now() - touchStart.current.time;
+        if (!touchInfo.current) return;
+        const dx = Math.abs(e.nativeEvent.locationX - touchInfo.current.x);
+        const dy = Math.abs(e.nativeEvent.locationY - touchInfo.current.y);
+        const dt = Date.now() - touchInfo.current.time;
         if (dx < 15 && dy < 15 && dt < 400) {
           handleTap(e.nativeEvent.locationX);
         }
-        touchStart.current = null;
+        touchInfo.current = null;
       }}
     >
-      <Animated.View style={[{ flexDirection: 'row' }, animStyle]} pointerEvents="none">
-        {doubled.map((brand: any, i: number) => {
+      <RNAnimated.View style={[{ flexDirection: 'row' }, { transform: [{ translateX }] }]} pointerEvents="none">
+        {copies.map((brand: any, i: number) => {
           const sz = BRAND_SIZES[brand.size] ?? BRAND_SIZES.md;
           return (
             <View
@@ -516,7 +532,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
             </View>
           );
         })}
-      </Animated.View>
+      </RNAnimated.View>
     </View>
   );
 });
