@@ -349,7 +349,12 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
 
   const totalW = brands.reduce((sum: number, b: any) => sum + (BRAND_SIZES[b.size]?.w ?? 130), 0);
   const maxH = brands.reduce((m: number, b: any) => Math.max(m, BRAND_SIZES[b.size]?.h ?? 40), 0);
-  const copies = [...brands, ...brands, ...brands, ...brands, ...brands];
+  const copyCount = Math.max(2, Math.ceil((width + totalW) / totalW));
+  const copies = useMemo(() => {
+    const arr: any[] = [];
+    for (let i = 0; i < copyCount; i++) arr.push(...brands);
+    return arr;
+  }, [brands, copyCount]);
 
   const translateX = useRef(new RNAnimated.Value(0)).current;
   const currentPos = useRef(0);
