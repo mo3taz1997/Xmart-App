@@ -1306,7 +1306,7 @@ export default function HomeScreen() {
               if (s.type === 'banner_slider') {
                 const resolvedBanners = (s.banners || []).map((b: any) => ({
                   ...b,
-                  imageUrl: optimizeBannerImage(b.imageUrl, Math.round(width)) || resolveUrl(b.imageUrl) || b.imageUrl,
+                  imageUrl: resolveUrl(b.imageUrl) || b.imageUrl,
                 }));
                 if (resolvedBanners.length === 0) return null;
                 return <PromoBannerSlider key={`banner-slider-${s.id}-${language}`} banners={resolvedBanners} />;
@@ -1359,8 +1359,6 @@ const StaticBannerSection = React.memo(function StaticBannerSection({ section, c
 
   const imageUrl = React.useMemo(() => {
     if (!rawImageUrl) return '';
-    const optimized = optimizeBannerImage(rawImageUrl, Math.round(width));
-    if (optimized) return optimized;
     if (rawImageUrl.startsWith('http')) return rawImageUrl;
     const host = process.env.EXPO_PUBLIC_DOMAIN;
     if (!host) return rawImageUrl;
