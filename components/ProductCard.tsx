@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +19,6 @@ function StaticFire() {
   );
 }
 
-
 const BADGE_COLORS = ['#248CCC', '#2E7D32', '#E65100', '#7B1FA2'];
 
 function handleToOffset(handle: string): number {
@@ -35,7 +34,7 @@ function seededRandom(seed: number) {
   return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
 }
 
-function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOffset }: { freeDelivery: boolean; isRTL: boolean; language: string; colors: typeof Colors.dark; soldCount: number; startOffset: number }) {
+const TrustBadges = React.memo(function TrustBadges({ freeDelivery, isRTL, language, soldCount, startOffset }: { freeDelivery: boolean; isRTL: boolean; language: string; soldCount: number; startOffset: number }) {
   const items = React.useMemo(() => {
     const list: { icon: string; text: string; color: string }[] = [];
     if (soldCount > 0) {
@@ -96,12 +95,7 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
   if (!badge) return null;
 
   return (
-    <View style={{
-      marginTop: 4,
-      overflow: 'hidden',
-      borderRadius: 6,
-      height: 26,
-    }}>
+    <View style={trustBadgeStyles.container}>
       <Animated.View style={[{
         flexDirection: isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
@@ -126,7 +120,16 @@ function TrustBadges({ freeDelivery, isRTL, language, colors, soldCount, startOf
       </Animated.View>
     </View>
   );
-}
+});
+
+const trustBadgeStyles = StyleSheet.create({
+  container: {
+    marginTop: 4,
+    overflow: 'hidden',
+    borderRadius: 6,
+    height: 26,
+  },
+});
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -150,100 +153,108 @@ interface ProductCardProps {
   vendor?: string;
 }
 
-function getStyles(colors: typeof Colors.dark) {
-  return StyleSheet.create({
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      overflow: 'hidden',
-      marginBottom: 12,
-    },
-    imageContainer: {
-      width: '100%',
-      backgroundColor: '#FFFFFF',
-      position: 'relative',
-    },
-    image: {
-      width: '100%',
-      height: '100%',
-    },
-    placeholderImage: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    info: {
-      padding: 10,
-      gap: 2,
-    },
-    vendor: {
-      fontFamily: 'Cairo_700Bold',
-      fontSize: 11,
-      color: colors.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    title: {
-      fontFamily: 'Cairo_600SemiBold',
-      fontSize: 12,
-      color: colors.text,
-      lineHeight: 18,
-      height: 36,
-    },
-    priceRow: {
-      alignItems: 'center',
-      gap: 6,
-      marginTop: 2,
-    },
-    price: {
-      fontFamily: 'Cairo_700Bold',
-      fontSize: 14,
-      color: colors.primary,
-    },
-    comparePrice: {
-      fontFamily: 'Cairo_400Regular',
-      fontSize: 12,
-      color: colors.textMuted,
-      textDecorationLine: 'line-through',
-    },
-    discountBadge: {
-      position: 'absolute',
-      top: 8,
-      backgroundColor: '#F57C00',
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 6,
-    },
-    discountText: {
-      fontFamily: 'Cairo_700Bold',
-      fontSize: 11,
-      color: '#fff',
-    },
-    soldOutBadge: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(211, 47, 47, 0.9)',
-      paddingVertical: 5,
-      alignItems: 'center',
-    },
-    soldOutText: {
-      fontFamily: 'Cairo_700Bold',
-      fontSize: 12,
-      color: '#fff',
-    },
-    wishlistBtn: {
-      position: 'absolute',
-      top: 8,
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
+const stylesCache = new Map<string, ReturnType<typeof StyleSheet.create>>();
+
+function getCachedStyles(colors: typeof Colors.dark) {
+  const key = colors.card + colors.text + colors.primary + colors.textMuted + colors.textSecondary;
+  let cached = stylesCache.get(key);
+  if (!cached) {
+    cached = StyleSheet.create({
+      card: {
+        backgroundColor: colors.card,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 12,
+      },
+      imageContainer: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        position: 'relative',
+      },
+      image: {
+        width: '100%',
+        height: '100%',
+      },
+      placeholderImage: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      info: {
+        padding: 10,
+        gap: 2,
+      },
+      vendor: {
+        fontFamily: 'Cairo_700Bold',
+        fontSize: 11,
+        color: colors.textSecondary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+      },
+      title: {
+        fontFamily: 'Cairo_600SemiBold',
+        fontSize: 12,
+        color: colors.text,
+        lineHeight: 18,
+        height: 36,
+      },
+      priceRow: {
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 2,
+      },
+      price: {
+        fontFamily: 'Cairo_700Bold',
+        fontSize: 14,
+        color: colors.primary,
+      },
+      comparePrice: {
+        fontFamily: 'Cairo_400Regular',
+        fontSize: 12,
+        color: colors.textMuted,
+        textDecorationLine: 'line-through',
+      },
+      discountBadge: {
+        position: 'absolute',
+        top: 8,
+        backgroundColor: '#F57C00',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+      },
+      discountText: {
+        fontFamily: 'Cairo_700Bold',
+        fontSize: 11,
+        color: '#fff',
+      },
+      soldOutBadge: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(211, 47, 47, 0.9)',
+        paddingVertical: 5,
+        alignItems: 'center',
+      },
+      soldOutText: {
+        fontFamily: 'Cairo_700Bold',
+        fontSize: 12,
+        color: '#fff',
+      },
+      wishlistBtn: {
+        position: 'absolute',
+        top: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    });
+    stylesCache.set(key, cached);
+  }
+  return cached;
 }
 
 function ProductCard({
@@ -258,7 +269,7 @@ function ProductCard({
   vendor,
 }: ProductCardProps) {
   const { colors } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const styles = getCachedStyles(colors);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { language, formatCurrency, t, isRTL } = useLanguage();
   const soldCount = useSalesCount(handle);
@@ -284,6 +295,10 @@ function ProductCard({
   const tabletCardW = Math.round((width - 80) / 5);
   const cardWidth = compact ? (isTablet ? tabletCardW : Math.round(width * 0.4)) : undefined;
 
+  const optimizedImageUrl = useMemo(() => optimizeShopifyImage(imageUrl, 400) || imageUrl, [imageUrl]);
+  const freeDelivery = parseFloat(price) >= 40;
+  const offsetHash = useMemo(() => handleToOffset(handle), [handle]);
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -294,7 +309,7 @@ function ProductCard({
     >
       <View style={[styles.imageContainer, { aspectRatio: 1, height: undefined }]}>
         {imageUrl ? (
-          <Image source={{ uri: optimizeShopifyImage(imageUrl, 400) || imageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={0} cachePolicy="memory-disk" recyclingKey={handle} placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkv6IuGgAAAABJRU5ErkJggg==' }} />
+          <Image source={{ uri: optimizedImageUrl }} style={[styles.image, !availableForSale && { opacity: 0.5 }]} contentFit="contain" transition={0} cachePolicy="memory-disk" recyclingKey={handle} placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkv6IuGgAAAABJRU5ErkJggg==' }} />
         ) : (
           <View style={styles.placeholderImage}>
             <Ionicons name="image-outline" size={40} color={colors.textMuted} />
@@ -332,12 +347,11 @@ function ProductCard({
           <Text style={styles.price}>{formatCurrency(price, currencyCode)}</Text>
         </View>
         <TrustBadges
-          freeDelivery={parseFloat(price) >= 40}
+          freeDelivery={freeDelivery}
           isRTL={isRTL}
           language={language}
-          colors={colors}
           soldCount={soldCount}
-          startOffset={handleToOffset(handle)}
+          startOffset={offsetHash}
         />
       </View>
     </Pressable>
