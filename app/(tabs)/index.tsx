@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { api } from '@/lib/api';
-import { BannerSkeleton } from '@/components/SkeletonLoader';
+import { BannerSkeleton, HomepageSkeleton } from '@/components/SkeletonLoader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { tabEvents } from '@/lib/tabEvents';
 import PageBackground from '@/components/PageBackground';
@@ -1282,6 +1282,8 @@ export default function HomeScreen() {
           <Ionicons name="search" size={18} color={colors.textMuted} />
           <Text style={[styles.searchPlaceholder, { textAlign: isRTL ? 'right' : 'left', color: colors.textMuted }]}>{t('search.placeholder')}</Text>
         </Pressable>
+
+        {homepageLoading && !homepage && <HomepageSkeleton />}
 
         {sortedSections.map((s: any, idx: number) => {
             const renderSection = () => {
