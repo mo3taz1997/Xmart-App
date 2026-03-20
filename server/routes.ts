@@ -978,9 +978,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const homepageCache = new Map<string, { data: any; ts: number }>();
+  const HOMEPAGE_CACHE_TTL = 90_000;
+
   app.get("/api/homepage", async (req: Request, res: Response) => {
     try {
       const lang = ((req.query.lang as string) || "").toLowerCase();
+
+      const cacheKey = `hp_${lang || 'all'}`;
+      const cached = homepageCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < HOMEPAGE_CACHE_TTL) {
+        res.setHeader('X-Cache', 'HIT');
+        return res.json(cached.data);
+      }
 
       const allSections = await db
         .select()
@@ -1071,7 +1081,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   handle: cpHandle, first: 12, language: cpLang, filters: [{ available: true }],
                 }).catch(() => null);
                 if (cpData?.collection?.products?.edges) {
-                  collectionProducts = cpData.collection.products.edges.map((e: any) => e.node);
+                  collectionProducts = cpData.collection.products.edges.map((e: any) => {
+                    const n = e.node;
+                    return {
+                      handle: n.handle,
+                      title: n.title,
+                      vendor: n.vendor,
+                      availableForSale: n.availableForSale,
+                      priceRange: n.priceRange,
+                      compareAtPriceRange: n.compareAtPriceRange,
+                      images: n.images ? { edges: (n.images.edges || []).slice(0, 1) } : undefined,
+                    };
+                  });
                 }
               }
             } catch {}
@@ -1242,13 +1263,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return true;
       });
 
-      res.json({
+      const responseData = {
         sections: finalSections,
         settings: settingsMap,
         heroBanners,
         midBanners,
         featuredCollectionHandles: [],
-      });
+      };
+
+      homepageCache.set(cacheKey, { data: responseData, ts: Date.now() });
+      res.setHeader('X-Cache', 'MISS');
+      res.json(responseData);
     } catch (error: any) {
       console.error("Error fetching homepage:", error.message);
       res.json({
