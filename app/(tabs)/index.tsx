@@ -354,6 +354,7 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
   const translateX = useRef(new RNAnimated.Value(0)).current;
   const currentPos = useRef(0);
   const isUserActive = useRef(false);
+  const dragReady = useRef(false);
   const dragStartVal = useRef(0);
   const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeAnim = useRef<RNAnimated.CompositeAnimation | null>(null);
@@ -434,14 +435,17 @@ const BrandsStripSection = React.memo(function BrandsStripSection({ section, isD
       Math.abs(gs.dx) > Math.abs(gs.dy) && Math.abs(gs.dx) > 4,
     onPanResponderGrant: () => {
       isUserActive.current = true;
+      dragReady.current = false;
       stopAll();
       translateX.stopAnimation(val => {
         dragStartVal.current = val;
         translateX.setOffset(val);
         translateX.setValue(0);
+        dragReady.current = true;
       });
     },
     onPanResponderMove: (_, gs) => {
+      if (!dragReady.current) return;
       translateX.setValue(gs.dx);
     },
     onPanResponderRelease: (_, gs) => {
