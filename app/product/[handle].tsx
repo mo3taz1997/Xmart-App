@@ -815,9 +815,14 @@ export default function ProductDetailScreen() {
         const titleLower = (c.title || '').toLowerCase().trim();
         const handleLower = (c.handle || '').toLowerCase().trim();
         const vendorHandle = vendorLower.replace(/[^a-z0-9]+/g, '-');
+        const vendorNoSpaces = vendorLower.replace(/\s+/g, '');
         return titleLower === vendorLower ||
           handleLower === vendorLower ||
-          handleLower === vendorHandle;
+          handleLower === vendorHandle ||
+          handleLower === vendorNoSpaces ||
+          titleLower.replace(/\s+/g, '') === vendorNoSpaces ||
+          handleLower.startsWith(vendorHandle + '-') ||
+          titleLower.includes(vendorLower);
       })
     : null;
   const brandImageUrl = (brandCollection?.image?.url) || null;
@@ -895,8 +900,11 @@ export default function ProductDetailScreen() {
                     transition={200}
                   />
                 ) : (
-                  <Text style={styles.vendorText}>{displayVendor}</Text>
+                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#163259', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{(displayVendor || '').charAt(0).toUpperCase()}</Text>
+                  </View>
                 )}
+                <Text style={styles.vendorText}>{displayVendor}</Text>
                 <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={12} color={colors.textMuted} />
               </Pressable>
             ) : null}
