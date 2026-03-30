@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScrollToTop } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -194,6 +195,7 @@ const SelectedCategoriesSection = React.memo(function SelectedCategoriesSection(
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         nestedScrollEnabled
         directionalLockEnabled
         contentContainerStyle={{ paddingHorizontal: 12, gap: 8, flexDirection: 'row' }}
@@ -332,6 +334,7 @@ function MultiCollectionTabBar({ tabs, activeIdx, onSelect, colors, isDark, isRT
         ref={tabScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         nestedScrollEnabled
         directionalLockEnabled
         contentContainerStyle={{
@@ -613,7 +616,7 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
       <RNAnimated.View style={{ opacity: contentOpacity }}>
         {isLoading ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
-            nestedScrollEnabled directionalLockEnabled
+            scrollsToTop={false} nestedScrollEnabled directionalLockEnabled
             contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
             {[0, 1, 2].map((i) => (
               <View key={i} style={{
@@ -636,6 +639,7 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
             ref={productsScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
+            scrollsToTop={false}
             nestedScrollEnabled
             directionalLockEnabled
             contentContainerStyle={{
@@ -1002,6 +1006,7 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         scrollEventThrottle={64}
         nestedScrollEnabled
         directionalLockEnabled
@@ -1176,7 +1181,8 @@ export default function HomeScreen() {
     }
   }, [homepage]);
 
-  const mainScrollRef = useRef<any>(null);
+  const mainScrollRef = useRef<ScrollView>(null);
+  useScrollToTop(mainScrollRef);
   const scrollYRef = useRef(0);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const lastSearchVisible = useRef(false);
@@ -1200,11 +1206,7 @@ export default function HomeScreen() {
   useEffect(() => {
     return tabEvents.on('homeTabPress', () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (mainScrollRef.current) {
-        const ref = mainScrollRef.current;
-        const scrollable = ref?.getScrollResponder?.() || ref?.getNode?.() || ref;
-        scrollable?.scrollTo?.({ y: 0, animated: true });
-      }
+      mainScrollRef.current?.scrollTo?.({ y: 0, animated: true });
     });
   }, []);
 
@@ -1282,6 +1284,7 @@ export default function HomeScreen() {
 
       <ScrollView
         ref={mainScrollRef}
+        scrollsToTop={true}
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical={false}
         overScrollMode="never"
@@ -1584,6 +1587,7 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         nestedScrollEnabled
         directionalLockEnabled
         contentContainerStyle={{

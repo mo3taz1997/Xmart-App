@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScrollToTop } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -158,6 +159,7 @@ function SubCircleRow({
         ref={ref}
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         contentContainerStyle={{
           minWidth: width,
           justifyContent: isRTL ? 'flex-end' : 'flex-start',
@@ -258,7 +260,8 @@ export default function CategoriesScreen() {
   const { colors, isDark } = useTheme();
 
   const [navStack, setNavStack] = useState<CategoryItem[]>([]);
-  const level1ScrollRef = useRef<ScrollView>(null);
+  const level1ScrollRef = useRef<FlatList>(null);
+  useScrollToTop(level1ScrollRef as any);
   const [sortIdx, setSortIdx] = useState(0);
   const [randomSeed, setRandomSeed] = useState(() => Math.random());
   const [showSort, setShowSort] = useState(false);

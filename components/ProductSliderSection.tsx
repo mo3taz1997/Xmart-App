@@ -88,6 +88,7 @@ function ProductSliderSectionInner({ section, language, colors, isDark, isRTL }:
         data={products}
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollsToTop={false}
         nestedScrollEnabled
         directionalLockEnabled
         keyExtractor={(item: any, i: number) => item.handle || String(i)}
