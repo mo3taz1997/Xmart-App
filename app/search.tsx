@@ -108,7 +108,7 @@ export default function SearchScreen() {
 
   const PAGE_SIZE = 20;
 
-  const executeSearch = async (text: string, brandFilter?: string | null) => {
+  const executeSearch = async (text: string, brandFilter?: string | null, sortKey?: string) => {
     if (Platform.OS !== 'web') Keyboard.dismiss();
     setIsLoading(true);
     setMode('results');
@@ -119,6 +119,8 @@ export default function SearchScreen() {
     try {
       const filters: any = { limit: PAGE_SIZE, offset: 0 };
       if (brandFilter) filters.brand = brandFilter;
+      const activeSortKey = sortKey !== undefined ? sortKey : SORT_OPTIONS[sortIdx]?.key;
+      if (activeSortKey && activeSortKey !== 'relevance') filters.sort = activeSortKey;
       const data = await api.searchProducts(text, language, filters);
       const prods = Array.isArray(data) ? data : (data.products || []);
       const meta = Array.isArray(data)
@@ -146,6 +148,8 @@ export default function SearchScreen() {
     try {
       const filters: any = { limit: PAGE_SIZE, offset: accumulatedProducts.length };
       if (selectedBrand) filters.brand = selectedBrand;
+      const activeSortKey = SORT_OPTIONS[sortIdx]?.key;
+      if (activeSortKey && activeSortKey !== 'relevance') filters.sort = activeSortKey;
       const data = await api.searchProducts(currentSearchTerm, language, filters);
       const prods = Array.isArray(data) ? data : (data.products || []);
       const newAll = [...accumulatedProducts, ...prods];
@@ -232,32 +236,11 @@ export default function SearchScreen() {
   const { getAvailability } = useStockStatus(products);
 
   const sortedFilteredProducts = React.useMemo(() => {
-    let filtered = products.map((p: any) => ({
+    return products.map((p: any) => ({
       ...p,
       availableForSale: getAvailability(p.handle, p.availableForSale),
     }));
-    if (sortIdx === 1) {
-      filtered.sort((a: any, b: any) => {
-        const pa = parseFloat(a.priceRange?.minVariantPrice?.amount || a.price || '0');
-        const pb = parseFloat(b.priceRange?.minVariantPrice?.amount || b.price || '0');
-        return pa - pb;
-      });
-    } else if (sortIdx === 2) {
-      filtered.sort((a: any, b: any) => {
-        const pa = parseFloat(a.priceRange?.minVariantPrice?.amount || a.price || '0');
-        const pb = parseFloat(b.priceRange?.minVariantPrice?.amount || b.price || '0');
-        return pb - pa;
-      });
-    } else if (sortIdx === 3) {
-      filtered.sort((a: any, b: any) => (a.title || '').localeCompare(b.title || ''));
-    }
-    return filtered.sort((a: any, b: any) => {
-      const aOut = a.availableForSale === false ? 1 : 0;
-      const bOut = b.availableForSale === false ? 1 : 0;
-      if (aOut !== bOut) return aOut - bOut;
-      return 0;
-    });
-  }, [products, sortIdx, getAvailability]);
+  }, [products, getAvailability]);
 
   const vendorBrands = React.useMemo(() => {
     if (allBrands.length > 0) return allBrands;
@@ -305,7 +288,7 @@ export default function SearchScreen() {
               <Ionicons name="swap-vertical-outline" size={14} color={sortIdx > 0 ? colors.primary : colors.textSecondary} />
               {sortIdx > 0 && <Text style={[rs.chipText, { color: colors.primary, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{SORT_OPTIONS[sortIdx].label}</Text>}
               {sortIdx > 0 ? (
-                <Pressable onPress={(e) => { e.stopPropagation(); setSortIdx(0); }} hitSlop={8}>
+                <Pressable onPress={(e) => { e.stopPropagation(); setSortIdx(0); if (currentSearchTerm) executeSearch(currentSearchTerm, selectedBrand, 'relevance'); }} hitSlop={8}>
                   <Ionicons name="close-circle" size={14} color={colors.primary} />
                 </Pressable>
               ) : (
@@ -394,6 +377,7 @@ export default function SearchScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSortIdx(i);
                     setShowSort(false);
+                    if (currentSearchTerm) executeSearch(currentSearchTerm, selectedBrand, SORT_OPTIONS[i].key);
                   }}
                 >
                   <Text style={[rs.sortOptionText, { color: i === sortIdx ? colors.primary : colors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>

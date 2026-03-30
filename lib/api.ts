@@ -51,7 +51,7 @@ export const api = {
   },
   getProduct: (handle: string, lang?: string) => request("GET", addLang(`/api/products/${handle}`, lang)),
   getProductRecommendations: (productId: string, lang?: string) => request("GET", addLang(`/api/products/${encodeURIComponent(productId)}/recommendations`, lang)),
-  searchProducts: (query: string, lang?: string, filters?: { minPrice?: number; maxPrice?: number; brand?: string; inStock?: boolean; limit?: number; offset?: number }) => {
+  searchProducts: (query: string, lang?: string, filters?: { minPrice?: number; maxPrice?: number; brand?: string; inStock?: boolean; limit?: number; offset?: number; sort?: string }) => {
     let path = `/api/search?q=${encodeURIComponent(query)}`;
     if (filters?.minPrice !== undefined) path += `&minPrice=${filters.minPrice}`;
     if (filters?.maxPrice !== undefined) path += `&maxPrice=${filters.maxPrice}`;
@@ -59,6 +59,7 @@ export const api = {
     if (filters?.inStock) path += `&inStock=true`;
     if (filters?.limit !== undefined) path += `&limit=${filters.limit}`;
     if (filters?.offset !== undefined) path += `&offset=${filters.offset}`;
+    if (filters?.sort) path += `&sort=${encodeURIComponent(filters.sort)}`;
     return request("GET", addLang(path, lang));
   },
   searchSuggest: (query: string, lang?: string) =>

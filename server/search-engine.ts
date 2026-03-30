@@ -734,6 +734,7 @@ interface SearchOptions {
   inStock?: boolean;
   limit?: number;
   offset?: number;
+  sort?: string;
 }
 
 interface SearchResult {
@@ -747,7 +748,7 @@ interface SearchResult {
 export async function advancedSearch(options: SearchOptions): Promise<SearchResult> {
   const {
     query, language = 'en', minPrice, maxPrice, brand, inStock,
-    limit = 30, offset = 0,
+    limit = 30, offset = 0, sort,
   } = options;
 
   const q = query.trim();
@@ -871,14 +872,22 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
     CASE WHEN compare_at_price IS NOT NULL AND compare_at_price > price THEN 0.5 ELSE 0 END
   )`;
 
+  let orderByClause: string;
+  if (sort === 'price_asc') {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price ASC NULLS LAST`;
+  } else if (sort === 'price_desc') {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price DESC NULLS LAST`;
+  } else if (sort === 'name') {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, title ASC`;
+  } else {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, ROUND(${rankExpr}::numeric, 0) DESC, RANDOM()`;
+  }
+
   const searchQuery = `
     SELECT *, ${rankExpr} as relevance_score
     FROM search_index
     ${whereClause}
-    ORDER BY
-      CASE WHEN available_for_sale THEN 0 ELSE 1 END,
-      ROUND(${rankExpr}::numeric, 0) DESC,
-      RANDOM()
+    ${orderByClause}
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
   params.push(limit, offset);

@@ -538,9 +538,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inStock = req.query.inStock === 'true';
       const limit = parseInt(req.query.limit as string) || 30;
       const offset = parseInt(req.query.offset as string) || 0;
+      const sort = req.query.sort as string | undefined;
 
       const results = await advancedSearch({
-        query, language, minPrice, maxPrice, brand, inStock, limit, offset,
+        query, language, minPrice, maxPrice, brand, inStock, limit, offset, sort,
       });
 
       trackSearch(query, results.totalCount, language).catch(() => {});
