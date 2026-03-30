@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, View, Pressable, Animated as RNAnimated, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import { useNavigation } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useCart } from "@/contexts/CartContext";
@@ -102,6 +102,7 @@ function NativeTabLayout() {
   const { cartCount } = useCart();
   const { t, isRTL } = useLanguage();
   const navigation = useNavigation();
+  const lastTabRef = useRef<string>('index');
 
   const handleTriggerPress = useCallback((tabName: string) => {
     const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
@@ -109,7 +110,26 @@ function NativeTabLayout() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       tabEvents.emit(tab.event);
     }
+    lastTabRef.current = tabName;
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener?.('state', (e: any) => {
+      const state = e?.data?.state;
+      if (state) {
+        const currentRoute = state.routes?.[state.index];
+        const routeName = currentRoute?.name;
+        if (routeName && routeName === lastTabRef.current) {
+          const tab = TAB_CONFIGS.find(tc => tc.name === routeName);
+          if (tab?.event) {
+            tabEvents.emit(tab.event);
+          }
+        }
+        if (routeName) lastTabRef.current = routeName;
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const tabs = isRTL ? [...NATIVE_TABS].reverse() : NATIVE_TABS;
 
