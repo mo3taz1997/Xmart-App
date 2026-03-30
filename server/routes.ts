@@ -101,13 +101,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const lang = ((req.query.lang as string) || "AR").toUpperCase();
       const language = lang === 'EN' ? 'EN' : 'AR';
-      const cacheKey = `collections-${language}`;
+      const cacheKey = `collections-all-${language}`;
       const cached = getCached(cacheKey, 5 * 60 * 1000);
       if (cached) return res.json(cached);
-      const data = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language });
-      const collections = data.collections.edges.map((edge: any) => edge.node);
-      setCache(cacheKey, collections);
-      res.json(collections);
+
+      const allCollections: any[] = [];
+      let hasNext = true;
+      let cursor: string | null = null;
+      while (hasNext) {
+        const paginatedQuery = `
+          query GetAllCollections($first: Int!, $after: String, $language: LanguageCode) @inContext(language: $language) {
+            collections(first: $first, after: $after) {
+              pageInfo { hasNextPage endCursor }
+              edges { node { id title handle description image { url altText } } }
+            }
+          }
+        `;
+        const vars: any = { first: 250, language };
+        if (cursor) vars.after = cursor;
+        const data = await shopifyFetch(paginatedQuery, vars);
+        const edges = data.collections?.edges || [];
+        allCollections.push(...edges.map((e: any) => e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+
+      setCache(cacheKey, allCollections);
+      res.json(allCollections);
     } catch (error: any) {
       console.error("Error fetching collections:", error.message);
       res.status(500).json({ error: error.message });

@@ -899,11 +899,7 @@ export default function ProductDetailScreen() {
                     contentFit="contain"
                     transition={200}
                   />
-                ) : (
-                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#163259', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{(displayVendor || '').charAt(0).toUpperCase()}</Text>
-                  </View>
-                )}
+                ) : null}
                 <Text style={styles.vendorText}>{displayVendor}</Text>
                 <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={12} color={colors.textMuted} />
               </Pressable>
