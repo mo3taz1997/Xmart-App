@@ -880,7 +880,7 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
   } else if (sort === 'name') {
     orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, title ASC`;
   } else {
-    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, ROUND(${rankExpr}::numeric, 0) DESC, RANDOM()`;
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, ROUND(${rankExpr}::numeric, 0) DESC, id ASC`;
   }
 
   const searchQuery = `

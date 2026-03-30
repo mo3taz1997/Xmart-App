@@ -1580,21 +1580,19 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
           <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.primary} />
         </Pressable>
       </View>
-      <FlatList
-        data={products}
+      <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+      <ScrollView
         horizontal
-        inverted={isRTL}
         showsHorizontalScrollIndicator={false}
         nestedScrollEnabled
         directionalLockEnabled
-        keyExtractor={(item: any, i: number) => item.handle || String(i)}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        initialNumToRender={4}
-        maxToRenderPerBatch={4}
-        windowSize={5}
-        removeClippedSubviews={Platform.OS !== 'web'}
-        ItemSeparatorComponent={FlatListGap10}
-        renderItem={({ item: p }: { item: any }) => {
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          gap: 10,
+          alignItems: 'flex-start',
+        }}
+      >
+        {products.map((p: any) => {
           const title = language === 'ar' ? (p.titleAr || p.title) : (p.titleEn || p.title);
           const price = p.priceRange?.minVariantPrice?.amount || p.price || '0';
           const currency = p.priceRange?.minVariantPrice?.currencyCode || p.currency || 'JOD';
@@ -1602,7 +1600,7 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
           const rawImg = p.images?.edges?.[0]?.node?.url || p.imageUrl || p.image || null;
           const imgUrl = optimizeShopifyImage(rawImg, 400);
           return (
-            <View style={{ width: CARD_W_CP }}>
+            <View key={p.handle || p.id} style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
               <ProductCard
                 handle={p.handle}
                 title={title}
@@ -1612,17 +1610,13 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
                 imageUrl={imgUrl}
                 availableForSale={p.availableForSale !== false}
                 vendor={p.vendor}
-                compact
               />
             </View>
           );
-        }}
-        ListFooterComponent={products.length >= 4 ? (
+        })}
+        {collectionHandle && products.length >= 4 && (
           <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } });
-            }}
+            onPress={() => router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } })}
             style={{
               width: HSCROLL_CARD_W * 0.55,
               height: 220,
@@ -1637,7 +1631,7 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               shadowOffset: { width: 0, height: 6 },
               elevation: 8,
               alignSelf: 'center',
-              marginLeft: 10,
+              transform: isRTL ? [{ scaleX: -1 }] : [],
             }}
           >
             <View style={{
@@ -1661,8 +1655,9 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
             </Text>
           </Pressable>
-        ) : null}
-      />
+        )}
+      </ScrollView>
+      </View>
     </View>
   );
 });
