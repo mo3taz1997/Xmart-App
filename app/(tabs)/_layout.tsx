@@ -90,9 +90,17 @@ function AnimatedTabButton({ children, onPress, onLongPress, accessibilityState,
   );
 }
 
+const NATIVE_TABS = [
+  { name: 'index', sf: { default: "house", selected: "house.fill" }, labelKey: 'tab.home' },
+  { name: 'categories', sf: { default: "square.grid.2x2", selected: "square.grid.2x2.fill" }, labelKey: 'tab.categories' },
+  { name: 'wishlist', sf: { default: "heart", selected: "heart.fill" }, labelKey: 'tab.wishlist' },
+  { name: 'cart', sf: { default: "cart", selected: "cart.fill" }, labelKey: 'tab.cart' },
+  { name: 'profile', sf: { default: "person", selected: "person.fill" }, labelKey: 'tab.profile' },
+] as const;
+
 function NativeTabLayout() {
   const { cartCount } = useCart();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const navigation = useNavigation();
 
   const handleTriggerPress = useCallback((tabName: string) => {
@@ -107,29 +115,17 @@ function NativeTabLayout() {
     }
   }, [navigation]);
 
+  const tabs = isRTL ? [...NATIVE_TABS].reverse() : NATIVE_TABS;
+
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="index" onPress={() => handleTriggerPress('index')}>
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>{t('tab.home')}</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="categories" onPress={() => handleTriggerPress('categories')}>
-        <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
-        <Label>{t('tab.categories')}</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="wishlist" onPress={() => handleTriggerPress('wishlist')}>
-        <Icon sf={{ default: "heart", selected: "heart.fill" }} />
-        <Label>{t('tab.wishlist')}</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="cart" onPress={() => handleTriggerPress('cart')}>
-        <Icon sf={{ default: "cart", selected: "cart.fill" }} />
-        <Label>{t('tab.cart')}</Label>
-        {cartCount > 0 ? <Badge>{String(cartCount)}</Badge> : null}
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile" onPress={() => handleTriggerPress('profile')}>
-        <Icon sf={{ default: "person", selected: "person.fill" }} />
-        <Label>{t('tab.profile')}</Label>
-      </NativeTabs.Trigger>
+      {tabs.map((tab) => (
+        <NativeTabs.Trigger key={tab.name} name={tab.name} onPress={() => handleTriggerPress(tab.name)}>
+          <Icon sf={tab.sf} />
+          <Label>{t(tab.labelKey as any)}</Label>
+          {tab.name === 'cart' && cartCount > 0 ? <Badge>{String(cartCount)}</Badge> : null}
+        </NativeTabs.Trigger>
+      ))}
     </NativeTabs>
   );
 }
