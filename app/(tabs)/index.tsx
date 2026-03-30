@@ -1624,19 +1624,19 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } });
             }}
             style={{
-              width: CARD_W_CP * 0.6,
-              alignSelf: 'center',
+              width: HSCROLL_CARD_W * 0.55,
+              height: 220,
               borderRadius: 16,
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
               gap: 10,
-              paddingVertical: 24,
               shadowColor: colors.primary,
               shadowOpacity: 0.35,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 6 },
               elevation: 8,
+              alignSelf: 'center',
               marginLeft: 10,
             }}
           >

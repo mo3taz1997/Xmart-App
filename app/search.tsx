@@ -240,28 +240,8 @@ export default function SearchScreen() {
       ...p,
       availableForSale: getAvailability(p.handle, p.availableForSale),
     }));
-    if (sortIdx === 1) {
-      filtered.sort((a: any, b: any) => {
-        const pa = parseFloat(a.priceRange?.minVariantPrice?.amount || a.price || '0');
-        const pb = parseFloat(b.priceRange?.minVariantPrice?.amount || b.price || '0');
-        return pa - pb;
-      });
-    } else if (sortIdx === 2) {
-      filtered.sort((a: any, b: any) => {
-        const pa = parseFloat(a.priceRange?.minVariantPrice?.amount || a.price || '0');
-        const pb = parseFloat(b.priceRange?.minVariantPrice?.amount || b.price || '0');
-        return pb - pa;
-      });
-    } else if (sortIdx === 3) {
-      filtered.sort((a: any, b: any) => (a.title || '').localeCompare(b.title || ''));
-    }
-    return filtered.sort((a: any, b: any) => {
-      const aOut = a.availableForSale === false ? 1 : 0;
-      const bOut = b.availableForSale === false ? 1 : 0;
-      if (aOut !== bOut) return aOut - bOut;
-      return 0;
-    });
-  }, [products, sortIdx, getAvailability]);
+    return filtered;
+  }, [products, getAvailability]);
 
   const vendorBrands = React.useMemo(() => {
     if (allBrands.length > 0) return allBrands;
