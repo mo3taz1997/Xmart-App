@@ -118,11 +118,9 @@ export default function SearchScreen() {
     setCurrentSearchTerm(text);
     try {
       const activeSortKey = sortKey !== undefined ? sortKey : SORT_OPTIONS[sortIdx]?.key;
-      const isSorted = activeSortKey && activeSortKey !== 'relevance';
-      const fetchLimit = isSorted ? 500 : PAGE_SIZE;
-      const filters: any = { limit: fetchLimit, offset: 0 };
+      const filters: any = { limit: PAGE_SIZE, offset: 0 };
       if (brandFilter) filters.brand = brandFilter;
-      if (isSorted) filters.sort = activeSortKey;
+      if (activeSortKey && activeSortKey !== 'relevance') filters.sort = activeSortKey;
       const data = await api.searchProducts(text, language, filters);
       const prods = Array.isArray(data) ? data : (data.products || []);
       const meta = Array.isArray(data)
@@ -130,7 +128,7 @@ export default function SearchScreen() {
         : data;
       setAccumulatedProducts(prods);
       setSearchResults(meta);
-      setHasMoreResults(!isSorted && prods.length === fetchLimit && (meta.totalCount || prods.length) > prods.length);
+      setHasMoreResults(prods.length === PAGE_SIZE && (meta.totalCount || prods.length) > prods.length);
       if (!brandFilter) {
         if (meta.brands && meta.brands.length > 0) setAllBrands(meta.brands);
         saveToHistory(text);

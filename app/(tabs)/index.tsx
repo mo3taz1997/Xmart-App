@@ -1200,8 +1200,11 @@ export default function HomeScreen() {
   useEffect(() => {
     return tabEvents.on('homeTabPress', () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      mainScrollRef.current?.scrollTo?.({ y: 0, animated: true });
-      mainScrollRef.current?.getNode?.()?.scrollTo?.({ y: 0, animated: true });
+      if (mainScrollRef.current) {
+        const ref = mainScrollRef.current;
+        const scrollable = ref?.getScrollResponder?.() || ref?.getNode?.() || ref;
+        scrollable?.scrollTo?.({ y: 0, animated: true });
+      }
     });
   }, []);
 
@@ -1621,13 +1624,14 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } });
             }}
             style={{
-              width: CARD_W_CP * 0.55,
-              height: 220,
+              width: CARD_W_CP * 0.6,
+              alignSelf: 'center',
               borderRadius: 16,
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
               gap: 10,
+              paddingVertical: 24,
               shadowColor: colors.primary,
               shadowOpacity: 0.35,
               shadowRadius: 12,
