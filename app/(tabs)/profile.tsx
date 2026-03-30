@@ -559,7 +559,7 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
 
       <View style={{ alignItems: 'center', marginTop: 2, marginBottom: 6, gap: 1 }}>
         <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.6 }}>
-          {language === 'ar' ? 'الإصدار 2.2.0' : 'Version 2.2.0'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(39)</Text>
+          {language === 'ar' ? 'الإصدار 2.2.0' : 'Version 2.2.0'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(40)</Text>
         </Text>
         <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.5 }}>
           {language === 'ar' ? '© 2026 XMART. جميع الحقوق محفوظة' : '© 2026 XMART. All rights reserved'}

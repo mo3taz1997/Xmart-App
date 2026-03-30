@@ -104,16 +104,12 @@ function NativeTabLayout() {
   const navigation = useNavigation();
 
   const handleTriggerPress = useCallback((tabName: string) => {
-    const state = (navigation as any).getState?.();
-    const currentRouteName = state?.routes?.[state?.index]?.name;
-    if (currentRouteName === tabName) {
-      const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
-      if (tab?.event) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        tabEvents.emit(tab.event);
-      }
+    const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
+    if (tab?.event) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      tabEvents.emit(tab.event);
     }
-  }, [navigation]);
+  }, []);
 
   const tabs = isRTL ? [...NATIVE_TABS].reverse() : NATIVE_TABS;
 
