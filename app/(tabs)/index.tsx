@@ -1614,6 +1614,50 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
             </View>
           );
         }}
+        ListFooterComponent={products.length >= 4 ? (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } });
+            }}
+            style={{
+              width: CARD_W_CP * 0.55,
+              height: 220,
+              borderRadius: 16,
+              backgroundColor: colors.primary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              shadowColor: colors.primary,
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 6 },
+              elevation: 8,
+              marginLeft: 10,
+            }}
+          >
+            <View style={{
+              width: 44, height: 44, borderRadius: 22,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Ionicons
+                name={isRTL ? 'chevron-back' : 'chevron-forward'}
+                size={22} color="#fff"
+              />
+            </View>
+            <Text style={{
+              fontFamily: 'Cairo_700Bold',
+              fontSize: 13,
+              color: '#fff',
+              textAlign: 'center',
+              paddingHorizontal: 8,
+              lineHeight: 20,
+            }}>
+              {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
+            </Text>
+          </Pressable>
+        ) : null}
       />
     </View>
   );
