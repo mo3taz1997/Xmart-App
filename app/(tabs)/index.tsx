@@ -41,7 +41,7 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     layoutY.current = e.nativeEvent.layout.y;
     if (!mounted) {
-      const viewportBottom = scrollY.current + screenHeight * 2;
+      const viewportBottom = scrollY.current + screenHeight * 1.3;
       if (layoutY.current < viewportBottom) {
         setMounted(true);
       }
@@ -52,7 +52,7 @@ function LazySection({ children, estimatedHeight = 280, scrollY }: {
     if (mounted) return;
     const check = () => {
       if (layoutY.current <= 0) return;
-      const viewportBottom = scrollY.current + screenHeight * 2;
+      const viewportBottom = scrollY.current + screenHeight * 1.3;
       if (layoutY.current < viewportBottom) {
         setMounted(true);
       }
@@ -555,7 +555,7 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
   const tabs: any[] = section.tabs || [];
   const [activeIdx, setActiveIdx] = useState(0);
   const contentOpacity = useRef(new RNAnimated.Value(1)).current;
-  const productsScrollRef = useRef<ScrollView>(null);
+  const productsScrollRef = useRef<FlatList>(null);
 
   const activeTab = tabs[activeIdx];
   const { data, isLoading } = useQuery({
@@ -573,7 +573,7 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
 
   const handleSelectTab = (idx: number) => {
     Haptics.selectionAsync();
-    productsScrollRef.current?.scrollTo({ x: 0, animated: true });
+    productsScrollRef.current?.scrollToOffset?.({ offset: 0, animated: true });
     if (idx === activeIdx) return;
     RNAnimated.sequence([
       RNAnimated.timing(contentOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
@@ -624,27 +624,33 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
           </View>
         ) : (
           <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
-          <ScrollView
-            ref={productsScrollRef}
+          <FlatList
+            ref={productsScrollRef as any}
             horizontal
+            data={products}
+            keyExtractor={(item: any) => item.id || item.handle}
             showsHorizontalScrollIndicator={false}
             scrollsToTop={false}
             nestedScrollEnabled
             directionalLockEnabled
+            initialNumToRender={4}
+            maxToRenderPerBatch={3}
+            windowSize={3}
+            removeClippedSubviews={Platform.OS !== 'web'}
             contentContainerStyle={{
               paddingHorizontal: 16,
               gap: 10,
               alignItems: 'flex-start',
             }}
-          >
-            {products.map((item: any) => {
+            getItemLayout={(_: any, index: number) => ({ length: HSCROLL_CARD_W + 10, offset: (HSCROLL_CARD_W + 10) * index + 16, index })}
+            renderItem={({ item }: { item: any }) => {
               const price = item.priceRange?.minVariantPrice?.amount || '0';
               const currency = item.priceRange?.minVariantPrice?.currencyCode || 'JOD';
               const compareAt = item.compareAtPriceRange?.minVariantPrice?.amount;
               const rawImgUrl = item.images?.edges?.[0]?.node?.url || null;
               const imgUrl = optimizeShopifyImage(rawImgUrl, 400);
               return (
-                <View key={item.id || item.handle} style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
+                <View style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
                   <ProductCard
                     handle={item.handle}
                     title={item.title}
@@ -657,8 +663,8 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
                   />
                 </View>
               );
-            })}
-            {activeTab?.handle && products.length * (HSCROLL_CARD_W + 10) + 32 > width && (
+            }}
+            ListFooterComponent={activeTab?.handle && products.length * (HSCROLL_CARD_W + 10) + 32 > width ? (
               <Pressable
                 onPress={() => router.push({ pathname: '/collection/[handle]', params: { handle: activeTab.handle } })}
                 style={{
@@ -699,8 +705,8 @@ const MultiCollectionSection = React.memo(function MultiCollectionSection({ sect
                   {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
                 </Text>
               </Pressable>
-            )}
-          </ScrollView>
+            ) : null}
+          />
           </View>
         )}
       </RNAnimated.View>
@@ -725,24 +731,24 @@ const CollectionShowcaseSection = React.memo(function CollectionShowcaseSection(
   useEffect(() => {
     if (allHandles.length === 0) return;
     let cancelled = false;
-    Promise.all(
-      allHandles.map(async (handle: string) => {
+    (async () => {
+      const cache: Record<string, string[]> = {};
+      for (const handle of allHandles) {
+        if (cancelled) return;
         try {
-          const res = await api.getCollectionProducts(handle, { first: '10', available: 'true' }, language);
+          const res = await api.getCollectionProducts(handle, { first: '6', available: 'true' }, language);
           const prods = (res?.products || []).filter((p: any) => p.availableForSale !== false);
           const urls = prods
             .map((p: any) => optimizeShopifyImage(p.images?.edges?.[0]?.node?.url || p.featuredImage?.url, 200))
             .filter(Boolean);
-          return { handle, urls };
-        } catch { return { handle, urls: [] as string[] }; }
-      })
-    ).then(results => {
-      if (cancelled) return;
-      const cache: Record<string, string[]> = {};
-      results.forEach(r => { cache[r.handle] = r.urls; });
-      thumbCacheRef.current = cache;
-      setThumbsReady(true);
-    });
+          cache[handle] = urls;
+        } catch { cache[handle] = []; }
+      }
+      if (!cancelled) {
+        thumbCacheRef.current = cache;
+        setThumbsReady(true);
+      }
+    })();
     return () => { cancelled = true; };
   }, [allHandles.join(',')]);
 
@@ -1597,19 +1603,25 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
         </Pressable>
       </View>
       <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
-      <ScrollView
+      <FlatList
         horizontal
+        data={products}
+        keyExtractor={(p: any) => p.handle || p.id}
         showsHorizontalScrollIndicator={false}
         scrollsToTop={false}
         nestedScrollEnabled
         directionalLockEnabled
+        initialNumToRender={4}
+        maxToRenderPerBatch={3}
+        windowSize={3}
+        removeClippedSubviews={Platform.OS !== 'web'}
         contentContainerStyle={{
           paddingHorizontal: 16,
           gap: 10,
           alignItems: 'flex-start',
         }}
-      >
-        {products.map((p: any) => {
+        getItemLayout={(_: any, index: number) => ({ length: HSCROLL_CARD_W + 10, offset: (HSCROLL_CARD_W + 10) * index + 16, index })}
+        renderItem={({ item: p }: { item: any }) => {
           const title = language === 'ar' ? (p.titleAr || p.title) : (p.titleEn || p.title);
           const price = p.priceRange?.minVariantPrice?.amount || p.price || '0';
           const currency = p.priceRange?.minVariantPrice?.currencyCode || p.currency || 'JOD';
@@ -1617,7 +1629,7 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
           const rawImg = p.images?.edges?.[0]?.node?.url || p.imageUrl || p.image || null;
           const imgUrl = optimizeShopifyImage(rawImg, 400);
           return (
-            <View key={p.handle || p.id} style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
+            <View style={{ width: HSCROLL_CARD_W, transform: isRTL ? [{ scaleX: -1 }] : [] }}>
               <ProductCard
                 handle={p.handle}
                 title={title}
@@ -1630,8 +1642,8 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               />
             </View>
           );
-        })}
-        {collectionHandle && products.length >= 4 && (
+        }}
+        ListFooterComponent={collectionHandle && products.length >= 4 ? (
           <Pressable
             onPress={() => router.push({ pathname: '/collection/[handle]', params: { handle: collectionHandle } })}
             style={{
@@ -1672,8 +1684,8 @@ const CollectionProductsSection = React.memo(function CollectionProductsSection(
               {language === 'ar' ? 'عرض\nالكل' : 'View\nAll'}
             </Text>
           </Pressable>
-        )}
-      </ScrollView>
+        ) : null}
+      />
       </View>
     </View>
   );
