@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -1061,6 +1061,7 @@ const PromoBannerSlider = React.memo(function PromoBannerSlider({ banners }: { b
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { t, isRTL, language, setLanguage } = useLanguage();
   const { colors, isDark, setMode } = useTheme();
@@ -1289,7 +1290,7 @@ export default function HomeScreen() {
 
       <ScrollView
         ref={mainScrollRef}
-        scrollsToTop={true}
+        scrollsToTop={isFocused}
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical={false}
         overScrollMode="never"

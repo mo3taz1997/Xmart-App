@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withDelay, withSequence, withSpring,
@@ -105,6 +106,7 @@ function MenuRow({ item, colors, isRTL, t, index, isDark, isLast }: { item: type
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { customer, isLoggedIn, isLoading, logout } = useAuth();
   const { t, isRTL, language, setLanguage, switchCount } = useLanguage();
@@ -219,7 +221,7 @@ export default function ProfileScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + webTopInset }]}>
         <PageBackground isDark={isDark} />
-        <ScrollView ref={mainScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView ref={mainScrollRef} showsVerticalScrollIndicator={false} scrollsToTop={isFocused} contentContainerStyle={{ paddingBottom: 100 }}>
           <View style={styles.guestWrap}>
             <View style={[styles.guestAvatarWrap, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)', borderColor: isDark ? 'rgba(36,140,204,0.3)' : 'rgba(22,50,89,0.12)' }]}>
               <Ionicons name="person-outline" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(22,50,89,0.35)'} />
@@ -253,7 +255,7 @@ export default function ProfileScreen() {
 return (
   <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + webTopInset }]}>
     <PageBackground isDark={isDark} />
-    <ScrollView ref={mainScrollRef} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={mainScrollRef} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false} scrollsToTop={isFocused}>
       <View style={styles.profileCard}>
         <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAvatarPicker(true); }} style={{ position: 'relative' }}>
           {isEmojiAvatar ? (

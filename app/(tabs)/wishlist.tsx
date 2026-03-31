@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -112,6 +113,7 @@ function WishlistItem({ item }: { item: any }) {
 
 export default function WishlistScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { items, clearWishlist } = useWishlist();
   const { t, isRTL } = useLanguage();
@@ -152,6 +154,7 @@ export default function WishlistScreen() {
         renderItem={({ item }) => <WishlistItem item={item} />}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        scrollsToTop={isFocused}
         scrollEnabled={!!items.length}
         initialNumToRender={6}
         maxToRenderPerBatch={6}

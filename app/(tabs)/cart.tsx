@@ -6,6 +6,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -219,6 +220,7 @@ function CartItem({ item, highlighted }: { item: any; highlighted?: boolean }) {
 
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const webBottomInset = Platform.OS === 'web' ? 34 : 0;
   const router = useRouter();
@@ -316,6 +318,7 @@ export default function CartScreen() {
         renderItem={({ item }) => <CartItem item={item} highlighted={highlightedHandle === item.merchandise?.product?.handle} />}
         contentContainerStyle={{ padding: 16, paddingBottom: 260 }}
         showsVerticalScrollIndicator={false}
+        scrollsToTop={isFocused}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         scrollEnabled={!!lines.length || upsellList.length > 0}
@@ -342,6 +345,7 @@ export default function CartScreen() {
                   data={upsellList}
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  scrollsToTop={false}
                   contentContainerStyle={{ paddingHorizontal: 4, gap: 8 }}
                   style={{ direction: isRTL ? 'rtl' : 'ltr' }}
                   renderItem={({ item }: { item: any }) => (
@@ -366,6 +370,7 @@ export default function CartScreen() {
               data={upsellList}
               horizontal
               showsHorizontalScrollIndicator={false}
+              scrollsToTop={false}
               contentContainerStyle={{ paddingHorizontal: 4, gap: 8 }}
               style={{ direction: isRTL ? 'rtl' : 'ltr' }}
               renderItem={({ item }: { item: any }) => (

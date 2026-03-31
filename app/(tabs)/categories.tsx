@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -255,6 +255,7 @@ function extractProductData(product: any) {
 /* ══════════════════════════ MAIN SCREEN ══════════════════════════ */
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { t, isRTL, language } = useLanguage();
   const { colors, isDark } = useTheme();
@@ -546,6 +547,7 @@ export default function CategoriesScreen() {
               data={cats}
               keyExtractor={(item) => item.id}
               numColumns={CIRCLE_COLS}
+              scrollsToTop={isFocused}
               columnWrapperStyle={{
                 paddingHorizontal: H_PAD,
                 justifyContent: 'space-around',
@@ -680,6 +682,7 @@ export default function CategoriesScreen() {
               data={childItems}
               keyExtractor={(item) => item.id}
               numColumns={CIRCLE_COLS}
+              scrollsToTop={false}
               columnWrapperStyle={{
                 paddingHorizontal: H_PAD,
                 justifyContent: 'space-around',
@@ -707,6 +710,7 @@ export default function CategoriesScreen() {
               data={collProducts}
               keyExtractor={(item: any) => item.handle || item.id}
               numColumns={PRODUCT_COLUMNS}
+              scrollsToTop={false}
               columnWrapperStyle={{ paddingHorizontal: 8, flexDirection: isRTL ? 'row-reverse' : 'row' }}
               renderItem={({ item }) => (
                 <View style={{ width: (width - 24) / PRODUCT_COLUMNS, padding: 4 }}>
