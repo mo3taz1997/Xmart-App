@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { tabEvents } from "@/lib/tabEvents";
+import { tabEvents, scrollRegistry } from "@/lib/tabEvents";
 
 const TAB_CONFIGS = [
   { name: 'index', icon: 'home', iconOutline: 'home-outline', activeColor: '#C4A265', event: 'homeTabPress' },
@@ -105,31 +105,15 @@ function NativeTabLayout() {
   const lastTabRef = useRef<string>('index');
 
   const handleTriggerPress = useCallback((tabName: string) => {
+    const isSameTab = tabName === lastTabRef.current;
     const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
-    if (tab?.event) {
+    if (isSameTab) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      tabEvents.emit(tab.event);
+      if (tab?.event) tabEvents.emit(tab.event);
+      scrollRegistry.scrollToTop(tabName);
     }
     lastTabRef.current = tabName;
   }, []);
-
-  useEffect(() => {
-    const unsubscribe = (navigation as any).addListener?.('state', (e: any) => {
-      const state = e?.data?.state;
-      if (state) {
-        const currentRoute = state.routes?.[state.index];
-        const routeName = currentRoute?.name;
-        if (routeName && routeName === lastTabRef.current) {
-          const tab = TAB_CONFIGS.find(tc => tc.name === routeName);
-          if (tab?.event) {
-            tabEvents.emit(tab.event);
-          }
-        }
-        if (routeName) lastTabRef.current = routeName;
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
 
   const tabs = isRTL ? [...NATIVE_TABS].reverse() : NATIVE_TABS;
 
@@ -214,6 +198,7 @@ function ClassicTabLayout() {
             tabPress: () => {
               if (navigation.isFocused() && tab.event) {
                 tabEvents.emit(tab.event);
+                scrollRegistry.scrollToTop(tab.name);
               }
             },
           })}

@@ -18,7 +18,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useStockStatus } from '@/lib/useStockStatus';
-import { tabEvents } from '@/lib/tabEvents';
+import { tabEvents, scrollRegistry } from '@/lib/tabEvents';
 
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -262,6 +262,12 @@ export default function CategoriesScreen() {
   const [navStack, setNavStack] = useState<CategoryItem[]>([]);
   const level1ScrollRef = useRef<FlatList>(null);
   useScrollToTop(level1ScrollRef as any);
+
+  useEffect(() => {
+    scrollRegistry.register('categories', level1ScrollRef);
+    return () => scrollRegistry.unregister('categories');
+  }, []);
+
   const [sortIdx, setSortIdx] = useState(0);
   const [randomSeed, setRandomSeed] = useState(() => Math.random());
   const [showSort, setShowSort] = useState(false);

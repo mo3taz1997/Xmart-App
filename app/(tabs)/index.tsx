@@ -18,7 +18,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { api } from '@/lib/api';
 import { BannerSkeleton, HomepageSkeleton } from '@/components/SkeletonLoader';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { tabEvents } from '@/lib/tabEvents';
+import { tabEvents, scrollRegistry } from '@/lib/tabEvents';
 import PageBackground from '@/components/PageBackground';
 import ProductCard from '@/components/ProductCard';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -1187,6 +1187,11 @@ export default function HomeScreen() {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const lastSearchVisible = useRef(false);
 
+  useEffect(() => {
+    scrollRegistry.register('index', mainScrollRef);
+    return () => scrollRegistry.unregister('index');
+  }, []);
+
   const lazyThrottleRef = useRef(0);
   const handleScroll = useCallback((e: any) => {
     const y = e.nativeEvent.contentOffset.y;
@@ -1206,7 +1211,7 @@ export default function HomeScreen() {
   useEffect(() => {
     return tabEvents.on('homeTabPress', () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      mainScrollRef.current?.scrollTo?.({ y: 0, animated: true });
+      mainScrollRef.current?.scrollTo?.({ x: 0, y: 0, animated: true });
     });
   }, []);
 
