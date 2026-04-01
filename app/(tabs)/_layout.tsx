@@ -5,8 +5,7 @@ import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, View, Pressable, Animated as RNAnimated, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useCallback, useEffect } from "react";
-import { useNavigation } from "expo-router";
+import React, { useRef, useCallback } from "react";
 import * as Haptics from "expo-haptics";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -101,26 +100,13 @@ const NATIVE_TABS = [
 function NativeTabLayout() {
   const { cartCount } = useCart();
   const { t, isRTL } = useLanguage();
-  const navigation = useNavigation();
-  const lastTabRef = useRef<string>('index');
-
-  const handleTriggerPress = useCallback((tabName: string) => {
-    const isSameTab = tabName === lastTabRef.current;
-    const tab = TAB_CONFIGS.find(tc => tc.name === tabName);
-    if (isSameTab) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (tab?.event) tabEvents.emit(tab.event);
-    }
-    scrollRegistry.scrollToTop(tabName);
-    lastTabRef.current = tabName;
-  }, []);
 
   const tabs = isRTL ? [...NATIVE_TABS].reverse() : NATIVE_TABS;
 
   return (
     <NativeTabs>
       {tabs.map((tab) => (
-        <NativeTabs.Trigger key={tab.name} name={tab.name} onPress={() => handleTriggerPress(tab.name)}>
+        <NativeTabs.Trigger key={tab.name} name={tab.name}>
           <Icon sf={tab.sf} />
           <Label>{t(tab.labelKey as any)}</Label>
           {tab.name === 'cart' && cartCount > 0 ? <Badge>{String(cartCount)}</Badge> : null}

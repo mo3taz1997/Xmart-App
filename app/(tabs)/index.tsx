@@ -1207,12 +1207,10 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   useEffect(() => {
     const unsub = navigation.addListener('tabPress' as any, () => {
-      if (isFocused) {
-        mainScrollRef.current?.scrollTo?.({ x: 0, y: 0, animated: true });
-      }
+      mainScrollRef.current?.scrollTo?.({ x: 0, y: 0, animated: true });
     });
     return unsub;
-  }, [navigation, isFocused]);
+  }, [navigation]);
 
   useEffect(() => {
     return tabEvents.on('homeTabPress', () => {
