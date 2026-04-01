@@ -110,8 +110,8 @@ function NativeTabLayout() {
     if (isSameTab) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (tab?.event) tabEvents.emit(tab.event);
-      scrollRegistry.scrollToTop(tabName);
     }
+    scrollRegistry.scrollToTop(tabName);
     lastTabRef.current = tabName;
   }, []);
 

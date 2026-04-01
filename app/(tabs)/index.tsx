@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useScrollToTop, useIsFocused } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused, useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -1203,6 +1203,16 @@ export default function HomeScreen() {
       setShowHeaderSearch(shouldShow);
     }
   }, []);
+
+  const navigation = useNavigation();
+  useEffect(() => {
+    const unsub = navigation.addListener('tabPress' as any, () => {
+      if (isFocused) {
+        mainScrollRef.current?.scrollTo?.({ x: 0, y: 0, animated: true });
+      }
+    });
+    return unsub;
+  }, [navigation, isFocused]);
 
   useEffect(() => {
     return tabEvents.on('homeTabPress', () => {
