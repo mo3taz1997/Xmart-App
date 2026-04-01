@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '@/constants/colors';
-import { tabEvents } from '@/lib/tabEvents';
+import { tabEvents, scrollRegistry } from '@/lib/tabEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageBackground from '@/components/PageBackground';
@@ -454,6 +454,9 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await setLanguage(lang);
     router.replace('/(tabs)');
+    setTimeout(() => {
+      scrollRegistry.scrollToTop('index');
+    }, 300);
   };
   return (
     <>
