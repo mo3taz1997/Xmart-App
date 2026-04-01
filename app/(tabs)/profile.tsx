@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Platform, ActivityIndicator, Dimensions, TextInput, Modal, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
+import { CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -449,14 +450,15 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
   setLanguage: (l: string) => void; setMode: (m: 'light' | 'dark') => void; t: any;
 }) {
   const { switchCount } = useLanguage();
+  const navigation = useNavigation();
   const handleLanguageChange = async (lang: string) => {
     if (lang === language) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await setLanguage(lang);
-    router.replace('/(tabs)');
+    navigation.dispatch(CommonActions.navigate({ name: 'index' }));
     setTimeout(() => {
       scrollRegistry.scrollToTop('index');
-    }, 300);
+    }, 400);
   };
   return (
     <>
@@ -563,7 +565,7 @@ function SettingsSection({ colors, isDark, isRTL, language, setLanguage, setMode
 
       <View style={{ alignItems: 'center', marginTop: 2, marginBottom: 6, gap: 1 }}>
         <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.6 }}>
-          {language === 'ar' ? 'الإصدار 2.2.0' : 'Version 2.2.0'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(57)</Text>
+          {language === 'ar' ? 'الإصدار 2.2.0' : 'Version 2.2.0'} <Text style={{ fontSize: 9, opacity: 0.4 }}>(58)</Text>
         </Text>
         <Text style={{ fontFamily: 'Cairo_400Regular', fontSize: 11, color: colors.textMuted, opacity: 0.5 }}>
           {language === 'ar' ? '© 2026 XMART. جميع الحقوق محفوظة' : '© 2026 XMART. All rights reserved'}
