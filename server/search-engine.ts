@@ -876,9 +876,23 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
   if (inStock) { baseConditions.push(`available_for_sale = true`); }
   const whereClauseNoBrand = baseConditions.length > 0 ? `WHERE ${baseConditions.join(' AND ')}` : '';
 
+  const queryWords = q.toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+  const escapeSql = (s: string) => s.replace(/'/g, "''").replace(/\\/g, '\\\\');
+  const allWordsConditions = queryWords.map(w => {
+    const ew = escapeSql(w);
+    return `(LOWER(title) LIKE '%${ew}%' OR LOWER(COALESCE(title_ar,'')) LIKE '%${ew}%' OR LOWER(handle) LIKE '%${ew}%')`;
+  });
+  const allWordsBoost = allWordsConditions.length > 1
+    ? `CASE WHEN ${allWordsConditions.join(' AND ')} THEN 50.0 ELSE 0 END`
+    : '0';
+  const handleQLikeEsc = escapeSql(q.toLowerCase().replace(/\s+/g, '-'));
+  const handleConcatBoost = `CASE WHEN LOWER(handle) LIKE '%${handleQLikeEsc}%' THEN 40.0 ELSE 0 END`;
+
   const rankExpr = `(
     COALESCE(ts_rank_cd(tsv_en, to_tsquery('simple', $1)), 0) * 3.0 +
     COALESCE(ts_rank_cd(tsv_ar, to_tsquery('simple', $1)), 0) * 3.0 +
+    ${allWordsBoost} +
+    ${handleConcatBoost} +
     CASE WHEN LOWER(COALESCE(vendor,'')) = LOWER($2) THEN 20.0
          WHEN COALESCE(vendor,'') ILIKE $3 THEN 12.0
          WHEN title ILIKE $2 THEN 10.0
@@ -888,8 +902,8 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
          WHEN COALESCE(title_ar,'') ILIKE $3 THEN 2.0
          WHEN handle ILIKE $3 THEN 1.5
          ELSE 0 END +
-    COALESCE(similarity(title, $2), 0) * 5.0 +
-    COALESCE(similarity(COALESCE(title_ar,''), $2), 0) * 5.0 +
+    COALESCE(similarity(title, $2), 0) * 3.0 +
+    COALESCE(similarity(COALESCE(title_ar,''), $2), 0) * 3.0 +
     CASE WHEN available_for_sale THEN 1.0 ELSE -3.0 END +
     CASE WHEN compare_at_price IS NOT NULL AND compare_at_price > price THEN 0.5 ELSE 0 END
   )`;
