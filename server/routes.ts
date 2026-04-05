@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       trackSearch(query, results.totalCount, language).catch(() => {});
 
-      if (results.products.length === 0) {
+      if (results.products.length < 3) {
         try {
           const [enData, arData] = await Promise.all([
             shopifyFetch(QUERIES.SEARCH_PRODUCTS, { query, first: limit, language: 'EN' }),
@@ -598,34 +598,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (mergedProducts.length > 0) {
-            for (let i = mergedProducts.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [mergedProducts[i], mergedProducts[j]] = [mergedProducts[j], mergedProducts[i]];
-            }
-            const sfLang = language === 'ar' ? 'AR' : 'EN';
-            const collectionData = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language: sfLang });
-            const allCollections = collectionData.collections.edges.map((edge: any) => edge.node);
-            const q = query.toLowerCase();
-            const matchingCollections = allCollections
-              .filter((c: any) =>
-                c.title?.toLowerCase().includes(q) ||
-                c.handle?.toLowerCase().includes(q)
-              )
-              .slice(0, 8);
+            const existingHandles = new Set(results.products.map((p: any) => p.handle));
+            const newProducts = mergedProducts.filter((p: any) => !existingHandles.has(p.handle));
+            const combined = [...results.products, ...newProducts];
 
             const vendorMap = new Map<string, number>();
-            mergedProducts.forEach((p: any) => {
+            combined.forEach((p: any) => {
               if (p.vendor) vendorMap.set(p.vendor, (vendorMap.get(p.vendor) || 0) + 1);
             });
 
             return res.json({
-              products: mergedProducts,
-              totalCount: mergedProducts.length,
-              suggestions: [],
+              products: combined.slice(0, limit),
+              totalCount: combined.length,
+              suggestions: results.suggestions || [],
               brands: Array.from(vendorMap.entries()).map(([name, count]) => ({ name, count })),
-              collections: matchingCollections,
-              priceRange: { min: 0, max: 0 },
-              source: 'shopify_fallback',
+              priceRange: results.priceRange || { min: 0, max: 0 },
+              source: results.products.length > 0 ? 'merged' : 'shopify_fallback',
             });
           }
         } catch (fallbackErr: any) {

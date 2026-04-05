@@ -717,12 +717,20 @@ function expandQueryWithSynonyms(query: string): string[] {
 }
 
 function buildTsQuery(terms: string[]): string {
-  return terms
-    .filter(t => t.length >= 2)
-    .map(t => t.replace(/[^a-zA-Z0-9\u0600-\u06FF\s]/g, '').trim())
-    .filter(Boolean)
-    .map(t => t.split(/\s+/).map(w => `${w}:*`).join(' & '))
-    .join(' | ');
+  const parts: string[] = [];
+  for (const t of terms) {
+    const cleaned = t.replace(/[^a-zA-Z0-9\u0600-\u06FF\s]/g, '').trim();
+    if (!cleaned || cleaned.length < 2) continue;
+    const words = cleaned.split(/\s+/).filter(w => w.length >= 2);
+    if (words.length === 0) continue;
+    for (const w of words) {
+      parts.push(`${w}:*`);
+    }
+    if (words.length > 1) {
+      parts.push(words.map(w => `${w}:*`).join(' & '));
+    }
+  }
+  return [...new Set(parts)].join(' | ');
 }
 
 interface SearchOptions {
@@ -784,26 +792,31 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
 
   if (tsQuery) {
     const normalizedLike = `%${normalizedQ}%`;
+    const handleQ = q.toLowerCase().replace(/\s+/g, '-');
     const synLikeConditions = allSynonymLikes.map((syn, i) => {
-      const idx = paramIdx + 4 + i;
-      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%'`;
+      const idx = paramIdx + 5 + i;
+      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%' OR handle ILIKE '%' || $${idx} || '%'`;
     }).join('\n      OR ');
 
     conditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${paramIdx})
-      OR tsv_en @@ to_tsquery('english', $${paramIdx})
+      OR tsv_en @@ to_tsquery('simple', $${paramIdx})
       OR title ILIKE $${paramIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${paramIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${paramIdx + 2}
       OR COALESCE(product_type,'') ILIKE $${paramIdx + 2}
+      OR handle ILIKE $${paramIdx + 2}
+      OR handle ILIKE $${paramIdx + 4}
       OR EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${paramIdx + 2})
       OR TRANSLATE(COALESCE(title_ar,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${paramIdx + 3}
       OR TRANSLATE(COALESCE(title,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${paramIdx + 3}
       OR TRANSLATE(COALESCE(vendor,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${paramIdx + 3}
+      OR similarity(title, $${paramIdx + 1}) > 0.15
+      OR similarity(COALESCE(title_ar,''), $${paramIdx + 1}) > 0.15
       ${synLikeConditions ? `OR ${synLikeConditions}` : ''}
     )`);
-    params.push(tsQuery, q, `%${q}%`, normalizedLike, ...allSynonymLikes);
-    paramIdx += 4 + allSynonymLikes.length;
+    params.push(tsQuery, q, `%${q}%`, normalizedLike, `%${handleQ}%`, ...allSynonymLikes);
+    paramIdx += 5 + allSynonymLikes.length;
   }
 
   if (minPrice !== undefined) {
@@ -832,26 +845,31 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
   let baseParamIdx = 1;
   if (tsQuery) {
     const normalizedLikeBase = `%${normalizedQ}%`;
+    const handleQBase = q.toLowerCase().replace(/\s+/g, '-');
     const baseSynLikeConditions = allSynonymLikes.map((syn, i) => {
-      const idx = baseParamIdx + 4 + i;
-      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%'`;
+      const idx = baseParamIdx + 5 + i;
+      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%' OR handle ILIKE '%' || $${idx} || '%'`;
     }).join('\n      OR ');
 
     baseConditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${baseParamIdx})
-      OR tsv_en @@ to_tsquery('english', $${baseParamIdx})
+      OR tsv_en @@ to_tsquery('simple', $${baseParamIdx})
       OR title ILIKE $${baseParamIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${baseParamIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${baseParamIdx + 2}
       OR COALESCE(product_type,'') ILIKE $${baseParamIdx + 2}
+      OR handle ILIKE $${baseParamIdx + 2}
+      OR handle ILIKE $${baseParamIdx + 4}
       OR EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${baseParamIdx + 2})
       OR TRANSLATE(COALESCE(title_ar,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${baseParamIdx + 3}
       OR TRANSLATE(COALESCE(title,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${baseParamIdx + 3}
       OR TRANSLATE(COALESCE(vendor,''), 'أإآٱةىؤئ', 'اااههيوي') ILIKE $${baseParamIdx + 3}
+      OR similarity(title, $${baseParamIdx + 1}) > 0.15
+      OR similarity(COALESCE(title_ar,''), $${baseParamIdx + 1}) > 0.15
       ${baseSynLikeConditions ? `OR ${baseSynLikeConditions}` : ''}
     )`);
-    baseParams.push(tsQuery, q, `%${q}%`, normalizedLikeBase, ...allSynonymLikes);
-    baseParamIdx += 4 + allSynonymLikes.length;
+    baseParams.push(tsQuery, q, `%${q}%`, normalizedLikeBase, `%${handleQBase}%`, ...allSynonymLikes);
+    baseParamIdx += 5 + allSynonymLikes.length;
   }
   if (minPrice !== undefined) { baseConditions.push(`price >= $${baseParamIdx}`); baseParams.push(minPrice); baseParamIdx++; }
   if (maxPrice !== undefined) { baseConditions.push(`price <= $${baseParamIdx}`); baseParams.push(maxPrice); baseParamIdx++; }
@@ -859,15 +877,19 @@ export async function advancedSearch(options: SearchOptions): Promise<SearchResu
   const whereClauseNoBrand = baseConditions.length > 0 ? `WHERE ${baseConditions.join(' AND ')}` : '';
 
   const rankExpr = `(
-    COALESCE(ts_rank_cd(tsv_en, to_tsquery('english', $1)), 0) * 3.0 +
+    COALESCE(ts_rank_cd(tsv_en, to_tsquery('simple', $1)), 0) * 3.0 +
     COALESCE(ts_rank_cd(tsv_ar, to_tsquery('simple', $1)), 0) * 3.0 +
     CASE WHEN LOWER(COALESCE(vendor,'')) = LOWER($2) THEN 20.0
          WHEN COALESCE(vendor,'') ILIKE $3 THEN 12.0
          WHEN title ILIKE $2 THEN 10.0
          WHEN COALESCE(title_ar,'') ILIKE $2 THEN 10.0
+         WHEN handle ILIKE $2 THEN 8.0
          WHEN title ILIKE $3 AND LENGTH($2) >= 4 THEN 2.0
          WHEN COALESCE(title_ar,'') ILIKE $3 THEN 2.0
+         WHEN handle ILIKE $3 THEN 1.5
          ELSE 0 END +
+    COALESCE(similarity(title, $2), 0) * 5.0 +
+    COALESCE(similarity(COALESCE(title_ar,''), $2), 0) * 5.0 +
     CASE WHEN available_for_sale THEN 1.0 ELSE -3.0 END +
     CASE WHEN compare_at_price IS NOT NULL AND compare_at_price > price THEN 0.5 ELSE 0 END
   )`;
