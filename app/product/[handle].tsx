@@ -899,8 +899,9 @@ export default function ProductDetailScreen() {
                     contentFit="contain"
                     transition={200}
                   />
-                ) : null}
-                <Text style={styles.vendorText}>{displayVendor}</Text>
+                ) : (
+                  <Text style={styles.vendorText}>{displayVendor}</Text>
+                )}
                 <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={12} color={colors.textMuted} />
               </Pressable>
             ) : null}
@@ -1670,8 +1671,8 @@ function getStyles(colors: typeof Colors.dark) {
       borderColor: colors.border,
     },
     brandImage: {
-      width: 50,
-      height: 22,
+      width: 60,
+      height: 26,
     },
     vendorText: {
       fontFamily: 'Cairo_600SemiBold',
