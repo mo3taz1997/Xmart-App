@@ -123,6 +123,7 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                textContentType="emailAddress"
               />
               <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={[styles.inputIcon, isRTL ? { right: 14 } : { left: 14 }]} />
             </View>
