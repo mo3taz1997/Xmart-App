@@ -2689,38 +2689,25 @@ async function advancedSearch(options) {
     CASE WHEN available_for_sale THEN 1.0 ELSE -3.0 END +
     CASE WHEN compare_at_price IS NOT NULL AND compare_at_price > price THEN 0.5 ELSE 0 END
   )`;
-  const qLower = q.toLowerCase();
-  const qWords = qLower.split(/\s+/).filter((w) => w.length >= 2);
-  const escapeSqlStr = (s) => s.replace(/'/g, "''");
-  const directMatchCond = qWords.map((w) => {
-    const ew = escapeSqlStr(w);
-    return `(LOWER(title) LIKE '%${ew}%' OR LOWER(COALESCE(title_ar,'')) LIKE '%${ew}%' OR LOWER(handle) LIKE '%${ew}%' OR LOWER(COALESCE(vendor,'')) LIKE '%${ew}%')`;
-  });
-  const hasDirectMatch = directMatchCond.length > 0 ? directMatchCond.join(" AND ") : "TRUE";
   let orderByClause;
-  let useRelevanceWrapping = false;
   if (sort === "price_asc") {
     orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price ASC NULLS LAST`;
-    useRelevanceWrapping = true;
   } else if (sort === "price_desc") {
     orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price DESC NULLS LAST`;
-    useRelevanceWrapping = true;
   } else if (sort === "name") {
     orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, title ASC`;
-    useRelevanceWrapping = true;
   } else {
     orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, ROUND(${rankExpr}::numeric, 0) DESC, id ASC`;
   }
-  const sortWhereClause = useRelevanceWrapping && tsQuery ? whereClause ? `${whereClause} AND (${hasDirectMatch})` : `WHERE (${hasDirectMatch})` : whereClause;
   const searchQuery = `
     SELECT *, ${rankExpr} as relevance_score
     FROM search_index
-    ${sortWhereClause}
+    ${whereClause}
     ${orderByClause}
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
   params.push(limit, offset);
-  const countQuery = `SELECT COUNT(*) as total FROM search_index ${sortWhereClause}`;
+  const countQuery = `SELECT COUNT(*) as total FROM search_index ${whereClause}`;
   const brandQuery = `
     SELECT vendor as name, COUNT(*) as count
     FROM search_index ${whereClauseNoBrand}
