@@ -1,14 +1,212 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  appSettings: () => appSettings,
+  categories: () => categories,
+  customerAddresses: () => customerAddresses,
+  homepageBanners: () => homepageBanners,
+  homepageSections: () => homepageSections,
+  insertUserSchema: () => insertUserSchema,
+  notifications: () => notifications,
+  orderItems: () => orderItems,
+  orders: () => orders,
+  pushTokens: () => pushTokens,
+  suggestedProducts: () => suggestedProducts,
+  uploadedImages: () => uploadedImages,
+  users: () => users
+});
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var bytea, uploadedImages, users, insertUserSchema, homepageSections, homepageBanners, appSettings, orders, customerAddresses, orderItems, categories, suggestedProducts, pushTokens, notifications;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    bytea = customType({
+      dataType() {
+        return "bytea";
+      },
+      toDriver(value) {
+        return value;
+      },
+      fromDriver(value) {
+        return Buffer.from(value);
+      }
+    });
+    uploadedImages = pgTable("uploaded_images", {
+      filename: varchar("filename").primaryKey(),
+      data: bytea("data").notNull(),
+      mimeType: text("mime_type").notNull().default("image/png"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    users = pgTable("users", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      username: text("username").notNull().unique(),
+      password: text("password").notNull()
+    });
+    insertUserSchema = createInsertSchema(users).pick({
+      username: true,
+      password: true
+    });
+    homepageSections = pgTable("homepage_sections", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      type: text("type").notNull(),
+      titleAr: text("title_ar"),
+      titleEn: text("title_en"),
+      language: text("language").notNull().default("both"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      metadata: text("metadata"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    homepageBanners = pgTable("homepage_banners", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      sectionId: varchar("section_id").notNull(),
+      imageUrl: text("image_url").notNull(),
+      linkType: text("link_type").default("collection"),
+      linkValue: text("link_value"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      language: text("language").default("both"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    appSettings = pgTable("app_settings", {
+      key: varchar("key").primaryKey(),
+      value: text("value").notNull(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    orders = pgTable("orders", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      orderNumber: integer("order_number").notNull(),
+      shopifyCheckoutId: text("shopify_checkout_id"),
+      customerEmail: text("customer_email").notNull(),
+      customerFirstName: text("customer_first_name").notNull(),
+      customerLastName: text("customer_last_name").notNull(),
+      customerPhone: text("customer_phone").notNull(),
+      shippingAddress: text("shipping_address"),
+      shippingCity: text("shipping_city"),
+      notes: text("notes"),
+      paymentMethod: text("payment_method").notNull().default("cod"),
+      status: text("status").notNull().default("pending"),
+      subtotal: text("subtotal").notNull(),
+      shippingCost: text("shipping_cost").notNull().default("0"),
+      total: text("total").notNull(),
+      currency: text("currency").notNull().default("JOD"),
+      deliveryCode: text("delivery_code"),
+      shopifyOrderName: text("shopify_order_name"),
+      shopifyOrderId: text("shopify_order_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    customerAddresses = pgTable("customer_addresses", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      customerEmail: text("customer_email").notNull(),
+      label: text("label"),
+      firstName: text("first_name").notNull(),
+      lastName: text("last_name").notNull(),
+      phone: text("phone").notNull(),
+      address: text("address"),
+      city: text("city"),
+      country: text("country").default("JO"),
+      isDefault: boolean("is_default").notNull().default(false),
+      shopifyAddressId: text("shopify_address_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    orderItems = pgTable("order_items", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      orderId: varchar("order_id").notNull(),
+      productTitle: text("product_title").notNull(),
+      productHandle: text("product_handle"),
+      variantTitle: text("variant_title"),
+      variantId: text("variant_id"),
+      quantity: integer("quantity").notNull(),
+      price: text("price").notNull(),
+      currency: text("currency").notNull().default("JOD"),
+      imageUrl: text("image_url")
+    });
+    categories = pgTable("categories", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      parentId: varchar("parent_id"),
+      titleAr: text("title_ar").notNull(),
+      titleEn: text("title_en").notNull(),
+      imageUrl: text("image_url"),
+      collectionHandle: text("collection_handle"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    suggestedProducts = pgTable("suggested_products", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      productHandle: text("product_handle").notNull(),
+      titleAr: text("title_ar"),
+      titleEn: text("title_en"),
+      imageUrl: text("image_url"),
+      sortOrder: integer("sort_order").notNull().default(0),
+      visible: boolean("visible").notNull().default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    pushTokens = pgTable("push_tokens", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      token: text("token").notNull().unique(),
+      platform: text("platform"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    notifications = pgTable("notifications", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      titleAr: text("title_ar").notNull(),
+      titleEn: text("title_en").notNull(),
+      bodyAr: text("body_ar"),
+      bodyEn: text("body_en"),
+      imageUrl: text("image_url"),
+      linkType: text("link_type").default("none"),
+      linkValue: text("link_value"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+  }
+});
+
+// server/db.ts
+var db_exports = {};
+__export(db_exports, {
+  db: () => db
+});
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+var pool, db;
+var init_db = __esm({
+  "server/db.ts"() {
+    "use strict";
+    init_schema();
+    pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 10,
+      idleTimeoutMillis: 3e4,
+      connectionTimeoutMillis: 1e4
+    });
+    pool.on("error", (err) => {
+      console.error("[DB Pool] Unexpected error on idle client:", err.message);
+    });
+    db = drizzle(pool, { schema: schema_exports });
+  }
+});
 
 // server/index.ts
 import express from "express";
@@ -42,10 +240,15 @@ async function shopifyAdminFetch(endpoint, method = "GET", body) {
   console.log(`[Admin API] ${method} ${url}`);
   const response = await fetch(url, fetchOptions);
   if (!response.ok) {
-    const text2 = await response.text();
-    throw new Error(`Shopify Admin API error: ${response.status} - ${text2}`);
+    const text3 = await response.text();
+    throw new Error(`Shopify Admin API error: ${response.status} - ${text3}`);
   }
-  return response.json();
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return {};
+  }
+  const text2 = await response.text();
+  if (!text2 || text2.trim() === "") return {};
+  return JSON.parse(text2);
 }
 async function shopifyAdminGraphQL(query, variables) {
   let adminDomain = SHOPIFY_STORE_DOMAIN;
@@ -135,6 +338,16 @@ var QUERIES = {
               altText
             }
           }
+        }
+      }
+    }
+  `,
+  COLLECTION_FILTERS: `
+    query GetCollectionFilters($handle: String!, $first: Int!, $after: String, $language: LanguageCode) @inContext(language: $language) {
+      collection(handle: $handle) {
+        products(first: $first, after: $after) {
+          pageInfo { hasNextPage endCursor }
+          edges { node { productType vendor } }
         }
       }
     }
@@ -1645,186 +1858,9 @@ async function autoCompleteCheckout(checkoutUrl, customer) {
   }
 }
 
-// server/db.ts
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  appSettings: () => appSettings,
-  categories: () => categories,
-  customerAddresses: () => customerAddresses,
-  homepageBanners: () => homepageBanners,
-  homepageSections: () => homepageSections,
-  insertUserSchema: () => insertUserSchema,
-  notifications: () => notifications,
-  orderItems: () => orderItems,
-  orders: () => orders,
-  pushTokens: () => pushTokens,
-  suggestedProducts: () => suggestedProducts,
-  uploadedImages: () => uploadedImages,
-  users: () => users
-});
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, customType } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var bytea = customType({
-  dataType() {
-    return "bytea";
-  },
-  toDriver(value) {
-    return value;
-  },
-  fromDriver(value) {
-    return Buffer.from(value);
-  }
-});
-var uploadedImages = pgTable("uploaded_images", {
-  filename: varchar("filename").primaryKey(),
-  data: bytea("data").notNull(),
-  mimeType: text("mime_type").notNull().default("image/png"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull()
-});
-var insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true
-});
-var homepageSections = pgTable("homepage_sections", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  type: text("type").notNull(),
-  titleAr: text("title_ar"),
-  titleEn: text("title_en"),
-  language: text("language").notNull().default("both"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  metadata: text("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var homepageBanners = pgTable("homepage_banners", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  sectionId: varchar("section_id").notNull(),
-  imageUrl: text("image_url").notNull(),
-  linkType: text("link_type").default("collection"),
-  linkValue: text("link_value"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  language: text("language").default("both"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var appSettings = pgTable("app_settings", {
-  key: varchar("key").primaryKey(),
-  value: text("value").notNull(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var orders = pgTable("orders", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderNumber: integer("order_number").notNull(),
-  shopifyCheckoutId: text("shopify_checkout_id"),
-  customerEmail: text("customer_email").notNull(),
-  customerFirstName: text("customer_first_name").notNull(),
-  customerLastName: text("customer_last_name").notNull(),
-  customerPhone: text("customer_phone").notNull(),
-  shippingAddress: text("shipping_address"),
-  shippingCity: text("shipping_city"),
-  notes: text("notes"),
-  paymentMethod: text("payment_method").notNull().default("cod"),
-  status: text("status").notNull().default("pending"),
-  subtotal: text("subtotal").notNull(),
-  shippingCost: text("shipping_cost").notNull().default("0"),
-  total: text("total").notNull(),
-  currency: text("currency").notNull().default("JOD"),
-  deliveryCode: text("delivery_code"),
-  shopifyOrderName: text("shopify_order_name"),
-  shopifyOrderId: text("shopify_order_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var customerAddresses = pgTable("customer_addresses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  customerEmail: text("customer_email").notNull(),
-  label: text("label"),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  phone: text("phone").notNull(),
-  address: text("address"),
-  city: text("city"),
-  country: text("country").default("JO"),
-  isDefault: boolean("is_default").notNull().default(false),
-  shopifyAddressId: text("shopify_address_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var orderItems = pgTable("order_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").notNull(),
-  productTitle: text("product_title").notNull(),
-  productHandle: text("product_handle"),
-  variantTitle: text("variant_title"),
-  variantId: text("variant_id"),
-  quantity: integer("quantity").notNull(),
-  price: text("price").notNull(),
-  currency: text("currency").notNull().default("JOD"),
-  imageUrl: text("image_url")
-});
-var categories = pgTable("categories", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  parentId: varchar("parent_id"),
-  titleAr: text("title_ar").notNull(),
-  titleEn: text("title_en").notNull(),
-  imageUrl: text("image_url"),
-  collectionHandle: text("collection_handle"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var suggestedProducts = pgTable("suggested_products", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productHandle: text("product_handle").notNull(),
-  titleAr: text("title_ar"),
-  titleEn: text("title_en"),
-  imageUrl: text("image_url"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var pushTokens = pgTable("push_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  token: text("token").notNull().unique(),
-  platform: text("platform"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  titleAr: text("title_ar").notNull(),
-  titleEn: text("title_en").notNull(),
-  bodyAr: text("body_ar"),
-  bodyEn: text("body_en"),
-  imageUrl: text("image_url"),
-  linkType: text("link_type").default("none"),
-  linkValue: text("link_value"),
-  createdAt: timestamp("created_at").defaultNow()
-});
-
-// server/db.ts
-var pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 10,
-  idleTimeoutMillis: 3e4,
-  connectionTimeoutMillis: 1e4
-});
-pool.on("error", (err) => {
-  console.error("[DB Pool] Unexpected error on idle client:", err.message);
-});
-var db = drizzle(pool, { schema: schema_exports });
-
 // server/routes.ts
+init_db();
+init_schema();
 import { asc, desc, eq, sql as sql2, inArray } from "drizzle-orm";
 
 // server/search-engine.ts
@@ -2486,7 +2522,20 @@ function expandQueryWithSynonyms(query) {
   return Array.from(expanded);
 }
 function buildTsQuery(terms) {
-  return terms.filter((t) => t.length >= 2).map((t) => t.replace(/[^a-zA-Z0-9\u0600-\u06FF\s]/g, "").trim()).filter(Boolean).map((t) => t.split(/\s+/).map((w) => `${w}:*`).join(" & ")).join(" | ");
+  const parts = [];
+  for (const t of terms) {
+    const cleaned = t.replace(/[^a-zA-Z0-9\u0600-\u06FF\s]/g, "").trim();
+    if (!cleaned || cleaned.length < 2) continue;
+    const words = cleaned.split(/\s+/).filter((w) => w.length >= 2);
+    if (words.length === 0) continue;
+    for (const w of words) {
+      parts.push(`${w}:*`);
+    }
+    if (words.length > 1) {
+      parts.push(words.map((w) => `${w}:*`).join(" & "));
+    }
+  }
+  return [...new Set(parts)].join(" | ");
 }
 async function advancedSearch(options) {
   const {
@@ -2497,7 +2546,8 @@ async function advancedSearch(options) {
     brand,
     inStock,
     limit = 30,
-    offset = 0
+    offset = 0,
+    sort
   } = options;
   const q = query.trim();
   if (!q) return { products: [], totalCount: 0, suggestions: [], brands: [], priceRange: { min: 0, max: 0 } };
@@ -2523,28 +2573,30 @@ async function advancedSearch(options) {
   let paramIdx = 1;
   if (tsQuery) {
     const normalizedLike = `%${normalizedQ}%`;
+    const handleQ = q.toLowerCase().replace(/\s+/g, "-");
     const synLikeConditions = allSynonymLikes.map((syn, i) => {
-      const idx = paramIdx + 4 + i;
-      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%'`;
+      const idx = paramIdx + 5 + i;
+      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%' OR handle ILIKE '%' || $${idx} || '%'`;
     }).join("\n      OR ");
     conditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${paramIdx})
-      OR tsv_en @@ to_tsquery('english', $${paramIdx})
-      OR similarity(title, $${paramIdx + 1}) > 0.1
-      OR similarity(COALESCE(title_ar,''), $${paramIdx + 1}) > 0.1
-      OR similarity(COALESCE(vendor,''), $${paramIdx + 1}) > 0.08
+      OR tsv_en @@ to_tsquery('simple', $${paramIdx})
       OR title ILIKE $${paramIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${paramIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${paramIdx + 2}
       OR COALESCE(product_type,'') ILIKE $${paramIdx + 2}
+      OR handle ILIKE $${paramIdx + 2}
+      OR handle ILIKE $${paramIdx + 4}
       OR EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${paramIdx + 2})
       OR TRANSLATE(COALESCE(title_ar,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${paramIdx + 3}
       OR TRANSLATE(COALESCE(title,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${paramIdx + 3}
       OR TRANSLATE(COALESCE(vendor,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${paramIdx + 3}
+      OR similarity(title, $${paramIdx + 1}) > 0.15
+      OR similarity(COALESCE(title_ar,''), $${paramIdx + 1}) > 0.15
       ${synLikeConditions ? `OR ${synLikeConditions}` : ""}
     )`);
-    params.push(tsQuery, q, `%${q}%`, normalizedLike, ...allSynonymLikes);
-    paramIdx += 4 + allSynonymLikes.length;
+    params.push(tsQuery, q, `%${q}%`, normalizedLike, `%${handleQ}%`, ...allSynonymLikes);
+    paramIdx += 5 + allSynonymLikes.length;
   }
   if (minPrice !== void 0) {
     conditions.push(`price >= $${paramIdx}`);
@@ -2570,28 +2622,30 @@ async function advancedSearch(options) {
   let baseParamIdx = 1;
   if (tsQuery) {
     const normalizedLikeBase = `%${normalizedQ}%`;
+    const handleQBase = q.toLowerCase().replace(/\s+/g, "-");
     const baseSynLikeConditions = allSynonymLikes.map((syn, i) => {
-      const idx = baseParamIdx + 4 + i;
-      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%'`;
+      const idx = baseParamIdx + 5 + i;
+      return `LOWER(COALESCE(vendor,'')) = $${idx} OR COALESCE(vendor,'') ILIKE $${idx} || '%' OR title ILIKE '%' || $${idx} || '%' OR COALESCE(title_ar,'') ILIKE '%' || $${idx} || '%' OR handle ILIKE '%' || $${idx} || '%'`;
     }).join("\n      OR ");
     baseConditions.push(`(
       tsv_ar @@ to_tsquery('simple', $${baseParamIdx})
-      OR tsv_en @@ to_tsquery('english', $${baseParamIdx})
-      OR similarity(title, $${baseParamIdx + 1}) > 0.1
-      OR similarity(COALESCE(title_ar,''), $${baseParamIdx + 1}) > 0.1
-      OR similarity(COALESCE(vendor,''), $${baseParamIdx + 1}) > 0.08
+      OR tsv_en @@ to_tsquery('simple', $${baseParamIdx})
       OR title ILIKE $${baseParamIdx + 2}
       OR COALESCE(title_ar,'') ILIKE $${baseParamIdx + 2}
       OR COALESCE(vendor,'') ILIKE $${baseParamIdx + 2}
       OR COALESCE(product_type,'') ILIKE $${baseParamIdx + 2}
+      OR handle ILIKE $${baseParamIdx + 2}
+      OR handle ILIKE $${baseParamIdx + 4}
       OR EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${baseParamIdx + 2})
       OR TRANSLATE(COALESCE(title_ar,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${baseParamIdx + 3}
       OR TRANSLATE(COALESCE(title,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${baseParamIdx + 3}
       OR TRANSLATE(COALESCE(vendor,''), '\u0623\u0625\u0622\u0671\u0629\u0649\u0624\u0626', '\u0627\u0627\u0627\u0647\u0647\u064A\u0648\u064A') ILIKE $${baseParamIdx + 3}
+      OR similarity(title, $${baseParamIdx + 1}) > 0.15
+      OR similarity(COALESCE(title_ar,''), $${baseParamIdx + 1}) > 0.15
       ${baseSynLikeConditions ? `OR ${baseSynLikeConditions}` : ""}
     )`);
-    baseParams.push(tsQuery, q, `%${q}%`, normalizedLikeBase, ...allSynonymLikes);
-    baseParamIdx += 4 + allSynonymLikes.length;
+    baseParams.push(tsQuery, q, `%${q}%`, normalizedLikeBase, `%${handleQBase}%`, ...allSynonymLikes);
+    baseParamIdx += 5 + allSynonymLikes.length;
   }
   if (minPrice !== void 0) {
     baseConditions.push(`price >= $${baseParamIdx}`);
@@ -2607,33 +2661,66 @@ async function advancedSearch(options) {
     baseConditions.push(`available_for_sale = true`);
   }
   const whereClauseNoBrand = baseConditions.length > 0 ? `WHERE ${baseConditions.join(" AND ")}` : "";
+  const queryWords = q.toLowerCase().split(/\s+/).filter((w) => w.length >= 2);
+  const escapeSql = (s) => s.replace(/'/g, "''").replace(/\\/g, "\\\\");
+  const allWordsConditions = queryWords.map((w) => {
+    const ew = escapeSql(w);
+    return `(LOWER(title) LIKE '%${ew}%' OR LOWER(COALESCE(title_ar,'')) LIKE '%${ew}%' OR LOWER(handle) LIKE '%${ew}%')`;
+  });
+  const allWordsBoost = allWordsConditions.length > 1 ? `CASE WHEN ${allWordsConditions.join(" AND ")} THEN 50.0 ELSE 0 END` : "0";
+  const handleQLikeEsc = escapeSql(q.toLowerCase().replace(/\s+/g, "-"));
+  const handleConcatBoost = `CASE WHEN LOWER(handle) LIKE '%${handleQLikeEsc}%' THEN 40.0 ELSE 0 END`;
   const rankExpr = `(
-    COALESCE(ts_rank_cd(tsv_en, to_tsquery('english', $1)), 0) * 3.0 +
+    COALESCE(ts_rank_cd(tsv_en, to_tsquery('simple', $1)), 0) * 3.0 +
     COALESCE(ts_rank_cd(tsv_ar, to_tsquery('simple', $1)), 0) * 3.0 +
-    GREATEST(similarity(title, $2), similarity(COALESCE(title_ar,''), $2)) * 2.5 +
-    similarity(COALESCE(vendor,''), $2) * 8.0 +
+    ${allWordsBoost} +
+    ${handleConcatBoost} +
     CASE WHEN LOWER(COALESCE(vendor,'')) = LOWER($2) THEN 20.0
          WHEN COALESCE(vendor,'') ILIKE $3 THEN 12.0
          WHEN title ILIKE $2 THEN 10.0
          WHEN COALESCE(title_ar,'') ILIKE $2 THEN 10.0
-         WHEN title ILIKE $3 AND LENGTH($2) >= 4 AND LOWER(title) NOT LIKE '%' || LOWER($2) || 's%' THEN 2.0
+         WHEN handle ILIKE $2 THEN 8.0
+         WHEN title ILIKE $3 AND LENGTH($2) >= 4 THEN 2.0
          WHEN COALESCE(title_ar,'') ILIKE $3 THEN 2.0
+         WHEN handle ILIKE $3 THEN 1.5
          ELSE 0 END +
+    COALESCE(similarity(title, $2), 0) * 3.0 +
+    COALESCE(similarity(COALESCE(title_ar,''), $2), 0) * 3.0 +
     CASE WHEN available_for_sale THEN 1.0 ELSE -3.0 END +
     CASE WHEN compare_at_price IS NOT NULL AND compare_at_price > price THEN 0.5 ELSE 0 END
   )`;
+  const qLower = q.toLowerCase();
+  const qWords = qLower.split(/\s+/).filter((w) => w.length >= 2);
+  const escapeSqlStr = (s) => s.replace(/'/g, "''");
+  const directMatchCond = qWords.map((w) => {
+    const ew = escapeSqlStr(w);
+    return `(LOWER(title) LIKE '%${ew}%' OR LOWER(COALESCE(title_ar,'')) LIKE '%${ew}%' OR LOWER(handle) LIKE '%${ew}%' OR LOWER(COALESCE(vendor,'')) LIKE '%${ew}%')`;
+  });
+  const hasDirectMatch = directMatchCond.length > 0 ? directMatchCond.join(" AND ") : "TRUE";
+  let orderByClause;
+  let useRelevanceWrapping = false;
+  if (sort === "price_asc") {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price ASC NULLS LAST`;
+    useRelevanceWrapping = true;
+  } else if (sort === "price_desc") {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, price DESC NULLS LAST`;
+    useRelevanceWrapping = true;
+  } else if (sort === "name") {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, title ASC`;
+    useRelevanceWrapping = true;
+  } else {
+    orderByClause = `ORDER BY CASE WHEN available_for_sale THEN 0 ELSE 1 END, ROUND(${rankExpr}::numeric, 0) DESC, id ASC`;
+  }
+  const sortWhereClause = useRelevanceWrapping && tsQuery ? whereClause ? `${whereClause} AND (${hasDirectMatch})` : `WHERE (${hasDirectMatch})` : whereClause;
   const searchQuery = `
     SELECT *, ${rankExpr} as relevance_score
     FROM search_index
-    ${whereClause}
-    ORDER BY
-      CASE WHEN available_for_sale THEN 0 ELSE 1 END,
-      ROUND(${rankExpr}::numeric, 0) DESC,
-      RANDOM()
+    ${sortWhereClause}
+    ${orderByClause}
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
   params.push(limit, offset);
-  const countQuery = `SELECT COUNT(*) as total FROM search_index ${whereClause}`;
+  const countQuery = `SELECT COUNT(*) as total FROM search_index ${sortWhereClause}`;
   const brandQuery = `
     SELECT vendor as name, COUNT(*) as count
     FROM search_index ${whereClauseNoBrand}
@@ -2828,6 +2915,7 @@ async function batchStockStatus(handles) {
 }
 
 // server/routes.ts
+import sharp from "sharp";
 function fixCheckoutUrl(cart) {
   if (cart?.checkoutUrl && cart.checkoutUrl.startsWith("http://")) {
     cart.checkoutUrl = cart.checkoutUrl.replace("http://", "https://");
@@ -2853,18 +2941,81 @@ function toAbsoluteUrl(url, req) {
   }
   return url;
 }
+function optimizeShopifyCdn(url, size = 400) {
+  if (!url) return null;
+  if (!url.includes("cdn.shopify.com")) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}width=${size}&quality=75`;
+}
+var imgCache = /* @__PURE__ */ new Map();
+var IMG_CACHE_TTL = 6e5;
 async function registerRoutes(app2) {
+  app2.get("/api/img", async (req, res) => {
+    try {
+      const src = req.query.src;
+      const w = Math.min(parseInt(req.query.w) || 800, 1200);
+      const q = Math.min(parseInt(req.query.q) || 70, 90);
+      if (!src || !src.startsWith("/uploads/")) {
+        return res.status(400).json({ error: "Invalid src" });
+      }
+      const cacheKey = `${src}_${w}_${q}`;
+      const cached = imgCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < IMG_CACHE_TTL) {
+        res.set("Content-Type", "image/webp");
+        res.set("Cache-Control", "public, max-age=2592000, immutable");
+        return res.send(cached.buf);
+      }
+      const domain = process.env.SHOPIFY_STORE_DOMAIN ? "dashboard.xmart.me" : "localhost";
+      const imgUrl = `https://${domain}${src}`;
+      const resp = await fetch(imgUrl);
+      if (!resp.ok) return res.status(404).json({ error: "Image not found" });
+      const arrayBuf = await resp.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+      const optimized = await sharp(buffer).resize(w, void 0, { fit: "inside", withoutEnlargement: true }).webp({ quality: q }).toBuffer();
+      imgCache.set(cacheKey, { buf: optimized, ts: Date.now() });
+      if (imgCache.size > 100) {
+        const now = Date.now();
+        for (const [k, v] of imgCache) {
+          if (now - v.ts > IMG_CACHE_TTL) imgCache.delete(k);
+        }
+      }
+      res.set("Content-Type", "image/webp");
+      res.set("Cache-Control", "public, max-age=2592000, immutable");
+      res.send(optimized);
+    } catch (e) {
+      console.error("Image optimization error:", e.message);
+      res.status(500).json({ error: "Failed to optimize image" });
+    }
+  });
   app2.get("/api/collections", async (req, res) => {
     try {
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
-      const cacheKey = `collections-${language}`;
+      const cacheKey = `collections-all-${language}`;
       const cached = getCached(cacheKey, 5 * 60 * 1e3);
       if (cached) return res.json(cached);
-      const data = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language });
-      const collections = data.collections.edges.map((edge) => edge.node);
-      setCache(cacheKey, collections);
-      res.json(collections);
+      const allCollections = [];
+      let hasNext = true;
+      let cursor = null;
+      while (hasNext) {
+        const paginatedQuery = `
+          query GetAllCollections($first: Int!, $after: String, $language: LanguageCode) @inContext(language: $language) {
+            collections(first: $first, after: $after) {
+              pageInfo { hasNextPage endCursor }
+              edges { node { id title handle description image { url altText } } }
+            }
+          }
+        `;
+        const vars = { first: 250, language };
+        if (cursor) vars.after = cursor;
+        const data = await shopifyFetch(paginatedQuery, vars);
+        const edges = data.collections?.edges || [];
+        allCollections.push(...edges.map((e) => e.node));
+        hasNext = data.collections?.pageInfo?.hasNextPage || false;
+        cursor = data.collections?.pageInfo?.endCursor || null;
+      }
+      setCache(cacheKey, allCollections);
+      res.json(allCollections);
     } catch (error) {
       console.error("Error fetching collections:", error.message);
       res.status(500).json({ error: error.message });
@@ -3014,6 +3165,12 @@ async function registerRoutes(app2) {
       if (req.query.available === "false") {
         filters.push({ available: false });
       }
+      if (req.query.productType) {
+        filters.push({ productType: req.query.productType });
+      }
+      if (req.query.productVendor) {
+        filters.push({ productVendor: req.query.productVendor });
+      }
       const data = await shopifyFetch(QUERIES.COLLECTION_PRODUCTS, {
         handle,
         first,
@@ -3055,6 +3212,43 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  app2.get("/api/collections/:handle/filters", async (req, res) => {
+    try {
+      const { handle } = req.params;
+      const cacheKey = `col-filters-${handle}`;
+      const cached = getCached(cacheKey, 10 * 60 * 1e3);
+      if (cached) return res.json(cached);
+      const types = /* @__PURE__ */ new Set();
+      const vendors = /* @__PURE__ */ new Set();
+      let after;
+      let hasMore = true;
+      while (hasMore) {
+        const data = await shopifyFetch(QUERIES.COLLECTION_FILTERS, {
+          handle,
+          first: 250,
+          after,
+          language: "EN"
+        });
+        if (!data.collection) break;
+        const edges = data.collection.products.edges;
+        for (const e of edges) {
+          if (e.node.productType) types.add(e.node.productType);
+          if (e.node.vendor) vendors.add(e.node.vendor);
+        }
+        hasMore = data.collection.products.pageInfo.hasNextPage;
+        after = data.collection.products.pageInfo.endCursor;
+      }
+      const result = {
+        types: Array.from(types).sort((a, b) => a.localeCompare(b)),
+        vendors: Array.from(vendors).sort((a, b) => a.localeCompare(b))
+      };
+      setCache(cacheKey, result);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching collection filters:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
   app2.get("/api/products", async (req, res) => {
     try {
       const first = parseInt(req.query.first) || 20;
@@ -3068,12 +3262,17 @@ async function registerRoutes(app2) {
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
       const availableFilter = req.query.available;
+      const queryParts = [];
+      if (query) queryParts.push(query);
+      if (req.query.productType) queryParts.push(`product_type:"${req.query.productType}"`);
+      if (req.query.productVendor) queryParts.push(`vendor:"${req.query.productVendor}"`);
+      const finalQuery = queryParts.join(" ") || void 0;
       const data = await shopifyFetch(QUERIES.PRODUCTS, {
         first,
         after,
         sortKey,
         reverse,
-        query: query || void 0,
+        query: finalQuery,
         language
       });
       let products = data.products.edges.map((edge) => edge.node);
@@ -3103,10 +3302,18 @@ async function registerRoutes(app2) {
       const { handle } = req.params;
       const lang = (req.query.lang || "AR").toUpperCase();
       const language = lang === "EN" ? "EN" : "AR";
-      const data = await shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language });
-      const product = data.product;
+      const [primaryData, enData] = await Promise.all([
+        shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language }),
+        language !== "EN" ? shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language: "EN" }).catch(() => null) : Promise.resolve(null)
+      ]);
+      const product = primaryData.product;
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
+      }
+      if (enData?.product) {
+        product.titleEn = enData.product.title;
+        product.descriptionEn = enData.product.description;
+        product.descriptionHtmlEn = enData.product.descriptionHtml;
       }
       res.json(product);
     } catch (error) {
@@ -3193,6 +3400,7 @@ async function registerRoutes(app2) {
       const inStock = req.query.inStock === "true";
       const limit = parseInt(req.query.limit) || 30;
       const offset = parseInt(req.query.offset) || 0;
+      const sort = req.query.sort;
       const results = await advancedSearch({
         query,
         language,
@@ -3201,11 +3409,12 @@ async function registerRoutes(app2) {
         brand,
         inStock,
         limit,
-        offset
+        offset,
+        sort
       });
       trackSearch(query, results.totalCount, language).catch(() => {
       });
-      if (results.products.length === 0) {
+      if (results.products.length < 3) {
         try {
           const [enData, arData] = await Promise.all([
             shopifyFetch(QUERIES.SEARCH_PRODUCTS, { query, first: limit, language: "EN" }),
@@ -3235,52 +3444,24 @@ async function registerRoutes(app2) {
             });
           }
           if (mergedProducts.length > 0) {
-            for (let i = mergedProducts.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [mergedProducts[i], mergedProducts[j]] = [mergedProducts[j], mergedProducts[i]];
-            }
-            const sfLang = language === "ar" ? "AR" : "EN";
-            const collectionData = await shopifyFetch(QUERIES.COLLECTIONS, { first: 250, language: sfLang });
-            const allCollections = collectionData.collections.edges.map((edge) => edge.node);
-            const q = query.toLowerCase();
-            const matchingCollections = allCollections.filter(
-              (c) => c.title?.toLowerCase().includes(q) || c.handle?.toLowerCase().includes(q)
-            ).slice(0, 8);
+            const existingHandles = new Set(results.products.map((p) => p.handle));
+            const newProducts = mergedProducts.filter((p) => !existingHandles.has(p.handle));
+            const combined = [...results.products, ...newProducts];
             const vendorMap = /* @__PURE__ */ new Map();
-            mergedProducts.forEach((p) => {
+            combined.forEach((p) => {
               if (p.vendor) vendorMap.set(p.vendor, (vendorMap.get(p.vendor) || 0) + 1);
             });
             return res.json({
-              products: mergedProducts,
-              totalCount: mergedProducts.length,
-              suggestions: [],
+              products: combined.slice(0, limit),
+              totalCount: combined.length,
+              suggestions: results.suggestions || [],
               brands: Array.from(vendorMap.entries()).map(([name, count]) => ({ name, count })),
-              collections: matchingCollections,
-              priceRange: { min: 0, max: 0 },
-              source: "shopify_fallback"
+              priceRange: results.priceRange || { min: 0, max: 0 },
+              source: results.products.length > 0 ? "merged" : "shopify_fallback"
             });
           }
         } catch (fallbackErr) {
           console.warn("[Search] Shopify fallback also failed:", fallbackErr.message);
-        }
-      }
-      if (results.products.length > 0) {
-        try {
-          const handles = results.products.map((p) => p.handle).filter(Boolean).slice(0, 20);
-          if (handles.length > 0) {
-            const handleFilter = handles.map((h) => `handle:${h}`).join(" OR ");
-            const stockData = await shopifyFetch(`query CheckStock($query: String!) { products(first: 50, query: $query) { edges { node { handle availableForSale } } } }`, { query: handleFilter });
-            const stockMap = {};
-            (stockData.products?.edges || []).forEach((e) => {
-              stockMap[e.node.handle] = e.node.availableForSale;
-            });
-            results.products = results.products.map((p) => ({
-              ...p,
-              availableForSale: p.handle in stockMap ? stockMap[p.handle] : p.availableForSale
-            }));
-          }
-        } catch (stockErr) {
-          console.warn("[Search] Stock verification failed:", stockErr.message);
         }
       }
       res.json(results);
@@ -3518,6 +3699,57 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  app2.delete("/api/customer", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const data = await shopifyFetch(QUERIES.GET_CUSTOMER, {
+        customerAccessToken: token,
+        language: "EN"
+      });
+      if (!data.customer) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      const customerId = data.customer.id;
+      const numericId = extractNumericId(customerId);
+      console.log(`[Customer] Deleting customer ${data.customer.email} (ID: ${numericId})`);
+      try {
+        await shopifyAdminFetch(`customers/${numericId}.json`, "DELETE");
+        console.log(`[Customer] Successfully deleted customer ${numericId}`);
+      } catch (adminErr) {
+        if (adminErr.message?.includes("422") || adminErr.message?.includes("orders")) {
+          console.log(`[Customer] Customer has orders, redacting personal data instead`);
+          await shopifyAdminFetch(`customers/${numericId}.json`, "PUT", {
+            customer: {
+              id: parseInt(numericId),
+              first_name: "Deleted",
+              last_name: "User",
+              email: `deleted-${numericId}@deleted.xmart.me`,
+              phone: "",
+              note: "Account deleted by user request",
+              tags: "account-deleted"
+            }
+          });
+        } else {
+          throw adminErr;
+        }
+      }
+      try {
+        const { pool: pool3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        await pool3.query("DELETE FROM users WHERE email = $1 OR shopify_customer_id = $2", [data.customer.email, customerId]);
+        await pool3.query("DELETE FROM customer_addresses WHERE customer_id = $1", [customerId]);
+        await pool3.query("DELETE FROM orders WHERE customer_id = $1", [customerId]);
+      } catch (dbErr) {
+        console.error("[Customer] DB cleanup error (non-fatal):", dbErr.message);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting customer:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
   app2.put("/api/customer/update", async (req, res) => {
     try {
       const token = req.headers.authorization?.replace("Bearer ", "");
@@ -3599,9 +3831,17 @@ async function registerRoutes(app2) {
       res.json({ translatedText: req.body.text });
     }
   });
+  const homepageCache = /* @__PURE__ */ new Map();
+  const HOMEPAGE_CACHE_TTL = 9e4;
   app2.get("/api/homepage", async (req, res) => {
     try {
       const lang = (req.query.lang || "").toLowerCase();
+      const cacheKey = `hp_${lang || "all"}`;
+      const cached = homepageCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < HOMEPAGE_CACHE_TTL) {
+        res.setHeader("X-Cache", "HIT");
+        return res.json(cached.data);
+      }
       const allSections = await db.select().from(homepageSections).orderBy(asc(homepageSections.sortOrder));
       const specialTypes = ["best_selling", "new_arrivals", "hero_banner", "mid_banner", "category_row", "selected_categories"];
       const filteredSections = allSections.filter((s) => {
@@ -3641,7 +3881,7 @@ async function registerRoutes(app2) {
                     id: h,
                     titleAr: ar?.title || en.title,
                     titleEn: en.title,
-                    imageUrl: en.image?.url || ar?.image?.url || null,
+                    imageUrl: optimizeShopifyCdn(en.image?.url || ar?.image?.url || null, 200),
                     collectionHandle: h
                   } : null;
                 }).filter(Boolean);
@@ -3662,6 +3902,38 @@ async function registerRoutes(app2) {
           if (section.type === "multi_collection" && section.metadata) {
             try {
               multiTabs = JSON.parse(section.metadata).tabs || [];
+            } catch {
+            }
+          }
+          let collectionProducts = [];
+          if (section.type === "collection_products" && section.metadata) {
+            try {
+              const cpMeta = JSON.parse(section.metadata);
+              const cpHandle = cpMeta.collectionHandle;
+              if (cpHandle) {
+                const cpLang = lang === "en" ? "EN" : "AR";
+                const cpData = await shopifyFetch(QUERIES.COLLECTION_PRODUCTS, {
+                  handle: cpHandle,
+                  first: 12,
+                  language: cpLang,
+                  filters: [{ available: true }]
+                }).catch(() => null);
+                if (cpData?.collection?.products?.edges) {
+                  collectionProducts = cpData.collection.products.edges.map((e) => {
+                    const n = e.node;
+                    const firstImg = n.images?.edges?.[0]?.node;
+                    return {
+                      handle: n.handle,
+                      title: n.title,
+                      vendor: n.vendor,
+                      availableForSale: n.availableForSale,
+                      priceRange: n.priceRange,
+                      compareAtPriceRange: n.compareAtPriceRange,
+                      images: firstImg ? { edges: [{ node: { ...firstImg, url: optimizeShopifyCdn(firstImg.url, 400) } }] } : void 0
+                    };
+                  });
+                }
+              }
             } catch {
             }
           }
@@ -3688,49 +3960,75 @@ async function registerRoutes(app2) {
               featuredProducts = JSON.parse(section.metadata).products || [];
             } catch {
             }
-            const missingVendor = featuredProducts.filter((p) => !p.vendor && p.handle);
-            if (missingVendor.length > 0) {
-              try {
-                const vendorResults = await Promise.all(
-                  missingVendor.map(
-                    (p) => shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: "EN" }).then((d) => ({ handle: p.handle, vendor: d?.product?.vendor || "" })).catch(() => ({ handle: p.handle, vendor: "" }))
-                  )
-                );
-                const vendorMap = {};
-                vendorResults.forEach((r) => {
-                  if (r.vendor) vendorMap[r.handle] = r.vendor;
-                });
-                let changed = false;
-                featuredProducts = featuredProducts.map((p) => {
-                  if (!p.vendor && vendorMap[p.handle]) {
-                    changed = true;
-                    return { ...p, vendor: vendorMap[p.handle] };
-                  }
-                  return p;
-                });
-                if (changed) {
-                  const existingMeta = (() => {
-                    try {
-                      return JSON.parse(section.metadata || "{}");
-                    } catch {
-                      return {};
-                    }
-                  })();
-                  const newMeta = JSON.stringify({ ...existingMeta, products: featuredProducts });
-                  await db.update(homepageSections).set({ metadata: newMeta }).where(eq(homepageSections.id, section.id));
-                  console.log("[Vendor enrich] Updated vendors for section:", section.id, vendorMap);
+          }
+          if (featuredProducts.length > 0) {
+            try {
+              const enrichResults = await Promise.all(
+                featuredProducts.map(
+                  (p) => p.handle ? Promise.all([
+                    shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: "EN" }).catch(() => null),
+                    shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle: p.handle, language: "AR" }).catch(() => null)
+                  ]).then(([en, ar]) => ({
+                    handle: p.handle,
+                    titleEn: en?.product?.title || null,
+                    titleAr: ar?.product?.title || null,
+                    descriptionAr: ar?.product?.description || null,
+                    vendor: en?.product?.vendor || null,
+                    imageUrl: optimizeShopifyCdn(en?.product?.images?.edges?.[0]?.node?.url || null, 600),
+                    price: en?.product?.priceRange?.minVariantPrice?.amount || null,
+                    compareAtPrice: en?.product?.compareAtPriceRange?.minVariantPrice?.amount || null,
+                    currency: en?.product?.priceRange?.minVariantPrice?.currencyCode || null,
+                    availableForSale: en?.product?.availableForSale ?? null
+                  })) : Promise.resolve(null)
+                )
+              );
+              let changed = false;
+              featuredProducts = featuredProducts.map((p) => {
+                const fresh = enrichResults.find((r) => r && r.handle === p.handle);
+                if (!fresh) return p;
+                const updates = {};
+                if (fresh.titleEn && fresh.titleEn !== p.titleEn) updates.titleEn = fresh.titleEn;
+                if (fresh.titleAr && fresh.titleAr !== p.titleAr) updates.titleAr = fresh.titleAr;
+                if (fresh.descriptionAr && fresh.descriptionAr !== p.descriptionAr) updates.descriptionAr = fresh.descriptionAr;
+                if (fresh.vendor && fresh.vendor !== p.vendor) updates.vendor = fresh.vendor;
+                if (fresh.price && fresh.price !== p.price) updates.price = fresh.price;
+                if (fresh.compareAtPrice !== void 0 && fresh.compareAtPrice !== p.compareAtPrice) updates.compareAtPrice = fresh.compareAtPrice;
+                if (fresh.currency && fresh.currency !== p.currency) updates.currency = fresh.currency;
+                if (fresh.imageUrl && !p.customImageUrl && fresh.imageUrl !== p.imageUrl) updates.imageUrl = fresh.imageUrl;
+                if (Object.keys(updates).length > 0) {
+                  changed = true;
+                  return { ...p, ...updates };
                 }
-              } catch (enrichErr) {
-                console.error("[Vendor enrich] error:", enrichErr.message);
+                return p;
+              });
+              if (changed) {
+                const existingMeta3 = (() => {
+                  try {
+                    return JSON.parse(section.metadata || "{}");
+                  } catch {
+                    return {};
+                  }
+                })();
+                const newMeta3 = JSON.stringify({ ...existingMeta3, products: featuredProducts });
+                await db.update(homepageSections).set({ metadata: newMeta3 }).where(eq(homepageSections.id, section.id));
+                console.log("[Product enrich] Updated product data for section:", section.id);
               }
+            } catch (enrichErr) {
+              console.error("[Product enrich] error:", enrichErr.message);
             }
           }
           const slimFeaturedProducts = featuredProducts.map((p) => ({
             handle: p.handle,
             titleEn: p.titleEn,
             titleAr: p.titleAr,
+            descriptionAr: p.descriptionAr,
             vendor: p.vendor,
             imageUrl: p.imageUrl,
+            customImageUrl: p.customImageUrl,
+            customTitleAr: p.customTitleAr,
+            customTitleEn: p.customTitleEn,
+            subtitleAr: p.subtitleAr,
+            subtitleEn: p.subtitleEn,
             price: p.price,
             compareAtPrice: p.compareAtPrice,
             currency: p.currency
@@ -3744,11 +4042,17 @@ async function registerRoutes(app2) {
                   handle: p.handle,
                   titleEn: p.titleEn,
                   titleAr: p.titleAr,
+                  descriptionAr: p.descriptionAr,
                   vendor: p.vendor,
                   imageUrl: p.imageUrl,
                   price: p.price,
                   compareAtPrice: p.compareAtPrice,
-                  currency: p.currency
+                  currency: p.currency,
+                  customImageUrl: p.customImageUrl,
+                  customTitleAr: p.customTitleAr,
+                  customTitleEn: p.customTitleEn,
+                  subtitleAr: p.subtitleAr,
+                  subtitleEn: p.subtitleEn
                 }));
                 cleanMetadata = JSON.stringify(parsed);
               }
@@ -3767,6 +4071,7 @@ async function registerRoutes(app2) {
             selectedCategories,
             tabs: multiTabs,
             showcaseCollections,
+            collectionProducts,
             featuredProducts: slimFeaturedProducts,
             brands,
             banners: banners.map((b) => ({
@@ -3809,13 +4114,16 @@ async function registerRoutes(app2) {
         }
         return true;
       });
-      res.json({
+      const responseData = {
         sections: finalSections,
         settings: settingsMap,
         heroBanners,
         midBanners,
         featuredCollectionHandles: []
-      });
+      };
+      homepageCache.set(cacheKey, { data: responseData, ts: Date.now() });
+      res.setHeader("X-Cache", "MISS");
+      res.json(responseData);
     } catch (error) {
       console.error("Error fetching homepage:", error.message);
       res.json({
@@ -4646,10 +4954,12 @@ async function registerRoutes(app2) {
 }
 
 // server/admin-routes.ts
+init_db();
+init_schema();
 import { eq as eq2, asc as asc2, desc as desc2, sql as sql3 } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
-import sharp from "sharp";
+import sharp2 from "sharp";
 async function sendPushNotifications(notification) {
   try {
     const tokens = await db.select().from(pushTokens);
@@ -4823,11 +5133,11 @@ function registerAdminRoutes(app2) {
       let finalBuffer;
       if (ext === ".svg") {
         savedFilename = `${prefix}.png`;
-        finalBuffer = await sharp(buffer).resize(800, null, { withoutEnlargement: true }).png({ quality: 90 }).toBuffer();
+        finalBuffer = await sharp2(buffer).resize(800, null, { withoutEnlargement: true }).png({ quality: 90 }).toBuffer();
       } else if (ext === ".ai") {
         savedFilename = `${prefix}.png`;
         try {
-          finalBuffer = await sharp(buffer).resize(800, null, { withoutEnlargement: true }).png({ quality: 90 }).toBuffer();
+          finalBuffer = await sharp2(buffer).resize(800, null, { withoutEnlargement: true }).png({ quality: 90 }).toBuffer();
         } catch {
           return res.status(400).json({ error: "Could not process this AI file. Please convert it to PNG or SVG first." });
         }
@@ -5218,9 +5528,20 @@ function registerAdminRoutes(app2) {
     _collectionsCache = { data: all, timestamp: Date.now() };
     return all;
   }
+  app2.post("/api/admin/refresh-collections", async (_req, res) => {
+    _collectionsCache = null;
+    try {
+      await fetchAllAdminCollections();
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app2.get("/api/admin/search-collections", async (req, res) => {
     try {
       const q = (req.query.q || "").trim().toLowerCase();
+      const refresh = req.query.refresh === "1";
+      if (refresh) _collectionsCache = null;
       let all = await fetchAllAdminCollections();
       if (q) {
         all = all.filter(
@@ -5231,34 +5552,6 @@ function registerAdminRoutes(app2) {
       res.json(all);
     } catch (error) {
       console.error("Error searching collections:", error.message);
-      res.status(500).json({ error: error.message });
-    }
-  });
-  app2.get("/api/admin/search-products", async (req, res) => {
-    try {
-      const q = (req.query.q || "").trim();
-      if (!q || q.length < 1) return res.json([]);
-      const activeQuery = `${q} status:active`;
-      const data = await shopifyAdminGraphQL(ADMIN_QUERIES.SEARCH_PRODUCTS, { query: activeQuery, first: 12 });
-      const products = data.products.edges.map((e) => mapAdminProduct(e.node));
-      const result = products.map((p) => {
-        const price = p.priceRange?.minVariantPrice?.amount || "0";
-        const compareAt = p.compareAtPriceRange?.minVariantPrice?.amount || null;
-        return {
-          handle: p.handle,
-          titleEn: p.title,
-          titleAr: p.title,
-          imageUrl: p.images?.edges?.[0]?.node?.url || null,
-          price,
-          compareAtPrice: compareAt && parseFloat(compareAt) > parseFloat(price) ? compareAt : null,
-          currency: p.priceRange?.minVariantPrice?.currencyCode || "JOD",
-          description: p.description || "",
-          descriptionAr: p.description || ""
-        };
-      });
-      res.json(result);
-    } catch (error) {
-      console.error("Error searching products:", error.message);
       res.status(500).json({ error: error.message });
     }
   });
@@ -5442,6 +5735,8 @@ function registerAdminRoutes(app2) {
 }
 
 // server/index.ts
+init_db();
+init_schema();
 import { eq as eq3 } from "drizzle-orm";
 import * as fs2 from "fs";
 import * as path2 from "path";
