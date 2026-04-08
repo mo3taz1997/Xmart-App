@@ -97,6 +97,7 @@ export default function RegisterScreen() {
                   autoCapitalize="words"
                   autoComplete="given-name"
                   textContentType="givenName"
+                  importantForAutofill="yes"
                 />
               </View>
               <View style={[styles.inputWrap, { flex: 1 }]}>
@@ -109,6 +110,7 @@ export default function RegisterScreen() {
                   autoCapitalize="words"
                   autoComplete="family-name"
                   textContentType="familyName"
+                  importantForAutofill="yes"
                 />
               </View>
             </View>
@@ -124,6 +126,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 autoComplete="email"
                 textContentType="emailAddress"
+                importantForAutofill="yes"
               />
               <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={[styles.inputIcon, isRTL ? { right: 14 } : { left: 14 }]} />
             </View>
@@ -139,6 +142,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 autoComplete="new-password"
                 textContentType="newPassword"
+                importantForAutofill="yes"
               />
               <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={[styles.inputIcon, isRTL ? { right: 14 } : { left: 14 }]} />
               <Pressable

@@ -92,6 +92,7 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   autoComplete="email"
                   textContentType="emailAddress"
+                  importantForAutofill="yes"
                 />
                 <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={[styles.inputIcon, isRTL ? { right: 14 } : { left: 14 }]} />
               </View>
@@ -107,6 +108,7 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   autoComplete="password"
                   textContentType="password"
+                  importantForAutofill="yes"
                 />
                 <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={[styles.inputIcon, isRTL ? { right: 14 } : { left: 14 }]} />
                 <Pressable
