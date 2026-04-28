@@ -3,7 +3,7 @@
     "name": "XMART",
     "slug": "xmart-smart-online-shopping",
     "owner": "mo3taz_97m",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "xmart",
@@ -44,7 +44,7 @@
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 11,
+      "versionCode": 12,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "com.google.android.gms.permission.AD_ID",
