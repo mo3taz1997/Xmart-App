@@ -12,6 +12,17 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Platform, Animated, Easing, StyleSheet, View, Text, Dimensions } from "react-native";
 import * as Updates from "expo-updates";
 import { Image } from "expo-image";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+
+let AppLinkNative: { fetchDeferredAppLink(): Promise<string | null> } | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    AppLinkNative = require('react-native-fbsdk-next').AppLink;
+  } catch (e) {
+    console.log('[DeferredDeepLink] FBSDK AppLink not available:', e);
+  }
+}
 import { LinearGradient } from "expo-linear-gradient";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -458,6 +469,69 @@ export default function RootLayout() {
         console.log('[Meta] init flow error:', e);
       }
     })();
+  }, []);
+
+  // Deferred Deep Link: capture the original product link the user clicked
+  // BEFORE installing the app (e.g. from a Meta ad). Runs once per install.
+  useEffect(() => {
+    if (Platform.OS === 'web' || !AppLinkNative) return;
+    let cancelled = false;
+    const FETCHED_KEY = '@xmart/deferred_link_fetched';
+    const CONSUMED_KEY = '@xmart/deferred_link_consumed';
+    const PENDING_KEY = '@xmart/deferred_link_pending';
+
+    const navigateToHandle = async (handle: string) => {
+      try {
+        router.push({ pathname: '/product/[handle]', params: { handle } });
+        await AsyncStorage.setItem(CONSUMED_KEY, '1');
+        await AsyncStorage.removeItem(PENDING_KEY);
+        console.log('[DeferredDeepLink] Navigation succeeded, marked consumed');
+      } catch (e) {
+        console.log('[DeferredDeepLink] Navigation error, will retry next launch:', e);
+      }
+    };
+
+    const parseHandle = (url: string): string | null => {
+      const m1 = url.match(/^xmart:\/\/product\/([^/?#]+)/i);
+      const m2 = url.match(/^https?:\/\/product\.xmart\.me\/p\/([^/?#]+)/i);
+      const raw = (m1 || m2)?.[1];
+      return raw ? decodeURIComponent(raw) : null;
+    };
+
+    (async () => {
+      try {
+        const consumed = await AsyncStorage.getItem(CONSUMED_KEY);
+        if (consumed) return;
+
+        // First, check if we have a pending handle from a prior launch that failed to navigate
+        const pending = await AsyncStorage.getItem(PENDING_KEY);
+        if (pending) {
+          console.log('[DeferredDeepLink] Resuming pending link:', pending);
+          setTimeout(() => { if (!cancelled) navigateToHandle(pending); }, 2500);
+          return;
+        }
+
+        // Otherwise, fetch from FBSDK (only once per install)
+        const fetched = await AsyncStorage.getItem(FETCHED_KEY);
+        if (fetched) return;
+        const url = await AppLinkNative!.fetchDeferredAppLink();
+        await AsyncStorage.setItem(FETCHED_KEY, '1');
+        if (cancelled || !url) {
+          console.log('[DeferredDeepLink] No deferred link');
+          return;
+        }
+        console.log('[DeferredDeepLink] Got URL:', url);
+        const handle = parseHandle(url);
+        if (!handle) return;
+        // Persist the pending handle BEFORE attempting navigation, so we can retry on next launch if needed
+        await AsyncStorage.setItem(PENDING_KEY, handle);
+        console.log('[DeferredDeepLink] Persisted pending, navigating to:', handle);
+        setTimeout(() => { if (!cancelled) navigateToHandle(handle); }, 2500);
+      } catch (e) {
+        console.log('[DeferredDeepLink] Error:', e);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   if (!fontsLoaded) return null;

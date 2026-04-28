@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { shopifyFetch, shopifyAdminFetch, shopifyAdminGraphQL, extractNumericId, QUERIES, ADMIN_QUERIES, mapAdminProduct } from "./shopify";
+import { registerSmartLinkRoutes } from "./smart-links";
 import { autoCompleteCheckout } from "./checkout-complete";
 import { db } from "./db";
 import { homepageSections, homepageBanners, appSettings, orders, orderItems, notifications, categories, suggestedProducts, pushTokens } from "../shared/schema";
@@ -47,6 +48,8 @@ const imgCache = new Map<string, { buf: Buffer; ts: number }>();
 const IMG_CACHE_TTL = 600_000;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  registerSmartLinkRoutes(app);
 
   app.get("/api/img", async (req: Request, res: Response) => {
     try {

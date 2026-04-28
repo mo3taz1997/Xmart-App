@@ -22,6 +22,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.xmart.jo",
       "buildNumber": "11",
+      "associatedDomains": [
+        "applinks:product.xmart.me"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
@@ -50,6 +53,23 @@
       "blockedPermissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "product.xmart.me",
+              "pathPrefix": "/p"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ],
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A",
