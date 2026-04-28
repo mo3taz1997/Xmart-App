@@ -19,6 +19,7 @@
       "backgroundColor": "#000000"
     },
     "ios": {
+      "icon": "./assets/images/icon-1024.png",
       "supportsTablet": false,
       "bundleIdentifier": "com.xmart.jo",
       "buildNumber": "11",
