@@ -23,13 +23,29 @@
       "buildNumber": "10",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["fbapi", "fb-messenger-share-api"]
+        "LSApplicationQueriesSchemes": [
+          "fbapi",
+          "fb-messenger-share-api"
+        ],
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads and improve your shopping experience.",
+        "SKAdNetworkItems": [
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          }
+        ]
       }
     },
     "android": {
       "package": "com.xmart.jo",
       "versionCode": 10,
-      "permissions": [],
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.INTERNET"
+      ],
       "blockedPermissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
@@ -95,6 +111,9 @@
     "extra": {
       "router": {
         "origin": "https://replit.com/"
+      },
+      "eas": {
+        "projectId": "1dffc7fd-5630-4d31-9617-346eb6707de1"
       }
     }
   }
