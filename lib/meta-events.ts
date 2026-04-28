@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 let Settings: any = null;
 let AppEventsLogger: any = null;
 let AEMReporter: any = null;
+let AppEvents: any = {};
+let AppEventParams: any = {};
 
 console.log('[Meta] module loading on platform:', Platform.OS);
 
@@ -13,13 +15,32 @@ if (Platform.OS !== 'web') {
     Settings = fbsdk.Settings;
     AppEventsLogger = fbsdk.AppEventsLogger;
     AEMReporter = fbsdk.AEMReporter;
-    console.log('[Meta] FBSDK module loaded — Settings:', !!Settings, 'AppEventsLogger:', !!AppEventsLogger, 'AEMReporter:', !!AEMReporter);
+    // Pull native standard-event/param name constants from SDK (these map to the official Meta Standard Events).
+    AppEvents = fbsdk.AppEvents || {};
+    AppEventParams = fbsdk.AppEventParams || {};
+    console.log('[Meta] FBSDK loaded — AppEventsLogger:', !!AppEventsLogger, 'AppEvents.InitiatedCheckout=', AppEvents.InitiatedCheckout, 'AppEvents.Purchased=', AppEvents.Purchased);
   } catch (e) {
     console.log('[Meta] FBSDK NOT available (likely Expo Go):', (e as Error).message);
   }
 } else {
   console.log('[Meta] Skipping FBSDK on web');
 }
+
+// Standard event names — prefer SDK constants, fall back to documented raw strings if SDK constants are unavailable.
+const EVT_ACTIVATE_APP = AppEvents.ActivatedApp || 'fb_mobile_activate_app';
+const EVT_VIEWED_CONTENT = AppEvents.ViewedContent || 'fb_mobile_content_view';
+const EVT_ADDED_TO_CART = AppEvents.AddedToCart || 'fb_mobile_add_to_cart';
+const EVT_INITIATED_CHECKOUT = AppEvents.InitiatedCheckout || 'fb_mobile_initiated_checkout';
+const EVT_PURCHASED = AppEvents.Purchased || 'fb_mobile_purchase';
+
+// Standard parameter keys
+const P_CONTENT = AppEventParams.Content || 'fb_content';
+const P_CONTENT_ID = AppEventParams.ContentID || 'fb_content_id';
+const P_CONTENT_TYPE = AppEventParams.ContentType || 'fb_content_type';
+const P_CURRENCY = AppEventParams.Currency || 'fb_currency';
+const P_NUM_ITEMS = AppEventParams.NumItems || 'fb_num_items';
+const P_ORDER_ID = AppEventParams.OrderId || 'fb_order_id';
+const P_DESCRIPTION = AppEventParams.Description || 'fb_description';
 
 const CURRENCY = 'JOD';
 const PURCHASE_DEDUPE_KEY = '@meta_purchased_order_ids_v1';
@@ -117,11 +138,11 @@ export function logAppOpen(): void {
     return;
   }
   try {
-    console.log('[Meta] firing event: fb_mobile_activate_app');
+    console.log('[Meta] firing standard event:', EVT_ACTIVATE_APP);
     if (TEST_EVENT_CODE) {
-      AppEventsLogger.logEvent('fb_mobile_activate_app', 0, withTestCode({}));
+      AppEventsLogger.logEvent(EVT_ACTIVATE_APP, 0, withTestCode({}));
     } else {
-      AppEventsLogger.logEvent('fb_mobile_activate_app');
+      AppEventsLogger.logEvent(EVT_ACTIVATE_APP);
     }
     console.log('[Meta] App Open fired');
   } catch (e) {
@@ -142,13 +163,13 @@ export function logViewContent(params: {
   }
   try {
     const valueToSum = params.price && !isNaN(params.price) ? params.price : 0;
-    console.log('[Meta] firing event: fb_mobile_content_view', { id: params.contentId, value: valueToSum });
-    AppEventsLogger.logEvent('fb_mobile_content_view', valueToSum, withTestCode({
-      fb_content_type: 'product',
-      fb_content_id: params.contentId,
-      fb_content: JSON.stringify([{ id: params.contentId, quantity: 1 }]),
-      fb_currency: params.currency || CURRENCY,
-      ...(params.contentName ? { fb_description: params.contentName } : {}),
+    console.log('[Meta] firing standard event:', EVT_VIEWED_CONTENT, { id: params.contentId, value: valueToSum });
+    AppEventsLogger.logEvent(EVT_VIEWED_CONTENT, valueToSum, withTestCode({
+      [P_CONTENT_TYPE]: 'product',
+      [P_CONTENT_ID]: params.contentId,
+      [P_CONTENT]: JSON.stringify([{ id: params.contentId, quantity: 1 }]),
+      [P_CURRENCY]: params.currency || CURRENCY,
+      ...(params.contentName ? { [P_DESCRIPTION]: params.contentName } : {}),
     }));
     console.log('[Meta] ViewContent fired');
   } catch (e) {
@@ -172,13 +193,13 @@ export function logAddToCart(params: {
     const qty = params.quantity || 1;
     const unitPrice = params.price && !isNaN(params.price) ? params.price : 0;
     const valueToSum = unitPrice * qty;
-    console.log('[Meta] firing event: fb_mobile_add_to_cart', { id: params.contentId, qty, value: valueToSum });
-    AppEventsLogger.logEvent('fb_mobile_add_to_cart', valueToSum, withTestCode({
-      fb_content_type: 'product',
-      fb_content_id: params.contentId,
-      fb_content: JSON.stringify([{ id: params.contentId, quantity: qty }]),
-      fb_currency: params.currency || CURRENCY,
-      ...(params.contentName ? { fb_description: params.contentName } : {}),
+    console.log('[Meta] firing standard event:', EVT_ADDED_TO_CART, { id: params.contentId, qty, value: valueToSum });
+    AppEventsLogger.logEvent(EVT_ADDED_TO_CART, valueToSum, withTestCode({
+      [P_CONTENT_TYPE]: 'product',
+      [P_CONTENT_ID]: params.contentId,
+      [P_CONTENT]: JSON.stringify([{ id: params.contentId, quantity: qty }]),
+      [P_CURRENCY]: params.currency || CURRENCY,
+      ...(params.contentName ? { [P_DESCRIPTION]: params.contentName } : {}),
     }));
     console.log('[Meta] AddToCart fired');
   } catch (e) {
@@ -199,13 +220,13 @@ export function logInitiateCheckout(params: {
   }
   try {
     const value = params.totalValue && !isNaN(params.totalValue) ? params.totalValue : 0;
-    console.log('[Meta] firing event: fb_mobile_initiated_checkout', { items: params.numItems, value });
-    AppEventsLogger.logEvent('fb_mobile_initiated_checkout', value, withTestCode({
-      fb_content_type: 'product',
-      fb_content_id: JSON.stringify(params.contentIds),
-      fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
-      fb_num_items: params.numItems,
-      fb_currency: params.currency || CURRENCY,
+    console.log('[Meta] firing standard event:', EVT_INITIATED_CHECKOUT, { items: params.numItems, value });
+    AppEventsLogger.logEvent(EVT_INITIATED_CHECKOUT, value, withTestCode({
+      [P_CONTENT_TYPE]: 'product',
+      [P_CONTENT_ID]: JSON.stringify(params.contentIds),
+      [P_CONTENT]: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
+      [P_NUM_ITEMS]: params.numItems,
+      [P_CURRENCY]: params.currency || CURRENCY,
     }));
     console.log('[Meta] InitiateCheckout fired');
   } catch (e) {
@@ -213,7 +234,9 @@ export function logInitiateCheckout(params: {
   }
 }
 
-// EVENT: Purchase — ONLY after order is confirmed in Shopify; deduped per orderId
+// EVENT: Purchase — ONLY after order is confirmed in Shopify; deduped per orderId.
+// Uses AppEventsLogger.logPurchase() which natively fires the Meta Standard "Purchase" event
+// (event name fb_mobile_purchase under the hood).
 export async function logPurchase(params: {
   orderId: string;
   totalValue: number;
@@ -238,17 +261,23 @@ export async function logPurchase(params: {
   try {
     purchasedOrderIds.add(params.orderId);
     persistDedupe();
-    console.log('[Meta] firing event: Purchase', { orderId: params.orderId, value: params.totalValue });
-    AppEventsLogger.logPurchase(params.totalValue, params.currency || CURRENCY, withTestCode({
-      fb_content_type: 'product',
-      fb_content_id: JSON.stringify(params.contentIds),
-      fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
-      fb_order_id: params.orderId,
+    const currency = params.currency || CURRENCY;
+    console.log('[Meta] firing standard event: Purchase (logPurchase →', EVT_PURCHASED, ')', { orderId: params.orderId, value: params.totalValue, currency });
+
+    // Primary: native logPurchase fires the official "Purchase" Standard Event.
+    AppEventsLogger.logPurchase(params.totalValue, currency, withTestCode({
+      [P_CONTENT_TYPE]: 'product',
+      [P_CONTENT_ID]: JSON.stringify(params.contentIds),
+      [P_CONTENT]: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
+      [P_ORDER_ID]: params.orderId,
+      [P_NUM_ITEMS]: params.contentIds.length,
+      [P_CURRENCY]: currency,
     }));
+
     console.log('[Meta] Purchase fired', {
       orderId: params.orderId,
       value: params.totalValue,
-      currency: params.currency || CURRENCY,
+      currency,
     });
   } catch (e) {
     console.log('[Meta] Purchase error:', (e as Error).message);
