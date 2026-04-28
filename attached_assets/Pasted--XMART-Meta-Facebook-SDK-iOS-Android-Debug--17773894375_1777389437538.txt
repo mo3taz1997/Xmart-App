@@ -1,0 +1,113 @@
+بدنا نربط تطبيق XMART مع Meta (Facebook) SDK بشكل صحيح على iOS و Android، وبعدها نعمل Debug للأحداث (App Events).
+
+معلومات التطبيق:
+
+اسم التطبيق: XMART
+Meta App ID: 1000504526488987
+iOS Bundle ID: com.xmart.jo
+Android Package Name: com.xmart.jo
+Android Main Activity: com.xmart.jo.MainActivity
+Android Key Hash: b1+xROemtKXMfo+tAGkaf4CRt+A=
+العملة: JOD
+
+🎯 الهدف:
+
+نريد تتبع:
+
+تحميل التطبيق
+تصفح المنتجات
+إضافة للسلة
+بدء الدفع
+الشراء
+
+وذلك لاستخدامها في إعلانات Meta وتحسين الحملات على Purchase.
+
+🧠 أولًا (مهم جدًا قبل أي تعديل):
+
+افحص المشروع وأخبرني:
+
+التطبيق مبني بأي تقنية؟
+(React Native / Expo / Flutter / Capacitor / WebView / Native)
+هل يوجد مجلد:
+android؟
+ios؟
+ما هو أفضل SDK أو مكتبة يجب استخدامها لهذا المشروع؟
+هل تحتاج أي معلومات إضافية مني قبل البدء؟
+
+🛠️ المطلوب تنفيذه:
+
+تركيب Meta / Facebook SDK المناسب حسب تقنية التطبيق
+ربط التطبيق باستخدام:
+Meta App ID:
+1000504526488987
+إعداد iOS باستخدام:
+Bundle ID:
+com.xmart.jo
+إعداد Android باستخدام:
+Package Name: com.xmart.jo
+Main Activity: com.xmart.jo.MainActivity
+Key Hash: b1+xROemtKXMfo+tAGkaf4CRt+A=
+
+📊 الأحداث المطلوبة (App Events):
+
+App Open
+يتم تشغيله عند فتح التطبيق
+View Content
+عند فتح صفحة منتج
+يجب أن يحتوي:
+content_ids (SKU أو ID)
+content_type = product
+content_name (اختياري)
+Add To Cart
+عند إضافة منتج للسلة
+يحتوي:
+content_ids
+content_type = product
+value (إن وجد)
+currency = JOD
+Initiate Checkout
+عند بدء عملية الدفع
+يحتوي:
+value (إجمالي السلة)
+currency = JOD
+content_ids
+num_items
+Purchase (الأهم)
+بعد إتمام الطلب بنجاح فقط
+يحتوي:
+value (قيمة الطلب)
+currency = JOD
+content_ids
+content_type = product
+order_id
+
+⚠️ شروط مهمة:
+
+لا يتم إطلاق Purchase قبل إتمام الطلب
+لا يتم تكرار Purchase event
+العملة دائمًا JOD
+استخدام نفس product IDs الموجودة في Shopify إن أمكن
+إضافة console logs أو debug logs لكل Event
+إضافة تعليقات داخل الكود توضح مكان كل event
+
+🧪 بعد التنفيذ:
+
+ارشدني خطوة بخطوة كيف نعمل اختبار للأحداث:
+
+App Open
+View Content
+Add To Cart
+Initiate Checkout
+Purchase
+
+وسنقوم بمراجعتها داخل:
+Meta Events Manager → Test Events
+
+📌 قبل ما تبدأ بالتنفيذ:
+
+اعطني ملخص:
+
+نوع التقنية المستخدمة
+الملفات التي سيتم تعديلها
+المكتبة أو SDK الذي ستستخدمه
+أي معلومات ناقصة تحتاجها مني
