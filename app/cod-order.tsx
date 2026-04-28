@@ -93,20 +93,34 @@ function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn 
     inputRange: [0, 1], outputRange: [0, 16 * nudgeDir],
   });
 
+  const isRTLRef = useRef(isRTL);
+  isRTLRef.current = isRTL;
+
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 5,
-      onPanResponderGrant: () => { dragging.current = true; },
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: (_, gs) => Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderGrant: () => {
+        dragging.current = true;
+        tx.stopAnimation();
+        nudgeAnim.stopAnimation();
+        nudgeAnim.setValue(0);
+      },
       onPanResponderMove: (_, gs) => {
         if (done.current) return;
-        const clamped = Math.max(0, Math.min(Math.abs(gs.dx), maxDx));
+        const dirDx = isRTLRef.current ? -gs.dx : gs.dx;
+        const clamped = Math.max(0, Math.min(dirDx, maxDx));
         tx.setValue(clamped);
       },
       onPanResponderRelease: (_, gs) => {
         dragging.current = false;
         if (done.current) return;
-        if (Math.abs(gs.dx) >= maxDx * 0.65) {
+        const dirDx = isRTLRef.current ? -gs.dx : gs.dx;
+        if (dirDx >= maxDx * 0.5) {
           done.current = true;
           RNAnimated.spring(tx, {
             toValue: maxDx,
@@ -124,6 +138,13 @@ function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn 
             toValue: 0, useNativeDriver: true, friction: 6, tension: 80,
           }).start();
         }
+      },
+      onPanResponderTerminate: () => {
+        dragging.current = false;
+        if (done.current) return;
+        RNAnimated.spring(tx, {
+          toValue: 0, useNativeDriver: true, friction: 6, tension: 80,
+        }).start();
       },
     })
   ).current;
