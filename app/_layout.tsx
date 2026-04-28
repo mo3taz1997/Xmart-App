@@ -442,11 +442,18 @@ export default function RootLayout() {
   // Meta (Facebook) SDK: init + ATT prompt (iOS) + App Open event
   // Runs once on app launch — fires `fb_mobile_activate_app` after permission flow
   useEffect(() => {
+    console.log('[Meta] _layout useEffect FIRED — beginning init flow');
     (async () => {
       try {
-        await requestTrackingPermission();
+        console.log('[Meta] step 1: requestTrackingPermission()');
+        const att = await requestTrackingPermission();
+        console.log('[Meta] step 1 done. ATT =', att);
+        console.log('[Meta] step 2: initMetaSdk()');
         await initMetaSdk();
+        console.log('[Meta] step 2 done.');
+        console.log('[Meta] step 3: logAppOpen()');
         logAppOpen();
+        console.log('[Meta] init flow complete');
       } catch (e) {
         console.log('[Meta] init flow error:', e);
       }
