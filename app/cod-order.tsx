@@ -51,9 +51,10 @@ function ScrollableInput({ inputRef, style, onFocusCb, onBlurCb, ...props }: any
   );
 }
 
-function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn }: {
+function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn, validate }: {
   onComplete: () => void; isRTL: boolean; language: string; colors: any;
   labelAr?: string; labelEn?: string;
+  validate?: () => boolean;
 }) {
   const trackW = width - 64;
   const maxDx = trackW - THUMB_W;
@@ -65,6 +66,8 @@ function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn 
   const nudgeAnim = useRef(new RNAnimated.Value(0)).current;
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const validateRef = useRef(validate);
+  validateRef.current = validate;
 
   useEffect(() => {
     RNAnimated.loop(
@@ -120,7 +123,14 @@ function SwipeToConfirm({ onComplete, isRTL, language, colors, labelAr, labelEn 
         dragging.current = false;
         if (done.current) return;
         const dirDx = isRTLRef.current ? -gs.dx : gs.dx;
-        if (dirDx >= maxDx * 0.5) {
+        if (dirDx >= maxDx * 0.4) {
+          // Validate BEFORE the spring animation so the user gets immediate feedback
+          if (validateRef.current && !validateRef.current()) {
+            RNAnimated.spring(tx, {
+              toValue: 0, useNativeDriver: true, friction: 6, tension: 80,
+            }).start();
+            return;
+          }
           done.current = true;
           RNAnimated.spring(tx, {
             toValue: maxDx,
@@ -1808,6 +1818,7 @@ export default function CodOrderScreen() {
         ) : (
           <SwipeToConfirm
             onComplete={handlePlaceOrder}
+            validate={validateForm}
             isRTL={isRTL}
             language={language}
             colors={colors}
