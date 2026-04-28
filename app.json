@@ -14,6 +14,8 @@
       "url": "https://u.expo.dev/1dffc7fd-5630-4d31-9617-346eb6707de1"
     },
     "splash": {
+      "image": "./assets/images/splash-blank.png",
+      "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
     "ios": {
