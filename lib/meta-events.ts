@@ -22,6 +22,15 @@ const PURCHASE_DEDUPE_MAX = 200;
 const purchasedOrderIds = new Set<string>();
 let dedupeHydrated = false;
 
+// Optional Test Events code from Meta Events Manager → Test Events.
+// When set (e.g. "TEST12345"), every event is tagged so it appears INSTANTLY in the Test Events tab.
+// Set EXPO_PUBLIC_META_TEST_EVENT_CODE in eas.json env or .env for preview builds; leave empty in production.
+const TEST_EVENT_CODE = process.env.EXPO_PUBLIC_META_TEST_EVENT_CODE || '';
+
+function withTestCode(params: Record<string, any>): Record<string, any> {
+  return TEST_EVENT_CODE ? { ...params, test_event_code: TEST_EVENT_CODE } : params;
+}
+
 async function hydrateDedupe(): Promise<void> {
   if (dedupeHydrated) return;
   dedupeHydrated = true;
@@ -60,7 +69,7 @@ export async function initMetaSdk(): Promise<void> {
     if (AEMReporter && Platform.OS === 'ios') {
       try { await AEMReporter.enable(); } catch {}
     }
-    console.log('[Meta] SDK initialized');
+    console.log('[Meta] SDK initialized', TEST_EVENT_CODE ? `(TEST mode: ${TEST_EVENT_CODE})` : '(LIVE mode)');
   } catch (e) {
     console.log('[Meta] SDK init error:', (e as Error).message);
   }
@@ -96,7 +105,11 @@ export async function requestTrackingPermission(): Promise<'granted' | 'denied' 
 export function logAppOpen(): void {
   if (!isReady()) return;
   try {
-    AppEventsLogger.logEvent('fb_mobile_activate_app');
+    if (TEST_EVENT_CODE) {
+      AppEventsLogger.logEvent('fb_mobile_activate_app', 0, withTestCode({}));
+    } else {
+      AppEventsLogger.logEvent('fb_mobile_activate_app');
+    }
     console.log('[Meta][Event] App Open');
   } catch (e) {
     console.log('[Meta] App Open error:', (e as Error).message);
@@ -113,13 +126,13 @@ export function logViewContent(params: {
   if (!isReady()) return;
   try {
     const valueToSum = params.price && !isNaN(params.price) ? params.price : 0;
-    AppEventsLogger.logEvent('fb_mobile_content_view', valueToSum, {
+    AppEventsLogger.logEvent('fb_mobile_content_view', valueToSum, withTestCode({
       fb_content_type: 'product',
       fb_content_id: params.contentId,
       fb_content: JSON.stringify([{ id: params.contentId, quantity: 1 }]),
       fb_currency: params.currency || CURRENCY,
       ...(params.contentName ? { fb_description: params.contentName } : {}),
-    });
+    }));
     console.log('[Meta][Event] ViewContent', { id: params.contentId, name: params.contentName, value: valueToSum });
   } catch (e) {
     console.log('[Meta] ViewContent error:', (e as Error).message);
@@ -139,13 +152,13 @@ export function logAddToCart(params: {
     const qty = params.quantity || 1;
     const unitPrice = params.price && !isNaN(params.price) ? params.price : 0;
     const valueToSum = unitPrice * qty;
-    AppEventsLogger.logEvent('fb_mobile_add_to_cart', valueToSum, {
+    AppEventsLogger.logEvent('fb_mobile_add_to_cart', valueToSum, withTestCode({
       fb_content_type: 'product',
       fb_content_id: params.contentId,
       fb_content: JSON.stringify([{ id: params.contentId, quantity: qty }]),
       fb_currency: params.currency || CURRENCY,
       ...(params.contentName ? { fb_description: params.contentName } : {}),
-    });
+    }));
     console.log('[Meta][Event] AddToCart', { id: params.contentId, qty, value: valueToSum });
   } catch (e) {
     console.log('[Meta] AddToCart error:', (e as Error).message);
@@ -162,13 +175,13 @@ export function logInitiateCheckout(params: {
   if (!isReady()) return;
   try {
     const value = params.totalValue && !isNaN(params.totalValue) ? params.totalValue : 0;
-    AppEventsLogger.logEvent('fb_mobile_initiated_checkout', value, {
+    AppEventsLogger.logEvent('fb_mobile_initiated_checkout', value, withTestCode({
       fb_content_type: 'product',
       fb_content_id: JSON.stringify(params.contentIds),
       fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
       fb_num_items: params.numItems,
       fb_currency: params.currency || CURRENCY,
-    });
+    }));
     console.log('[Meta][Event] InitiateCheckout', { items: params.numItems, value, ids: params.contentIds });
   } catch (e) {
     console.log('[Meta] InitiateCheckout error:', (e as Error).message);
@@ -200,12 +213,12 @@ export async function logPurchase(params: {
   try {
     purchasedOrderIds.add(params.orderId);
     persistDedupe();
-    AppEventsLogger.logPurchase(params.totalValue, params.currency || CURRENCY, {
+    AppEventsLogger.logPurchase(params.totalValue, params.currency || CURRENCY, withTestCode({
       fb_content_type: 'product',
       fb_content_id: JSON.stringify(params.contentIds),
       fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
       fb_order_id: params.orderId,
-    });
+    }));
     console.log('[Meta][Event] Purchase', {
       orderId: params.orderId,
       value: params.totalValue,

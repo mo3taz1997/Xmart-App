@@ -9,7 +9,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "dashboard.xmart.me"
+        "EXPO_PUBLIC_DOMAIN": "dashboard.xmart.me",
+        "EXPO_PUBLIC_META_TEST_EVENT_CODE": "TEST86197"
       }
     },
     "production": {
