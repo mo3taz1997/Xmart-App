@@ -11,13 +11,19 @@ export function redirectSystemPath({
     if (path.includes('://')) {
       try {
         const u = new URL(path);
-        pathname = u.pathname || '/';
+        const isHttp = u.protocol === 'http:' || u.protocol === 'https:';
+        if (isHttp) {
+          pathname = u.pathname || '/';
+        } else {
+          pathname = `/${u.host}${u.pathname || ''}`.replace(/\/+$/, '') || '/';
+        }
         search = u.search || '';
       } catch {
-        const m = path.match(/^[a-z][a-z0-9+.-]*:\/\/[^/]+(\/[^?#]*)?(\?[^#]*)?/i);
+        const m = path.match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)(\/[^?#]*)?(\?[^#]*)?/i);
         if (m) {
-          pathname = m[1] || '/';
-          search = m[2] || '';
+          const isHttp = /^https?:/i.test(path);
+          pathname = isHttp ? (m[2] || '/') : `/${m[1]}${m[2] || ''}`.replace(/\/+$/, '') || '/';
+          search = m[3] || '';
         }
       }
     } else {
