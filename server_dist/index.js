@@ -1486,6 +1486,351 @@ function mapAdminProduct(p) {
   };
 }
 
+// server/smart-links.ts
+var IOS_BUNDLE_ID = "com.xmart.jo";
+var ANDROID_PACKAGE = "com.xmart.jo";
+var IOS_APP_STORE_ID = "6760316670";
+var APP_NAME = "XMART";
+var SMART_LINK_HOST = "product.xmart.me";
+var APPLE_TEAM_ID = (process.env.APPLE_TEAM_ID || "").trim();
+var ANDROID_SHA256_FINGERPRINT = (process.env.ANDROID_SHA256_FINGERPRINT || "").trim();
+var APP_STORE_URL = `https://apps.apple.com/jo/app/id${IOS_APP_STORE_ID}`;
+var PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+var linkCache = /* @__PURE__ */ new Map();
+function getCache(key, ttlMs) {
+  const e = linkCache.get(key);
+  if (e && Date.now() - e.ts < ttlMs) return e.data;
+  return null;
+}
+function setCache(key, data) {
+  linkCache.set(key, { data, ts: Date.now() });
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
+}
+function stripHtml(s) {
+  return String(s || "").replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
+}
+function summarizeProduct(p) {
+  if (!p || !p.handle) return null;
+  const numericId = String(p.id || "").split("/").pop() || "";
+  const image = p.images?.edges?.[0]?.node?.url || null;
+  const price = p.priceRange?.minVariantPrice?.amount || "0";
+  const currency = p.priceRange?.minVariantPrice?.currencyCode || "JOD";
+  const compareAtPrice = p.compareAtPriceRange?.minVariantPrice?.amount && Number(p.compareAtPriceRange.minVariantPrice.amount) > 0 ? p.compareAtPriceRange.minVariantPrice.amount : null;
+  return {
+    id: p.id,
+    numericId,
+    title: p.title || "",
+    description: stripHtml(p.descriptionHtml || p.description || "").slice(0, 5e3),
+    handle: p.handle,
+    image,
+    price,
+    currency,
+    available: !!p.availableForSale,
+    compareAtPrice,
+    vendor: p.vendor || null,
+    productType: p.productType || null
+  };
+}
+async function fetchProductByHandle(handle) {
+  const cacheKey = `prod:${handle}`;
+  const cached = getCache(cacheKey, 5 * 60 * 1e3);
+  if (cached !== null) return cached;
+  try {
+    const data = await shopifyFetch(QUERIES.PRODUCT_BY_HANDLE, { handle, language: "EN" });
+    const summary = summarizeProduct(data?.product);
+    setCache(cacheKey, summary);
+    return summary;
+  } catch (e) {
+    console.warn("[SmartLinks] fetch product failed:", e?.message);
+    return null;
+  }
+}
+async function fetchAllProducts() {
+  const cacheKey = "catalog:all";
+  const cached = getCache(cacheKey, 60 * 60 * 1e3);
+  if (cached) return cached;
+  const all = [];
+  let after = null;
+  let pages = 0;
+  const MAX_PAGES = 40;
+  try {
+    while (pages < MAX_PAGES) {
+      const data = await shopifyFetch(QUERIES.PRODUCTS, {
+        first: 250,
+        after,
+        language: "EN"
+      });
+      const conn = data?.products;
+      if (!conn) break;
+      for (const edge of conn.edges || []) {
+        const s = summarizeProduct(edge.node);
+        if (s) all.push(s);
+      }
+      if (!conn.pageInfo?.hasNextPage) break;
+      after = conn.pageInfo.endCursor;
+      pages++;
+    }
+    setCache(cacheKey, all);
+  } catch (e) {
+    console.warn("[SmartLinks] fetch all products failed:", e?.message);
+  }
+  return all;
+}
+function renderSmartLinkPage(handle, product, baseUrl) {
+  const title = product?.title || `XMART Product`;
+  const description = product?.description?.slice(0, 200) || "\u062A\u0633\u0648\u0651\u0642 \u0639\u0644\u0649 XMART - \u0643\u0644 \u0645\u0627 \u062A\u062D\u062A\u0627\u062C\u0647 \u0641\u064A \u062A\u0637\u0628\u064A\u0642 \u0648\u0627\u062D\u062F";
+  const image = product?.image || `${baseUrl}/assets/images/icon.png`;
+  const price = product?.price ? Number(product.price).toFixed(3) : null;
+  const currency = product?.currency || "JOD";
+  const deepLink = `xmart://product/${encodeURIComponent(handle)}`;
+  const canonicalUrl = `https://${SMART_LINK_HOST}/p/${encodeURIComponent(handle)}`;
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>${escapeHtml(title)} - XMART</title>
+<meta name="description" content="${escapeHtml(description)}">
+<link rel="canonical" href="${escapeHtml(canonicalUrl)}">
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<meta property="og:type" content="product">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(description)}">
+<meta property="og:url" content="${escapeHtml(canonicalUrl)}">
+<meta property="og:image" content="${escapeHtml(image)}">
+<meta property="og:site_name" content="${APP_NAME}">
+${price ? `<meta property="product:price:amount" content="${escapeHtml(price)}">
+<meta property="product:price:currency" content="${escapeHtml(currency)}">` : ""}
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(description)}">
+<meta name="twitter:image" content="${escapeHtml(image)}">
+
+<meta property="al:ios:url" content="${escapeHtml(deepLink)}">
+<meta property="al:ios:app_store_id" content="${IOS_APP_STORE_ID}">
+<meta property="al:ios:app_name" content="${APP_NAME}">
+<meta property="al:android:url" content="${escapeHtml(deepLink)}">
+<meta property="al:android:package" content="${ANDROID_PACKAGE}">
+<meta property="al:android:app_name" content="${APP_NAME}">
+<meta property="al:web:url" content="${escapeHtml(canonicalUrl)}">
+<meta property="al:web:should_fallback" content="false">
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:#0A0A0A;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(at 20% 0%,#163259 0,transparent 50%),radial-gradient(at 80% 100%,#248CCC 0,transparent 50%);background-attachment:fixed}
+.card{background:rgba(20,20,30,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.brand{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:24px;font-size:24px;font-weight:800;letter-spacing:1px}
+.brand-x{color:#fff}
+.brand-mart{color:#248CCC}
+.product-image{width:200px;height:200px;border-radius:16px;object-fit:cover;margin:0 auto 20px;background:#1a1a2e;display:block}
+.product-image-placeholder{width:200px;height:200px;border-radius:16px;background:linear-gradient(135deg,#163259,#248CCC);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:64px;color:#fff;font-weight:800}
+.product-title{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.4;color:#fff}
+.product-price{font-size:26px;font-weight:800;color:#248CCC;margin-bottom:4px}
+.product-compare{font-size:15px;color:#888;text-decoration:line-through;margin-bottom:20px}
+.spacer{height:24px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;border-radius:14px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;border:none;cursor:pointer;text-decoration:none;transition:transform 0.15s,opacity 0.15s;margin-bottom:10px}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:linear-gradient(135deg,#248CCC,#163259);color:#fff}
+.btn-secondary{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.12)}
+.btn-store{background:#000;color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0 16px;color:#666;font-size:13px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08)}
+.store-buttons{display:flex;gap:10px;flex-direction:column}
+.hint{font-size:12px;color:#666;margin-top:14px;line-height:1.6}
+.icon{width:20px;height:20px;flex-shrink:0}
+@media (max-width:380px){
+  .card{padding:22px 18px}
+  .product-image,.product-image-placeholder{width:160px;height:160px}
+  .product-title{font-size:18px}
+  .product-price{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand"><span class="brand-x">X</span><span class="brand-mart">mart</span></div>
+  ${product?.image ? `<img class="product-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" onerror="this.outerHTML='<div class=\\'product-image-placeholder\\'>X</div>'">` : `<div class="product-image-placeholder">X</div>`}
+  <div class="product-title">${escapeHtml(title)}</div>
+  ${price ? `<div class="product-price">${escapeHtml(price)} ${escapeHtml(currency)}</div>` : ""}
+  ${product?.compareAtPrice ? `<div class="product-compare">${Number(product.compareAtPrice).toFixed(3)} ${escapeHtml(currency)}</div>` : `<div class="spacer"></div>`}
+
+  <button class="btn btn-primary" onclick="openApp()">
+    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    \u0627\u0641\u062A\u062D \u0641\u064A \u062A\u0637\u0628\u064A\u0642 XMART
+  </button>
+
+  <div class="divider">\u0623\u0648 \u062D\u0645\u0651\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642</div>
+
+  <div class="store-buttons">
+    <a class="btn btn-store" href="${APP_STORE_URL}" id="appstore-btn">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+      \u062A\u062D\u0645\u064A\u0644 \u0645\u0646 App Store
+    </a>
+    <a class="btn btn-store" href="${PLAY_STORE_URL}" id="playstore-btn">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5V3.5c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zM5.69 22l8.78-8.78 2.96 2.96-10.18 5.81c-.55.32-.84.13-1.56-.01v.02zM18.81 13.85L15.1 17.05l-7.41-4.22 7.41-4.22 3.71 3.21c.46.46.46 1.21 0 1.67l-.01.01-.01.01v-.66z"/></svg>
+      \u062A\u062D\u0645\u064A\u0644 \u0645\u0646 Google Play
+    </a>
+  </div>
+
+  <div class="hint">
+    \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0645\u062B\u0628\u062A\u0627\u064B\u060C \u0631\u062D \u064A\u0641\u062A\u062D \u0627\u0644\u0645\u0646\u062A\u062C \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B.<br>
+    \u0648\u0625\u0644\u0627\u060C \u062D\u0645\u0651\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0648\u0631\u062D \u064A\u0641\u062A\u062D \u0627\u0644\u0645\u0646\u062A\u062C \u0628\u0639\u062F \u0627\u0644\u062A\u062B\u0628\u064A\u062A.
+  </div>
+</div>
+
+<script>
+(function(){
+  var deepLink = ${JSON.stringify(deepLink)};
+  var iosUrl = ${JSON.stringify(APP_STORE_URL)};
+  var androidUrl = ${JSON.stringify(PLAY_STORE_URL)};
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var isMobile = isIOS || isAndroid;
+  var appStoreFallback = isIOS ? iosUrl : (isAndroid ? androidUrl : null);
+
+  function openApp() {
+    if (!isMobile) {
+      window.location.href = isIOS ? iosUrl : androidUrl || iosUrl;
+      return;
+    }
+    var openedAt = Date.now();
+    var visibilityChanged = false;
+    var onVis = function(){ if (document.visibilityState === 'hidden') visibilityChanged = true; };
+    document.addEventListener('visibilitychange', onVis);
+
+    window.location.href = deepLink;
+
+    setTimeout(function(){
+      document.removeEventListener('visibilitychange', onVis);
+      var elapsed = Date.now() - openedAt;
+      if (!visibilityChanged && elapsed < 2500 && appStoreFallback) {
+        window.location.href = appStoreFallback;
+      }
+    }, 1500);
+  }
+  window.openApp = openApp;
+
+  if (isMobile) {
+    setTimeout(openApp, 100);
+  }
+})();
+</script>
+</body>
+</html>`;
+}
+function registerSmartLinkRoutes(app2) {
+  app2.get("/.well-known/apple-app-site-association", (_req, res) => {
+    if (!APPLE_TEAM_ID) {
+      console.warn("[SmartLinks] APPLE_TEAM_ID env var not set - AASA file is unavailable");
+      return res.status(503).json({ error: "APPLE_TEAM_ID not configured on server" });
+    }
+    const aasa = {
+      applinks: {
+        apps: [],
+        details: [
+          {
+            appID: `${APPLE_TEAM_ID}.${IOS_BUNDLE_ID}`,
+            paths: ["/p/*"]
+          }
+        ]
+      }
+    };
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.status(200).send(JSON.stringify(aasa));
+  });
+  app2.get("/.well-known/assetlinks.json", (_req, res) => {
+    if (!ANDROID_SHA256_FINGERPRINT) {
+      console.warn("[SmartLinks] ANDROID_SHA256_FINGERPRINT env var not set - assetlinks.json is unavailable");
+      return res.status(503).json({ error: "ANDROID_SHA256_FINGERPRINT not configured on server" });
+    }
+    const fingerprints = ANDROID_SHA256_FINGERPRINT.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
+    const assetlinks = [
+      {
+        relation: ["delegate_permission/common.handle_all_urls"],
+        target: {
+          namespace: "android_app",
+          package_name: ANDROID_PACKAGE,
+          sha256_cert_fingerprints: fingerprints
+        }
+      }
+    ];
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.status(200).send(JSON.stringify(assetlinks));
+  });
+  app2.get("/p/:handle", async (req, res) => {
+    try {
+      const handle = String(req.params.handle || "").trim();
+      if (!handle) return res.status(400).send("Missing product handle");
+      const fwdProto = (req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
+      const fwdHost = (req.headers["x-forwarded-host"] || "").split(",")[0].trim() || req.headers.host || SMART_LINK_HOST;
+      const baseUrl = `${fwdProto}://${fwdHost}`;
+      const product = await fetchProductByHandle(handle);
+      const html = renderSmartLinkPage(handle, product, baseUrl);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.status(product ? 200 : 404).send(html);
+    } catch (e) {
+      console.error("[SmartLinks] /p/:handle error:", e?.message);
+      res.status(500).send("Server error");
+    }
+  });
+  app2.get("/api/catalog-feed.xml", async (_req, res) => {
+    try {
+      const products = await fetchAllProducts();
+      const items = products.filter((p) => p.handle && p.title).map((p) => {
+        const link = `https://${SMART_LINK_HOST}/p/${encodeURIComponent(p.handle)}`;
+        const currentPrice = Number(p.price);
+        const compareAt = p.compareAtPrice ? Number(p.compareAtPrice) : 0;
+        const onSale = compareAt > 0 && compareAt > currentPrice;
+        const priceTag = onSale ? `${compareAt.toFixed(3)} ${p.currency}` : `${currentPrice.toFixed(3)} ${p.currency}`;
+        const salePriceTag = onSale ? `${currentPrice.toFixed(3)} ${p.currency}` : null;
+        const description = (p.description || p.title || "").slice(0, 4900);
+        return `    <item>
+      <g:id>${escapeXml(p.numericId)}</g:id>
+      <g:title>${escapeXml(p.title)}</g:title>
+      <g:description>${escapeXml(description)}</g:description>
+      <g:link>${escapeXml(link)}</g:link>
+      <g:image_link>${escapeXml(p.image || "")}</g:image_link>
+      <g:availability>${p.available ? "in stock" : "out of stock"}</g:availability>
+      <g:price>${escapeXml(priceTag)}</g:price>${salePriceTag ? `
+      <g:sale_price>${escapeXml(salePriceTag)}</g:sale_price>` : ""}
+      <g:condition>new</g:condition>
+      <g:brand>${escapeXml(p.vendor || APP_NAME)}</g:brand>${p.productType ? `
+      <g:product_type>${escapeXml(p.productType)}</g:product_type>` : ""}
+      <g:identifier_exists>no</g:identifier_exists>
+    </item>`;
+      }).join("\n");
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>${APP_NAME} Catalog</title>
+    <link>https://${SMART_LINK_HOST}</link>
+    <description>${APP_NAME} product catalog feed for Meta Commerce Manager</description>
+${items}
+  </channel>
+</rss>`;
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.status(200).send(xml);
+    } catch (e) {
+      console.error("[SmartLinks] catalog feed error:", e?.message);
+      res.status(500).send(`<?xml version="1.0"?><error>${escapeXml(e?.message || "error")}</error>`);
+    }
+  });
+  console.log(`[SmartLinks] Routes registered. APPLE_TEAM_ID: ${APPLE_TEAM_ID ? "set" : "MISSING"}, ANDROID_SHA256_FINGERPRINT: ${ANDROID_SHA256_FINGERPRINT ? "set" : "MISSING"}`);
+}
+
 // server/checkout-complete.ts
 var SHOPIFY_STORE_DOMAIN2 = process.env.SHOPIFY_STORE_DOMAIN || "";
 var CookieJar = class {
@@ -2915,7 +3260,7 @@ function getCached(key, ttlMs) {
   if (entry && Date.now() - entry.ts < ttlMs) return entry.data;
   return null;
 }
-function setCache(key, data) {
+function setCache2(key, data) {
   apiCache.set(key, { data, ts: Date.now() });
 }
 function toAbsoluteUrl(url, req) {
@@ -2937,6 +3282,7 @@ function optimizeShopifyCdn(url, size = 400) {
 var imgCache = /* @__PURE__ */ new Map();
 var IMG_CACHE_TTL = 6e5;
 async function registerRoutes(app2) {
+  registerSmartLinkRoutes(app2);
   app2.get("/api/img", async (req, res) => {
     try {
       const src = req.query.src;
@@ -3001,7 +3347,7 @@ async function registerRoutes(app2) {
         hasNext = data.collections?.pageInfo?.hasNextPage || false;
         cursor = data.collections?.pageInfo?.endCursor || null;
       }
-      setCache(cacheKey, allCollections);
+      setCache2(cacheKey, allCollections);
       res.json(allCollections);
     } catch (error) {
       console.error("Error fetching collections:", error.message);
@@ -3191,7 +3537,7 @@ async function registerRoutes(app2) {
       };
       if (!after && first <= 12) {
         const cacheKey = `col-${handle}-${language}-${first}-${req.query.available || ""}`;
-        setCache(cacheKey, result);
+        setCache2(cacheKey, result);
       }
       res.json(result);
     } catch (error) {
@@ -3229,7 +3575,7 @@ async function registerRoutes(app2) {
         types: Array.from(types).sort((a, b) => a.localeCompare(b)),
         vendors: Array.from(vendors).sort((a, b) => a.localeCompare(b))
       };
-      setCache(cacheKey, result);
+      setCache2(cacheKey, result);
       res.json(result);
     } catch (error) {
       console.error("Error fetching collection filters:", error.message);
@@ -4789,34 +5135,86 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
-  app2.get("/api/shipping-rates", async (req, res) => {
+  app2.post("/api/shipping-rates", async (req, res) => {
     try {
-      const zones = await shopifyAdminFetch("shipping_zones.json");
-      const rates = [];
-      for (const zone of zones.shipping_zones || []) {
-        for (const rate of zone.price_based_shipping_rates || []) {
-          rates.push({
-            name: rate.name,
-            price: rate.price,
-            currency: "JOD",
-            minSubtotal: rate.min_order_subtotal ?? null,
-            maxSubtotal: rate.max_order_subtotal ?? null
-          });
+      const { items, city, address, firstName, lastName, phone } = req.body || {};
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.json([]);
+      }
+      const cartLines = items.filter((it) => it && it.variantId).map((it) => ({
+        merchandiseId: it.variantId,
+        quantity: Math.max(1, parseInt(it.quantity, 10) || 1)
+      }));
+      if (cartLines.length === 0) return res.json([]);
+      const deliveryAddress = {
+        firstName: firstName || "Buyer",
+        lastName: lastName || "Buyer",
+        address1: address || "Address",
+        city: city || "Amman",
+        country: "Jordan",
+        phone: phone || "+962790000000"
+      };
+      const cartInput = {
+        lines: cartLines,
+        buyerIdentity: {
+          countryCode: "JO",
+          deliveryAddressPreferences: [{ deliveryAddress }]
         }
-        for (const rate of zone.weight_based_shipping_rates || []) {
-          rates.push({
-            name: rate.name,
-            price: rate.price,
-            currency: "JOD",
-            minSubtotal: null,
-            maxSubtotal: null
-          });
+      };
+      const SHIPPING_QUERY = `
+        mutation CartCreateForShipping($input: CartInput!) {
+          cartCreate(input: $input) {
+            cart {
+              deliveryGroups(first: 5) {
+                edges {
+                  node {
+                    deliveryOptions {
+                      handle
+                      title
+                      estimatedCost { amount currencyCode }
+                    }
+                  }
+                }
+              }
+            }
+            userErrors { field message }
+          }
+        }
+      `;
+      const data = await shopifyFetch(SHIPPING_QUERY, { input: cartInput });
+      const errs = data?.cartCreate?.userErrors || [];
+      if (errs.length > 0) {
+        console.log("[ShippingRates] cartCreate userErrors:", JSON.stringify(errs));
+      }
+      const groups = data?.cartCreate?.cart?.deliveryGroups?.edges || [];
+      const ratesMap = /* @__PURE__ */ new Map();
+      for (const edge of groups) {
+        const opts = edge?.node?.deliveryOptions || [];
+        for (const opt of opts) {
+          const amount = parseFloat(opt?.estimatedCost?.amount || "0") || 0;
+          const currency = opt?.estimatedCost?.currencyCode || "JOD";
+          const key = `${opt?.title || "Standard Delivery"}__${currency}`;
+          const existing = ratesMap.get(key);
+          if (existing) {
+            existing.price += amount;
+          } else {
+            ratesMap.set(key, {
+              name: opt?.title || "Standard Delivery",
+              price: amount,
+              currency
+            });
+          }
         }
       }
+      const rates = Array.from(ratesMap.values()).sort((a, b) => a.price - b.price).map((r) => ({
+        name: r.name,
+        price: r.price.toFixed(3),
+        currency: r.currency
+      }));
       res.json(rates);
     } catch (error) {
-      console.error("Error fetching shipping rates:", error.message);
-      res.status(500).json({ error: error.message });
+      console.error("[ShippingRates] error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Shipping rate lookup failed" });
     }
   });
   app2.post("/api/validate-discount", async (req, res) => {
