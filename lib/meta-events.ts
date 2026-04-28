@@ -1,0 +1,218 @@
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+let Settings: any = null;
+let AppEventsLogger: any = null;
+let AEMReporter: any = null;
+
+if (Platform.OS !== 'web') {
+  try {
+    const fbsdk = require('react-native-fbsdk-next');
+    Settings = fbsdk.Settings;
+    AppEventsLogger = fbsdk.AppEventsLogger;
+    AEMReporter = fbsdk.AEMReporter;
+  } catch (e) {
+    console.log('[Meta] FBSDK not available (likely Expo Go):', (e as Error).message);
+  }
+}
+
+const CURRENCY = 'JOD';
+const PURCHASE_DEDUPE_KEY = '@meta_purchased_order_ids_v1';
+const PURCHASE_DEDUPE_MAX = 200;
+const purchasedOrderIds = new Set<string>();
+let dedupeHydrated = false;
+
+async function hydrateDedupe(): Promise<void> {
+  if (dedupeHydrated) return;
+  dedupeHydrated = true;
+  try {
+    const raw = await AsyncStorage.getItem(PURCHASE_DEDUPE_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) arr.forEach((id) => typeof id === 'string' && purchasedOrderIds.add(id));
+    }
+  } catch {}
+}
+
+async function persistDedupe(): Promise<void> {
+  try {
+    let arr = Array.from(purchasedOrderIds);
+    if (arr.length > PURCHASE_DEDUPE_MAX) arr = arr.slice(-PURCHASE_DEDUPE_MAX);
+    await AsyncStorage.setItem(PURCHASE_DEDUPE_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
+function isReady(): boolean {
+  return Platform.OS !== 'web' && AppEventsLogger != null;
+}
+
+export async function initMetaSdk(): Promise<void> {
+  // Hydrate purchase dedupe set even on web so subsequent native installs share key behavior — cheap, safe.
+  await hydrateDedupe();
+  if (!isReady() || !Settings) {
+    console.log('[Meta] SDK init skipped (web or unavailable)');
+    return;
+  }
+  try {
+    await Settings.initializeSDK();
+    Settings.setAutoLogAppEventsEnabled(true);
+    Settings.setAdvertiserIDCollectionEnabled(true);
+    if (AEMReporter && Platform.OS === 'ios') {
+      try { await AEMReporter.enable(); } catch {}
+    }
+    console.log('[Meta] SDK initialized');
+  } catch (e) {
+    console.log('[Meta] SDK init error:', (e as Error).message);
+  }
+}
+
+export async function requestTrackingPermission(): Promise<'granted' | 'denied' | 'unavailable'> {
+  if (Platform.OS !== 'ios') return 'unavailable';
+  try {
+    const tt = await import('expo-tracking-transparency');
+    const { status: cur } = await tt.getTrackingPermissionsAsync();
+    if (cur !== 'undetermined') {
+      const granted = cur === 'granted';
+      try {
+        if (Settings) await Settings.setAdvertiserTrackingEnabled(granted);
+      } catch {}
+      console.log('[Meta] ATT already determined:', cur);
+      return granted ? 'granted' : 'denied';
+    }
+    const { status } = await tt.requestTrackingPermissionsAsync();
+    const granted = status === 'granted';
+    try {
+      if (Settings) await Settings.setAdvertiserTrackingEnabled(granted);
+    } catch {}
+    console.log('[Meta] ATT prompt result:', status);
+    return granted ? 'granted' : 'denied';
+  } catch (e) {
+    console.log('[Meta] ATT error:', (e as Error).message);
+    return 'unavailable';
+  }
+}
+
+// EVENT: App Open — fired once when the app launches (after SDK init)
+export function logAppOpen(): void {
+  if (!isReady()) return;
+  try {
+    AppEventsLogger.logEvent('fb_mobile_activate_app');
+    console.log('[Meta][Event] App Open');
+  } catch (e) {
+    console.log('[Meta] App Open error:', (e as Error).message);
+  }
+}
+
+// EVENT: View Content — fired on product detail screen mount
+export function logViewContent(params: {
+  contentId: string;
+  contentName?: string;
+  price?: number;
+  currency?: string;
+}): void {
+  if (!isReady()) return;
+  try {
+    const valueToSum = params.price && !isNaN(params.price) ? params.price : 0;
+    AppEventsLogger.logEvent('fb_mobile_content_view', valueToSum, {
+      fb_content_type: 'product',
+      fb_content_id: params.contentId,
+      fb_content: JSON.stringify([{ id: params.contentId, quantity: 1 }]),
+      fb_currency: params.currency || CURRENCY,
+      ...(params.contentName ? { fb_description: params.contentName } : {}),
+    });
+    console.log('[Meta][Event] ViewContent', { id: params.contentId, name: params.contentName, value: valueToSum });
+  } catch (e) {
+    console.log('[Meta] ViewContent error:', (e as Error).message);
+  }
+}
+
+// EVENT: Add To Cart — fired from CartContext.addToCart (centralized)
+export function logAddToCart(params: {
+  contentId: string;
+  contentName?: string;
+  price?: number;
+  quantity?: number;
+  currency?: string;
+}): void {
+  if (!isReady()) return;
+  try {
+    const qty = params.quantity || 1;
+    const unitPrice = params.price && !isNaN(params.price) ? params.price : 0;
+    const valueToSum = unitPrice * qty;
+    AppEventsLogger.logEvent('fb_mobile_add_to_cart', valueToSum, {
+      fb_content_type: 'product',
+      fb_content_id: params.contentId,
+      fb_content: JSON.stringify([{ id: params.contentId, quantity: qty }]),
+      fb_currency: params.currency || CURRENCY,
+      ...(params.contentName ? { fb_description: params.contentName } : {}),
+    });
+    console.log('[Meta][Event] AddToCart', { id: params.contentId, qty, value: valueToSum });
+  } catch (e) {
+    console.log('[Meta] AddToCart error:', (e as Error).message);
+  }
+}
+
+// EVENT: Initiate Checkout — fired when user starts the checkout/payment flow
+export function logInitiateCheckout(params: {
+  contentIds: string[];
+  numItems: number;
+  totalValue: number;
+  currency?: string;
+}): void {
+  if (!isReady()) return;
+  try {
+    const value = params.totalValue && !isNaN(params.totalValue) ? params.totalValue : 0;
+    AppEventsLogger.logEvent('fb_mobile_initiated_checkout', value, {
+      fb_content_type: 'product',
+      fb_content_id: JSON.stringify(params.contentIds),
+      fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
+      fb_num_items: params.numItems,
+      fb_currency: params.currency || CURRENCY,
+    });
+    console.log('[Meta][Event] InitiateCheckout', { items: params.numItems, value, ids: params.contentIds });
+  } catch (e) {
+    console.log('[Meta] InitiateCheckout error:', (e as Error).message);
+  }
+}
+
+// EVENT: Purchase — ONLY after order is confirmed in Shopify; deduped per orderId
+export async function logPurchase(params: {
+  orderId: string;
+  totalValue: number;
+  contentIds: string[];
+  currency?: string;
+}): Promise<void> {
+  if (!isReady()) return;
+  if (!params.orderId) {
+    console.log('[Meta] Purchase blocked: missing orderId');
+    return;
+  }
+  if (!params.totalValue || isNaN(params.totalValue) || params.totalValue <= 0) {
+    console.log('[Meta] Purchase blocked: invalid value', params.totalValue);
+    return;
+  }
+  // Make sure we've loaded persisted dedupe set before checking — prevents double-fire after app relaunch.
+  await hydrateDedupe();
+  if (purchasedOrderIds.has(params.orderId)) {
+    console.log('[Meta] Purchase blocked: duplicate orderId', params.orderId);
+    return;
+  }
+  try {
+    purchasedOrderIds.add(params.orderId);
+    persistDedupe();
+    AppEventsLogger.logPurchase(params.totalValue, params.currency || CURRENCY, {
+      fb_content_type: 'product',
+      fb_content_id: JSON.stringify(params.contentIds),
+      fb_content: JSON.stringify(params.contentIds.map(id => ({ id, quantity: 1 }))),
+      fb_order_id: params.orderId,
+    });
+    console.log('[Meta][Event] Purchase', {
+      orderId: params.orderId,
+      value: params.totalValue,
+      currency: params.currency || CURRENCY,
+      ids: params.contentIds,
+    });
+  } catch (e) {
+    console.log('[Meta] Purchase error:', (e as Error).message);
+  }
+}

@@ -22,13 +22,15 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.xmart.jo",
+      "buildNumber": "10",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["fbapi", "fb-messenger-share-api"]
       }
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 9,
+      "versionCode": 10,
       "permissions": [],
       "blockedPermissions": [
         "android.permission.CAMERA",
@@ -67,7 +69,26 @@
       "expo-font",
       "expo-web-browser",
       "expo-secure-store",
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads and improve your shopping experience."
+        }
+      ],
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1000504526488987",
+          "clientToken": "86d39ac98643ed6efccab93e157ea690",
+          "displayName": "XMART",
+          "scheme": "fb1000504526488987",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "This identifier will be used to deliver personalized ads and improve your shopping experience."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

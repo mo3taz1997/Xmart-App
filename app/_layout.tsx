@@ -18,6 +18,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useFonts, Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold } from "@expo-google-fonts/cairo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
+import { initMetaSdk, requestTrackingPermission, logAppOpen } from "@/lib/meta-events";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
@@ -436,6 +437,20 @@ export default function RootLayout() {
       } catch (e) {}
     }
     lockOrientation();
+  }, []);
+
+  // Meta (Facebook) SDK: init + ATT prompt (iOS) + App Open event
+  // Runs once on app launch — fires `fb_mobile_activate_app` after permission flow
+  useEffect(() => {
+    (async () => {
+      try {
+        await requestTrackingPermission();
+        await initMetaSdk();
+        logAppOpen();
+      } catch (e) {
+        console.log('[Meta] init flow error:', e);
+      }
+    })();
   }, []);
 
   if (!fontsLoaded) return null;

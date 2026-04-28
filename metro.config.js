@@ -3,6 +3,28 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const config = getDefaultConfig(__dirname);
 
+config.resolver = {
+  ...config.resolver,
+  blockList: [
+    /\.local\/.*/,
+    /\.git\/.*/,
+    /server_dist\/.*/,
+  ],
+};
+
+config.watcher = {
+  ...config.watcher,
+  additionalExts: config.watcher?.additionalExts || [],
+  watchman: {
+    ...(config.watcher?.watchman || {}),
+    deferStates: ["hg.update"],
+  },
+  healthCheck: {
+    ...(config.watcher?.healthCheck || {}),
+    enabled: false,
+  },
+};
+
 config.server = {
   ...config.server,
   enhanceMiddleware: (middleware) => {

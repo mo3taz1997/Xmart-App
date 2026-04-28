@@ -109,6 +109,25 @@ Preferred communication style: Simple, everyday language (Arabic).
 - `sharp` - Image processing for logo uploads
 - `esbuild` - Server bundling for production
 
+## Meta (Facebook) SDK — App Events (April 2026)
+- **Native build required**: Android `versionCode 10`, iOS `buildNumber "10"`. Not OTA-deliverable.
+- **Packages**: `react-native-fbsdk-next` (^13.4.3), `expo-tracking-transparency` (~6.0.8), `expo-build-properties` (~1.0.10).
+- **app.json**: Configured plugins for `react-native-fbsdk-next` (App ID `1000504526488987`, scheme `fb1000504526488987`, AdvertiserIDCollection enabled, AutoLogAppEvents enabled, AdvertiserTrackingEnabled gated by ATT) and `expo-tracking-transparency` (custom Arabic prompt). iOS `LSApplicationQueriesSchemes` whitelists `fbapi` + `fb-messenger-share-api`.
+- **Module**: `lib/meta-events.ts` — single entry for all events. Web-safe via `Platform.OS !== 'web'` + try/require. AEM enabled on iOS for SKAdNetwork conversions.
+- **Currency**: JOD across all events. Param naming uses `fb_` prefix convention.
+- **Events wired**:
+  - **App Open** — `app/_layout.tsx` once on launch (after ATT prompt + SDK init).
+  - **ATT prompt** — iOS only. Fires once via `expo-tracking-transparency`; result mirrored to `Settings.setAdvertiserTrackingEnabled`.
+  - **ViewContent** — `app/product/[handle].tsx` on product mount.
+  - **AddToCart** — Centralized in `contexts/CartContext.tsx` (`addToCart` + `replaceCartWith` for Buy Now). Every entry point covered.
+  - **InitiateCheckout** — `app/checkout.tsx` and `app/cod-order.tsx` (`handlePlaceOrder`) when user starts the order flow.
+  - **Purchase** — Fired ONLY after Shopify confirms. Strict gating:
+    - `app/checkout.tsx`: requires `result.orderNumber` (no synthetic IDs).
+    - `app/cod-order.tsx` COD direct buy + cart paths: require `result.order.shopifyOrderName || shopifyOrderId` AND `status === 'confirmed'`. Local DB id is never used.
+    - `app/cod-order.tsx` Online Card via WebView `/thank_you`: prefers Shopify orderName; falls back to URL token (extracted from `/orders/<token>`, `/checkouts/c/<id>`, or `/checkouts/<token>/thank`) so guest checkouts are still tracked.
+- **Dedupe**: `purchasedOrderIds` Set persisted to AsyncStorage (`@meta_purchased_order_ids_v1`, capped at 200). Survives app relaunch.
+- **Build & validate**: After merge, run `npm run server:build` (esbuild) before deploy. Test events via Meta Events Manager → Test Events using device IDFA/IDFV.
+
 ## Performance Optimizations (March 2026)
 - **Lazy Loading Sections**: Home screen sections below the fold are lazy-loaded via `LazySection` wrapper. Only the first 3 sections render immediately; the rest mount when scrolled near viewport. Uses a scroll-driven registry pattern (no polling intervals).
 - **Memoization**: All home section components wrapped in `React.memo()` (SelectedCategories, BrandsStrip, MultiCollection, CollectionShowcase, PromoBannerSlider, StaticBanner, FeaturedProducts, CollectionProducts, ProductSliderSection). `ProductCard` callbacks (`handlePress`, `handleWishlist`) wrapped in `useCallback`. Styles computed via `useMemo`.

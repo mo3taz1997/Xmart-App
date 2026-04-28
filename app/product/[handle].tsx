@@ -9,6 +9,7 @@ import XmartLogoSvg from '@/components/XmartLogoSvg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { logViewContent } from '@/lib/meta-events';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -578,6 +579,19 @@ export default function ProductDetailScreen() {
         }
       }
     }
+  }, [product?.id]);
+
+  // Meta Event: ViewContent — fires once when the product page loads with valid data
+  useEffect(() => {
+    if (!product?.id) return;
+    const priceStr = product?.priceRange?.minVariantPrice?.amount || product?.variants?.edges?.[0]?.node?.price?.amount || '0';
+    const priceNum = parseFloat(priceStr) || 0;
+    logViewContent({
+      contentId: String(product.id),
+      contentName: product?.title,
+      price: priceNum,
+      currency: product?.priceRange?.minVariantPrice?.currencyCode || 'JOD',
+    });
   }, [product?.id]);
 
   const selectVariant = (i: number) => {

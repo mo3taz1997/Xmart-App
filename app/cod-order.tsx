@@ -22,6 +22,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
+import { logInitiateCheckout, logPurchase } from '@/lib/meta-events';
 
 const { width } = Dimensions.get('window');
 const SWIPE_H = 58;
@@ -695,6 +696,28 @@ export default function CodOrderScreen() {
     setIsProcessing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    // Meta Event: InitiateCheckout — fires when user starts the order (covers both COD and Card paths)
+    try {
+      let ids: string[] = [];
+      let numItems = 0;
+      let total = 0;
+      if (isDirectBuy && selectedVariant) {
+        ids = [selectedVariant.id, ...upsellItems.map(u => u.variantId)];
+        numItems = productQty + upsellItems.reduce((s, u) => s + u.quantity, 0);
+        total = parseFloat(displayTotal || rawSubtotal || '0') || 0;
+      } else {
+        ids = lines.map((l: any) => l.merchandise.id);
+        numItems = lines.reduce((s: number, l: any) => s + (l.quantity || 0), 0);
+        total = parseFloat(displayTotal || rawSubtotal || '0') || 0;
+      }
+      logInitiateCheckout({
+        contentIds: ids,
+        numItems,
+        totalValue: total,
+        currency: displayCurrency || 'JOD',
+      });
+    } catch {}
+
     if (saveAsDefault && token) {
       try {
         const created = await api.createCustomerAddress(token, {
@@ -866,6 +889,24 @@ export default function CodOrderScreen() {
             shippingName: discountApplied?.isFreeShipping ? (language === 'ar' ? 'توصيل مجاني' : 'Free Delivery') : shipping.name,
           });
 
+          // Meta Event: Purchase — Only fire when Shopify confirmed the order (status === 'confirmed' AND we have a Shopify identifier).
+          // Never use the local DB id as fallback — backend marks status 'pending' when Shopify creation fails.
+          try {
+            const shopifyId = result.order?.shopifyOrderName || result.order?.shopifyOrderId;
+            const isConfirmed = result.order?.status === 'confirmed' || !!shopifyId;
+            if (shopifyId && isConfirmed) {
+              const purchaseIds = [selectedVariant.id, ...upsellItems.map(u => u.variantId)];
+              const totalNum = parseFloat(displayTotal || '0') || 0;
+              logPurchase({
+                orderId: String(shopifyId),
+                totalValue: totalNum,
+                contentIds: purchaseIds,
+                currency: productCurrency || 'JOD',
+              });
+            } else {
+              console.log('[Meta] Purchase skipped: COD direct buy not confirmed by Shopify', { status: result.order?.status });
+            }
+          } catch {}
           setConfirmedOrder({
             orderNumber: result.order?.deliveryCode || '—',
             total: displayTotal,
@@ -940,6 +981,23 @@ export default function CodOrderScreen() {
           shippingName: discountApplied?.isFreeShipping ? (language === 'ar' ? 'توصيل مجاني' : 'Free Delivery') : shipping.name,
         });
 
+        // Meta Event: Purchase — Cart-based COD: only fire when Shopify confirmed (skip if backend returned status 'pending').
+        try {
+          const shopifyId = result.order?.shopifyOrderName || result.order?.shopifyOrderId;
+          const isConfirmed = result.order?.status === 'confirmed' || !!shopifyId;
+          if (shopifyId && isConfirmed) {
+            const purchaseIds = lines.map((line: any) => line.merchandise.id);
+            const totalNum = parseFloat(displayTotal || '0') || 0;
+            logPurchase({
+              orderId: String(shopifyId),
+              totalValue: totalNum,
+              contentIds: purchaseIds,
+              currency: cartCurrency || 'JOD',
+            });
+          } else {
+            console.log('[Meta] Purchase skipped: cart COD not confirmed by Shopify', { status: result.order?.status });
+          }
+        } catch {}
         setConfirmedOrder({
           orderNumber: result.order?.deliveryCode || '—',
           total: displayTotal,
@@ -1002,6 +1060,17 @@ export default function CodOrderScreen() {
             imageUrl: line.merchandise?.image?.url || line.merchandise?.product?.images?.edges?.[0]?.node?.url,
           }));
 
+      // Extract a stable token from the Shopify thank-you URL so we can dedupe even when email lookup fails (guests).
+      // Shopify URLs look like: /<shop>/checkouts/<token>/thank_you OR /<shop>/orders/<token> OR /checkouts/c/<id>/thank_you
+      const extractShopifyToken = (rawUrl: string): string | null => {
+        const m =
+          rawUrl.match(/\/orders\/([a-zA-Z0-9_-]+)/) ||
+          rawUrl.match(/\/checkouts\/c\/([a-zA-Z0-9_-]+)/) ||
+          rawUrl.match(/\/checkouts\/([a-zA-Z0-9_-]+)\/thank/);
+        return m ? m[1] : null;
+      };
+      const urlToken = extractShopifyToken(url);
+
       setFetchingOrderDetails(true);
       clearCart();
 
@@ -1025,6 +1094,26 @@ export default function CodOrderScreen() {
           }
         }
 
+        // Meta Event: Purchase — Online payment (Card) success after Shopify thank_you redirect.
+        // Reaching /thank_you is itself proof Shopify confirmed payment, so it's safe to fire.
+        // Prefer canonical Shopify orderName as the dedupe key; fall back to the URL token (works for guests too).
+        try {
+          const purchaseIds = isDirectBuy && selectedVariant
+            ? [selectedVariant.id, ...upsellItems.map(u => u.variantId)]
+            : lines.map((l: any) => l.merchandise.id);
+          const totalNum = parseFloat(capturedDisplayTotal || shopifyTotal || capturedSubtotal || '0') || 0;
+          const orderId = shopifyOrderName || urlToken || shopifyDeliveryCode;
+          if (orderId && totalNum > 0) {
+            logPurchase({
+              orderId: String(orderId),
+              totalValue: totalNum,
+              contentIds: purchaseIds,
+              currency: capturedCurrency || 'JOD',
+            });
+          } else {
+            console.log('[Meta] Purchase skipped: missing dedupe key or invalid total for online payment', { orderId, totalNum });
+          }
+        } catch {}
         setConfirmedOrder({
           orderNumber: shopifyDeliveryCode || shopifyOrderName || '—',
           total: capturedDisplayTotal || shopifyTotal || capturedSubtotal,

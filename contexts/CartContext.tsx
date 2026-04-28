@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useMemo,
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from './LanguageContext';
 import { api } from '@/lib/api';
+import { logAddToCart } from '@/lib/meta-events';
 
 interface CartLine {
   id: string;
@@ -191,6 +192,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = useCallback(async (variantId: string, quantity = 1, info?: CartItemInfo): Promise<Cart> => {
     setIsLoading(true);
+    // Meta Event: AddToCart — fired centrally so every entry point (product page, upsell, etc.) is tracked
+    try {
+      const priceNum = info?.price ? parseFloat(info.price) : 0;
+      logAddToCart({
+        contentId: variantId,
+        contentName: info?.productTitle,
+        price: priceNum,
+        quantity,
+        currency: info?.currencyCode || 'JOD',
+      });
+    } catch {}
     let resultCart!: Cart;
     try {
       setLines(prev => {
@@ -271,6 +283,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const replaceCartWith = useCallback(async (variantId: string, quantity = 1, info?: CartItemInfo): Promise<Cart> => {
     setIsLoading(true);
+    // Meta Event: AddToCart — Buy Now flow replaces the cart, still counts as add-to-cart intent
+    try {
+      const priceNum = info?.price ? parseFloat(info.price) : 0;
+      logAddToCart({
+        contentId: variantId,
+        contentName: info?.productTitle,
+        price: priceNum,
+        quantity,
+        currency: info?.currencyCode || 'JOD',
+      });
+    } catch {}
     let resultCart!: Cart;
     try {
       const max = info?.maxQuantity;

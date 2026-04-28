@@ -41,6 +41,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
+import { logInitiateCheckout, logPurchase } from '@/lib/meta-events';
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
@@ -184,6 +185,20 @@ export default function CheckoutScreen() {
     setIsProcessing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    // Meta Event: InitiateCheckout — fired when user confirms checkout (after form validation)
+    try {
+      const cartLines = cart?.lines?.edges || [];
+      const ids = cartLines.map((e: any) => e.node.merchandise.id);
+      const numItems = cartLines.reduce((s: number, e: any) => s + (e.node.quantity || 0), 0);
+      const totalAmount = parseFloat(cart?.cost?.totalAmount?.amount || '0') || 0;
+      logInitiateCheckout({
+        contentIds: ids,
+        numItems,
+        totalValue: totalAmount,
+        currency: cart?.cost?.totalAmount?.currencyCode || 'JOD',
+      });
+    } catch {}
+
     try {
       let activeCartId = shopifyCartId;
       let activeCheckoutUrl = shopifyCheckoutUrl;
@@ -268,6 +283,21 @@ export default function CheckoutScreen() {
         });
 
         if (result.success && result.orderConfirmed) {
+          // Meta Event: Purchase — fired ONLY when Shopify returns canonical order number; no synthetic IDs (keeps dedupe deterministic)
+          try {
+            if (result.orderNumber) {
+              const ids = (cart?.lines?.edges || []).map((e: any) => e.node.merchandise.id);
+              const totalNum = parseFloat(total || '0') || 0;
+              logPurchase({
+                orderId: String(result.orderNumber),
+                totalValue: totalNum,
+                contentIds: ids,
+                currency,
+              });
+            } else {
+              console.log('[Meta] Purchase skipped: orderConfirmed but no Shopify orderNumber returned');
+            }
+          } catch {}
           setConfirmedOrder({
             orderNumber: result.orderNumber || '—',
             customerFirstName: firstName.trim(),
