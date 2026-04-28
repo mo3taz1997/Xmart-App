@@ -9,9 +9,7 @@
     "scheme": "xmart",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1",
     "updates": {
       "url": "https://u.expo.dev/1dffc7fd-5630-4d31-9617-346eb6707de1"
     },
