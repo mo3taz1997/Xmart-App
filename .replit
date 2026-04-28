@@ -74,3 +74,9 @@ task = "shell.exec"
 args = "npm run expo:dev"
 waitForPort = 8081
 ensurePreviewReachable = "/status"
+
+[userenv]
+
+[userenv.shared]
+APPLE_TEAM_ID = "WMJ2XWFP53"
+ANDROID_SHA256_FINGERPRINT = "00:7D:2E:5F:97:A0:9D:7C:42:9A:BB:C0:EE:AC:17:7E:8A:2C:C8:E4:0E:6C:59:82:C8:DB:9B:CD:96:90:31:FB"
