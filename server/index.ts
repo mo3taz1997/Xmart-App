@@ -23,6 +23,20 @@ function setupCors(app: express.Application) {
   app.use((req, res, next) => {
     const origins = new Set<string>();
 
+    if (process.env.ALLOWED_ORIGINS) {
+      process.env.ALLOWED_ORIGINS.split(",").forEach((d) => {
+        origins.add(d.trim());
+      });
+    }
+
+    if (process.env.EXPO_PUBLIC_DOMAIN) {
+      origins.add(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
+    }
+
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      origins.add(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+    }
+
     if (process.env.REPLIT_DEV_DOMAIN) {
       origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
     }
@@ -387,8 +401,8 @@ const adminLoginPageHtml = `<!DOCTYPE html>
   const adminTemplatePath = path.resolve(process.cwd(), "server", "templates", "admin.html");
   const adminRawHtml = fs.readFileSync(adminTemplatePath, "utf-8");
   const isDev = process.env.NODE_ENV !== 'production';
-  const replitDomain = isDev ? (process.env.REPLIT_DEV_DOMAIN || "") : "";
-  const imageBase = replitDomain ? `https://${replitDomain}:5000` : "";
+  const devDomain = isDev ? (process.env.REPLIT_DEV_DOMAIN || "") : "";
+  const imageBase = devDomain ? `https://${devDomain}:5000` : "";
   const imageBaseScript = imageBase
     ? `<script>window.IMAGE_BASE = '${imageBase}';</script>`
     : "";
