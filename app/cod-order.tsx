@@ -576,23 +576,59 @@ export default function CodOrderScreen() {
     : (cartSubtotal || cartTotal || '0');
   const displayCurrency = isDirectBuy ? productCurrency : cartCurrency;
 
-  const { data: shippingRates } = useQuery({
-    queryKey: ['shipping-rates'],
-    queryFn: () => api.getShippingRates(),
-    staleTime: 10 * 60 * 1000,
+  const [shippingAddrKey, setShippingAddrKey] = useState({ city: '', address: '' });
+
+  const itemsForShipping = useMemo(() => {
+    if (isDirectBuy && selectedVariant) {
+      const base = [{ variantId: selectedVariant.id, quantity: productQty }];
+      upsellItems.forEach(u => base.push({ variantId: u.variantId, quantity: u.quantity }));
+      return base;
+    }
+    return lines
+      .filter((line: any) => !!line.merchandise?.id)
+      .map((line: any) => ({ variantId: line.merchandise.id, quantity: line.quantity || 1 }));
+  }, [isDirectBuy, selectedVariant, productQty, upsellItems, lines]);
+
+  const itemsHash = useMemo(
+    () => itemsForShipping.map(i => `${i.variantId}:${i.quantity}`).join('|'),
+    [itemsForShipping]
+  );
+
+  const { data: shippingRates, isFetching: isFetchingShipping } = useQuery({
+    queryKey: ['shipping-rates', itemsHash, shippingAddrKey.city, shippingAddrKey.address],
+    queryFn: () => {
+      if (itemsForShipping.length === 0) return Promise.resolve([]);
+      return api.getShippingRates({
+        items: itemsForShipping,
+        firstName: formValues.current.firstName,
+        lastName: formValues.current.lastName,
+        address: formValues.current.address,
+        city: formValues.current.city || 'Amman',
+        phone: formValues.current.phone,
+      });
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: itemsForShipping.length > 0,
   });
 
   const shipping = useMemo(() => {
     if (!shippingRates || shippingRates.length === 0) return { cost: '0', name: '' };
     const sub = parseFloat(rawSubtotal);
-    for (const rate of shippingRates) {
-      const min = rate.minSubtotal ?? 0;
-      const max = rate.maxSubtotal ?? Infinity;
-      if (sub >= min && sub <= max) {
-        return { cost: parseFloat(rate.price).toFixed(3), name: rate.name };
-      }
+    // New rates from draftOrderCalculate have minSubtotal/maxSubtotal = null → take first one.
+    // Legacy rates may have ranges → filter by subtotal.
+    const cheapest = shippingRates
+      .filter((r: any) => {
+        const min = r.minSubtotal ?? 0;
+        const max = r.maxSubtotal ?? Infinity;
+        return sub >= min && sub <= max;
+      })
+      .sort((a: any, b: any) => parseFloat(a.price) - parseFloat(b.price))[0];
+    if (cheapest) {
+      return { cost: parseFloat(cheapest.price).toFixed(3), name: cheapest.name };
     }
-    return { cost: '0', name: '' };
+    // Fallback: just take the first available rate
+    const first = shippingRates[0];
+    return { cost: parseFloat(first.price).toFixed(3), name: first.name };
   }, [shippingRates, rawSubtotal]);
 
   const shippingAmount = parseFloat(shipping.cost);
@@ -717,6 +753,18 @@ export default function CodOrderScreen() {
         'error'
       );
       scrollRef.current?.scrollTo({ y: 0, animated: true });
+      return false;
+    }
+
+    // Block confirm while shipping is being recalculated for the latest address
+    if (isFetchingShipping) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      showToast(
+        language === 'ar'
+          ? 'جاري حساب سعر التوصيل، يرجى الانتظار...'
+          : 'Calculating shipping rate, please wait...',
+        'info'
+      );
       return false;
     }
     return true;
@@ -1611,7 +1659,7 @@ export default function CodOrderScreen() {
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.address')} *</Text>
             <View style={[s.addressRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <ScrollableInput inputRef={addressRef} style={[s.input, s.addressInput, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.address && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.address} onChangeText={(v: string) => { formValues.current.address = v; if (fieldErrors.address) setFieldErrors(e => ({ ...e, address: false })); }} placeholder={t('checkout.addressPlaceholder')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
+              <ScrollableInput inputRef={addressRef} style={[s.input, s.addressInput, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.address && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.address} onChangeText={(v: string) => { formValues.current.address = v; if (fieldErrors.address) setFieldErrors(e => ({ ...e, address: false })); }} onBlurCb={() => setShippingAddrKey(p => p.address === formValues.current.address ? p : { ...p, address: formValues.current.address })} placeholder={t('checkout.addressPlaceholder')} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
               <Pressable
                 style={({ pressed }) => [s.locationIconBtn, { opacity: pressed ? 0.7 : 1 }]}
                 onPress={detectLocation}
@@ -1626,7 +1674,7 @@ export default function CodOrderScreen() {
             </View>
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.city')} *</Text>
-            <ScrollableInput inputRef={cityRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.city && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.city} onChangeText={(v: string) => { formValues.current.city = v; if (fieldErrors.city) setFieldErrors(e => ({ ...e, city: false })); }} placeholder={language === 'ar' ? 'المدينة' : 'City'} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
+            <ScrollableInput inputRef={cityRef} style={[s.input, { textAlign: isRTL ? 'right' : 'left' }, fieldErrors.city && { borderColor: '#E53935', borderWidth: 1.5 }]} defaultValue={formValues.current.city} onChangeText={(v: string) => { formValues.current.city = v; if (fieldErrors.city) setFieldErrors(e => ({ ...e, city: false })); }} onBlurCb={() => setShippingAddrKey(p => p.city === formValues.current.city ? p : { ...p, city: formValues.current.city })} placeholder={language === 'ar' ? 'المدينة' : 'City'} placeholderTextColor={colors.textMuted} returnKeyType="next" onSubmitEditing={() => notesRef.current?.focus()} />
 
             <Text style={[s.label, { textAlign: isRTL ? 'right' : 'left' }]}>{t('checkout.notes')}</Text>
             <ScrollableInput inputRef={notesRef} style={[s.input, s.textArea, { textAlign: isRTL ? 'right' : 'left', textAlignVertical: 'top' }]} defaultValue={formValues.current.notes} onChangeText={(v: string) => { formValues.current.notes = v; }} placeholder={t('checkout.notesPlaceholder')} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} />
