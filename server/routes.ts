@@ -2123,34 +2123,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/shipping-rates", async (req: Request, res: Response) => {
-    try {
-      const zones = await shopifyAdminFetch("shipping_zones.json");
-      const rates: Array<{ name: string; price: string; currency: string; minSubtotal: number | null; maxSubtotal: number | null }> = [];
-      for (const zone of zones.shipping_zones || []) {
-        for (const rate of zone.price_based_shipping_rates || []) {
-          rates.push({
-            name: rate.name,
-            price: rate.price,
-            currency: "JOD",
-            minSubtotal: rate.min_order_subtotal ?? null,
-            maxSubtotal: rate.max_order_subtotal ?? null,
-          });
-        }
-        for (const rate of zone.weight_based_shipping_rates || []) {
-          rates.push({
-            name: rate.name,
-            price: rate.price,
-            currency: "JOD",
-            minSubtotal: null,
-            maxSubtotal: null,
-          });
+  // Calculates shipping rates the same way the Shopify website checkout does:
+  // sends customer info + cart items to Shopify's draftOrderCalculate, which respects
+  // every shipping rule the merchant has set (Delivery Profiles, Markets, conditions, etc.)
+  let _cachedDefaultRates: { rates: any[]; expires: number } | null = null;
+
+  async function calculateShippingViaDraftOrder(
+    items: Array<{ variantId: string; quantity: number }>,
+    addr: { firstName?: string; lastName?: string; address1?: string; city?: string; phone?: string; zip?: string }
+  ): Promise<Array<{ name: string; price: string; currency: string; minSubtotal: null; maxSubtotal: null }>> {
+    const lineItems = items
+      .filter(it => it && it.variantId)
+      .map(it => ({
+        variantId: String(it.variantId).startsWith('gid://')
+          ? String(it.variantId)
+          : `gid://shopify/ProductVariant/${it.variantId}`,
+        quantity: Math.max(1, parseInt(String(it.quantity), 10) || 1),
+      }));
+
+    if (lineItems.length === 0) return [];
+
+    const query = `
+      mutation CalcShipping($input: DraftOrderInput!) {
+        draftOrderCalculate(input: $input) {
+          calculatedDraftOrder {
+            availableShippingRates {
+              handle
+              title
+              price { amount currencyCode }
+            }
+          }
+          userErrors { field message }
         }
       }
+    `;
+
+    const variables = {
+      input: {
+        lineItems,
+        shippingAddress: {
+          firstName: addr.firstName || "Customer",
+          lastName: addr.lastName || "Customer",
+          address1: addr.address1 || "Address",
+          city: addr.city || "Amman",
+          country: "Jordan",
+          countryCode: "JO",
+          phone: addr.phone || "+962790000000",
+          zip: addr.zip || "11118",
+        },
+      },
+    };
+
+    try {
+      const data = await shopifyAdminGraphQL(query, variables);
+      const errs = data?.draftOrderCalculate?.userErrors || [];
+      if (errs.length > 0) {
+        console.log("[ShippingRates] draftOrderCalculate userErrors:", JSON.stringify(errs));
+      }
+      const rates = data?.draftOrderCalculate?.calculatedDraftOrder?.availableShippingRates || [];
+      return rates.map((r: any) => ({
+        name: r.title,
+        price: parseFloat(r.price?.amount || "0").toFixed(3),
+        currency: r.price?.currencyCode || "JOD",
+        minSubtotal: null,
+        maxSubtotal: null,
+      }));
+    } catch (e: any) {
+      console.error("[ShippingRates] draftOrderCalculate error:", e?.message || e);
+      return [];
+    }
+  }
+
+  // Legacy GET: used by older app versions on Play Store / App Store.
+  // Uses a default product variant + Amman address to return the default shipping rate.
+  // Cached for 5 minutes to avoid hitting Shopify on every request.
+  app.get("/api/shipping-rates", async (req: Request, res: Response) => {
+    try {
+      if (_cachedDefaultRates && _cachedDefaultRates.expires > Date.now()) {
+        return res.json(_cachedDefaultRates.rates);
+      }
+
+      const productsData = await shopifyAdminFetch("products.json?limit=1&fields=id,variants");
+      const firstVariantId = productsData?.products?.[0]?.variants?.[0]?.id;
+
+      if (!firstVariantId) return res.json([]);
+
+      const rates = await calculateShippingViaDraftOrder(
+        [{ variantId: String(firstVariantId), quantity: 1 }],
+        { city: "Amman" }
+      );
+
+      _cachedDefaultRates = { rates, expires: Date.now() + 5 * 60 * 1000 };
       res.json(rates);
     } catch (error: any) {
-      console.error("Error fetching shipping rates:", error.message);
-      res.status(500).json({ error: error.message });
+      console.error("[ShippingRates GET] error:", error?.message || error);
+      res.status(500).json({ error: "Failed to fetch shipping rates" });
+    }
+  });
+
+  // POST: used by the current app. Accepts real cart items + customer address
+  // for accurate per-customer shipping rates from Shopify.
+  app.post("/api/shipping-rates", async (req: Request, res: Response) => {
+    try {
+      const { items, firstName, lastName, address, city, phone, zip } = req.body || {};
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.json([]);
+      }
+      if (items.length > 50) {
+        return res.status(400).json({ error: "Too many line items" });
+      }
+      const safeItems = items
+        .filter((it: any) => it && it.variantId)
+        .map((it: any) => ({
+          variantId: String(it.variantId),
+          quantity: Math.min(99, Math.max(1, parseInt(String(it.quantity), 10) || 1)),
+        }));
+      const rates = await calculateShippingViaDraftOrder(safeItems, {
+        firstName: firstName ? String(firstName).slice(0, 100) : undefined,
+        lastName: lastName ? String(lastName).slice(0, 100) : undefined,
+        address1: address ? String(address).slice(0, 200) : undefined,
+        city: city ? String(city).slice(0, 100) : undefined,
+        phone: phone ? String(phone).slice(0, 30) : undefined,
+        zip: zip ? String(zip).slice(0, 20) : undefined,
+      });
+      res.json(rates);
+    } catch (error: any) {
+      console.error("[ShippingRates POST] error:", error?.message || error);
+      res.status(500).json({ error: "Failed to fetch shipping rates" });
     }
   });
 
