@@ -576,34 +576,24 @@ export default function CodOrderScreen() {
     : (cartSubtotal || cartTotal || '0');
   const displayCurrency = isDirectBuy ? productCurrency : cartCurrency;
 
-  const shippingItems = useMemo(() => {
-    if (isDirectBuy && selectedVariant?.id) {
-      const arr = [{ variantId: selectedVariant.id, quantity: productQty }];
-      upsellItems.forEach(u => arr.push({ variantId: u.variantId, quantity: u.quantity }));
-      return arr;
-    }
-    return lines
-      .filter((l: any) => !!l.merchandise?.id)
-      .map((l: any) => ({ variantId: l.merchandise.id, quantity: l.quantity || 1 }));
-  }, [isDirectBuy, selectedVariant?.id, productQty, upsellItems, lines]);
-
-  const shippingItemsKey = useMemo(
-    () => shippingItems.map(i => `${i.variantId}x${i.quantity}`).join(','),
-    [shippingItems]
-  );
-
   const { data: shippingRates } = useQuery({
-    queryKey: ['shipping-rates', shippingItemsKey],
-    queryFn: () => api.getShippingRates({ items: shippingItems }),
-    enabled: shippingItems.length > 0,
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['shipping-rates'],
+    queryFn: () => api.getShippingRates(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const shipping = useMemo(() => {
     if (!shippingRates || shippingRates.length === 0) return { cost: '0', name: '' };
-    const rate = shippingRates[0];
-    return { cost: parseFloat(rate.price).toFixed(3), name: rate.name };
-  }, [shippingRates]);
+    const sub = parseFloat(rawSubtotal);
+    for (const rate of shippingRates) {
+      const min = rate.minSubtotal ?? 0;
+      const max = rate.maxSubtotal ?? Infinity;
+      if (sub >= min && sub <= max) {
+        return { cost: parseFloat(rate.price).toFixed(3), name: rate.name };
+      }
+    }
+    return { cost: '0', name: '' };
+  }, [shippingRates, rawSubtotal]);
 
   const shippingAmount = parseFloat(shipping.cost);
   const discountAmount = discountApplied ? parseFloat(discountApplied.discountAmount) : 0;

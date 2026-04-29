@@ -2123,101 +2123,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/shipping-rates", async (req: Request, res: Response) => {
+  app.get("/api/shipping-rates", async (req: Request, res: Response) => {
     try {
-      const { items, city, address, firstName, lastName, phone } = req.body || {};
-
-      if (!Array.isArray(items) || items.length === 0) {
-        return res.json([]);
-      }
-
-      const cartLines = items
-        .filter((it: any) => it && it.variantId)
-        .map((it: any) => ({
-          merchandiseId: it.variantId,
-          quantity: Math.max(1, parseInt(it.quantity, 10) || 1),
-        }));
-
-      if (cartLines.length === 0) return res.json([]);
-
-      const deliveryAddress: any = {
-        firstName: firstName || "Buyer",
-        lastName: lastName || "Buyer",
-        address1: address || "Address",
-        city: city || "Amman",
-        country: "Jordan",
-        phone: phone || "+962790000000",
-      };
-
-      const cartInput = {
-        lines: cartLines,
-        buyerIdentity: {
-          countryCode: "JO",
-          deliveryAddressPreferences: [{ deliveryAddress }],
-        },
-      };
-
-      const SHIPPING_QUERY = `
-        mutation CartCreateForShipping($input: CartInput!) {
-          cartCreate(input: $input) {
-            cart {
-              deliveryGroups(first: 5) {
-                edges {
-                  node {
-                    deliveryOptions {
-                      handle
-                      title
-                      estimatedCost { amount currencyCode }
-                    }
-                  }
-                }
-              }
-            }
-            userErrors { field message }
-          }
+      const zones = await shopifyAdminFetch("shipping_zones.json");
+      const rates: Array<{ name: string; price: string; currency: string; minSubtotal: number | null; maxSubtotal: number | null }> = [];
+      for (const zone of zones.shipping_zones || []) {
+        for (const rate of zone.price_based_shipping_rates || []) {
+          rates.push({
+            name: rate.name,
+            price: rate.price,
+            currency: "JOD",
+            minSubtotal: rate.min_order_subtotal ?? null,
+            maxSubtotal: rate.max_order_subtotal ?? null,
+          });
         }
-      `;
-
-      const data = await shopifyFetch(SHIPPING_QUERY, { input: cartInput });
-      const errs = data?.cartCreate?.userErrors || [];
-      if (errs.length > 0) {
-        console.log("[ShippingRates] cartCreate userErrors:", JSON.stringify(errs));
-      }
-
-      const groups = data?.cartCreate?.cart?.deliveryGroups?.edges || [];
-      const ratesMap = new Map<string, { name: string; price: number; currency: string }>();
-
-      for (const edge of groups) {
-        const opts = edge?.node?.deliveryOptions || [];
-        for (const opt of opts) {
-          const amount = parseFloat(opt?.estimatedCost?.amount || "0") || 0;
-          const currency = opt?.estimatedCost?.currencyCode || "JOD";
-          const key = `${opt?.title || "Standard Delivery"}__${currency}`;
-          const existing = ratesMap.get(key);
-          if (existing) {
-            existing.price += amount;
-          } else {
-            ratesMap.set(key, {
-              name: opt?.title || "Standard Delivery",
-              price: amount,
-              currency,
-            });
-          }
+        for (const rate of zone.weight_based_shipping_rates || []) {
+          rates.push({
+            name: rate.name,
+            price: rate.price,
+            currency: "JOD",
+            minSubtotal: null,
+            maxSubtotal: null,
+          });
         }
       }
-
-      const rates = Array.from(ratesMap.values())
-        .sort((a, b) => a.price - b.price)
-        .map(r => ({
-          name: r.name,
-          price: r.price.toFixed(3),
-          currency: r.currency,
-        }));
-
       res.json(rates);
     } catch (error: any) {
-      console.error("[ShippingRates] error:", error?.message || error);
-      res.status(500).json({ error: error?.message || "Shipping rate lookup failed" });
+      console.error("Error fetching shipping rates:", error.message);
+      res.status(500).json({ error: error.message });
     }
   });
 

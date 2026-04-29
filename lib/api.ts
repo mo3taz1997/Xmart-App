@@ -115,8 +115,7 @@ export const api = {
     request("PUT", "/api/customer/update", data, token),
   deleteAccount: (token: string) => request("DELETE", "/api/customer", undefined, token),
 
-  getShippingRates: (data: { items: Array<{ variantId: string; quantity: number }>; city?: string; address?: string; firstName?: string; lastName?: string; phone?: string }) =>
-    request("POST", "/api/shipping-rates", data),
+  getShippingRates: () => request("GET", "/api/shipping-rates"),
   validateDiscount: (code: string, cartId: string, items?: Array<{ variantId: string; quantity: number }>) => request("POST", "/api/validate-discount", { code, cartId, items }),
 
   placeOrder: (data: {
