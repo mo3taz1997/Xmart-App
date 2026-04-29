@@ -2194,31 +2194,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Legacy GET: used by older app versions on Play Store / App Store.
-  // Uses a default product variant + Amman address to return the default shipping rate.
-  // Cached for 5 minutes to avoid hitting Shopify on every request.
-  app.get("/api/shipping-rates", async (req: Request, res: Response) => {
-    try {
-      if (_cachedDefaultRates && _cachedDefaultRates.expires > Date.now()) {
-        return res.json(_cachedDefaultRates.rates);
-      }
-
-      const productsData = await shopifyAdminFetch("products.json?limit=1&fields=id,variants");
-      const firstVariantId = productsData?.products?.[0]?.variants?.[0]?.id;
-
-      if (!firstVariantId) return res.json([]);
-
-      const rates = await calculateShippingViaDraftOrder(
-        [{ variantId: String(firstVariantId), quantity: 1 }],
-        { city: "Amman" }
-      );
-
-      _cachedDefaultRates = { rates, expires: Date.now() + 5 * 60 * 1000 };
-      res.json(rates);
-    } catch (error: any) {
-      console.error("[ShippingRates GET] error:", error?.message || error);
-      res.status(500).json({ error: "Failed to fetch shipping rates" });
-    }
+  // Legacy GET: kept ONLY for older installed app versions that still call this endpoint
+  // without sending cart items + address. Returns an empty array so old apps fall through
+  // to "free shipping" (preserves their original behavior). Accurate per-customer rates
+  // require the POST endpoint below, which the latest app version uses.
+  app.get("/api/shipping-rates", async (_req: Request, res: Response) => {
+    res.json([]);
   });
 
   // POST: used by the current app. Accepts real cart items + customer address
