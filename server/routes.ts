@@ -2126,7 +2126,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calculates shipping rates the same way the Shopify website checkout does:
   // sends customer info + cart items to Shopify's draftOrderCalculate, which respects
   // every shipping rule the merchant has set (Delivery Profiles, Markets, conditions, etc.)
-  let _cachedDefaultRates: { rates: any[]; expires: number } | null = null;
+  let _cachedLegacyRates: { rates: any[]; expires: number } | null = null;
+  let _legacyDiscoverInFlight: Promise<any[]> | null = null;
+
+  // Probes Shopify's draftOrderCalculate with custom-priced line items at multiple subtotals
+  // to discover the merchant's actual shipping rules (free shipping thresholds, tiered pricing, etc.).
+  // Builds a list of rate brackets the legacy app can consume — every value comes from Shopify.
+  async function discoverShippingBrackets(): Promise<Array<{ name: string; price: string; currency: string; minSubtotal: number; maxSubtotal: number | null }>> {
+    const mutation = `
+      mutation Calc($input: DraftOrderInput!) {
+        draftOrderCalculate(input: $input) {
+          calculatedDraftOrder {
+            availableShippingRates { title price { amount currencyCode } }
+          }
+          userErrors { field message }
+        }
+      }`;
+
+    const probeAt = async (amount: number): Promise<{ name: string; price: string; currency: string } | null> => {
+      try {
+        const data = await shopifyAdminGraphQL(mutation, {
+          input: {
+            lineItems: [{
+              title: "Probe",
+              originalUnitPrice: amount.toFixed(2),
+              quantity: 1,
+              requiresShipping: true,
+            }],
+            shippingAddress: {
+              firstName: "Probe", lastName: "Probe",
+              address1: "Address", city: "Amman",
+              country: "Jordan", countryCode: "JO",
+              phone: "+962790000000", zip: "11118",
+            },
+          },
+        });
+        const rates = data?.draftOrderCalculate?.calculatedDraftOrder?.availableShippingRates || [];
+        if (rates.length === 0) return null;
+        // Pick the cheapest available rate at this subtotal (matches what the website checkout shows by default)
+        const sorted = [...rates].sort((a: any, b: any) => parseFloat(a.price?.amount || "0") - parseFloat(b.price?.amount || "0"));
+        const r = sorted[0];
+        return {
+          name: r.title,
+          price: parseFloat(r.price?.amount || "0").toFixed(3),
+          currency: r.price?.currencyCode || "JOD",
+        };
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const sameRate = (a: any, b: any) => a && b && a.name === b.name && a.price === b.price && a.currency === b.currency;
+
+    // Initial wide probes
+    const probes = [1, 10, 20, 35, 50, 75, 150, 300, 600];
+    const samples: Array<{ amount: number; rate: any }> = [];
+    for (const amt of probes) {
+      samples.push({ amount: amt, rate: await probeAt(amt) });
+    }
+
+    // Group consecutive samples with the same rate into segments
+    type Seg = { rate: any; lo: number; hi: number };
+    const segments: Seg[] = [];
+    for (const s of samples) {
+      const last = segments[segments.length - 1];
+      if (last && sameRate(last.rate, s.rate)) {
+        last.hi = s.amount;
+      } else {
+        segments.push({ rate: s.rate, lo: s.amount, hi: s.amount });
+      }
+    }
+
+    // Refine boundaries between segments via binary search (down to 0.01 precision)
+    for (let i = 0; i < segments.length - 1; i++) {
+      let lo = segments[i].hi;
+      let hi = segments[i + 1].lo;
+      while (hi - lo > 0.01) {
+        const mid = Math.round(((lo + hi) / 2) * 100) / 100;
+        const r = await probeAt(mid);
+        if (sameRate(r, segments[i].rate)) lo = mid;
+        else hi = mid;
+      }
+      segments[i].hi = lo;
+      segments[i + 1].lo = hi;
+    }
+
+    // Build the rate list in the legacy format the old app expects.
+    // Order matters: the old app picks the FIRST rate whose [min, max] range matches the cart subtotal.
+    // We emit cheapest-first so free/cheap rates are picked when the customer qualifies.
+    const ordered = segments
+      .filter(s => s.rate)
+      .map((s, idx, arr) => ({
+        name: s.rate.name as string,
+        price: s.rate.price as string,
+        currency: s.rate.currency as string,
+        minSubtotal: idx === 0 ? 0 : s.lo,
+        maxSubtotal: idx === arr.length - 1 ? null : s.hi,
+        _priceNum: parseFloat(s.rate.price),
+      }))
+      .sort((a, b) => a._priceNum - b._priceNum)
+      .map(({ _priceNum, ...rest }) => rest);
+
+    return ordered;
+  }
 
   async function calculateShippingViaDraftOrder(
     items: Array<{ variantId: string; quantity: number }>,
@@ -2194,12 +2296,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Legacy GET: kept ONLY for older installed app versions that still call this endpoint
-  // without sending cart items + address. Returns an empty array so old apps fall through
-  // to "free shipping" (preserves their original behavior). Accurate per-customer rates
-  // require the POST endpoint below, which the latest app version uses.
+  // Legacy GET: used by older installed app versions on customer phones.
+  // Discovers the merchant's actual shipping rules from Shopify (no hardcoded values)
+  // and returns rate brackets the legacy app filters by cart subtotal.
+  // Cached for 1 hour; refreshed in the background on the next request after expiry.
   app.get("/api/shipping-rates", async (_req: Request, res: Response) => {
-    res.json([]);
+    try {
+      const now = Date.now();
+      if (_cachedLegacyRates && _cachedLegacyRates.expires > now) {
+        return res.json(_cachedLegacyRates.rates);
+      }
+      if (!_legacyDiscoverInFlight) {
+        _legacyDiscoverInFlight = discoverShippingBrackets()
+          .then(rates => {
+            _cachedLegacyRates = { rates, expires: Date.now() + 60 * 60 * 1000 };
+            return rates;
+          })
+          .catch(err => {
+            console.error("[ShippingRates GET] discovery failed:", err?.message || err);
+            return _cachedLegacyRates?.rates || [];
+          })
+          .finally(() => { _legacyDiscoverInFlight = null; });
+      }
+      const rates = await _legacyDiscoverInFlight;
+      res.json(rates);
+    } catch (error: any) {
+      console.error("[ShippingRates GET] error:", error?.message || error);
+      res.json(_cachedLegacyRates?.rates || []);
+    }
   });
 
   // POST: used by the current app. Accepts real cart items + customer address
