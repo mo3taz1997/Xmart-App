@@ -3,7 +3,7 @@
     "name": "XMART",
     "slug": "xmart-smart-online-shopping",
     "owner": "mo3taz_97m",
-    "version": "2.3.3",
+    "version": "2.3.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "xmart",
@@ -22,7 +22,7 @@
       "icon": "./assets/images/icon-1024.png",
       "supportsTablet": false,
       "bundleIdentifier": "com.xmart.jo",
-      "buildNumber": "13",
+      "buildNumber": "14",
       "associatedDomains": [
         "applinks:product.xmart.me"
       ],
@@ -45,7 +45,7 @@
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 15,
+      "versionCode": 16,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "com.google.android.gms.permission.AD_ID",
