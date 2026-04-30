@@ -22,7 +22,7 @@
       "icon": "./assets/images/icon-1024.png",
       "supportsTablet": false,
       "bundleIdentifier": "com.xmart.jo",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "associatedDomains": [
         "applinks:product.xmart.me"
       ],
@@ -45,7 +45,7 @@
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 17,
+      "versionCode": 18,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "com.google.android.gms.permission.AD_ID",
