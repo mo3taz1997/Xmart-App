@@ -31,7 +31,7 @@
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.0",
-    "eas-cli": "^18.8.1",
+    "eas-cli": "^18.9.1",
     "expo": "~54.0.27",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
