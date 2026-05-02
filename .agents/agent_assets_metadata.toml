@@ -6,3 +6,27 @@ id = "0AirEoYngzRN5ga5wBm3v"
 uri = "file://icon-preview-50.png"
 type = "image"
 title = "معاينة الأيقونة 50% — كيف رح تطلع على الجوال"
+
+[[outputs]]
+id = "Ce7gxhhdNDrH4Elj9tLC1"
+uri = "file://preview-1-icon.png"
+type = "image"
+title = "1) icon.png الفعلي (للـ iOS وlegacy)"
+
+[[outputs]]
+id = "u8rgK-ilcyGAJACfP-wE6"
+uri = "file://preview-2-adaptive-full.png"
+type = "image"
+title = "2) Adaptive icon كامل (foreground + background) قبل القناع"
+
+[[outputs]]
+id = "Ms8ZJVOTjrEgXGlVbrebd"
+uri = "file://preview-3-on-pixel.png"
+type = "image"
+title = "3) كيف بتطلع على Pixel (دائري)"
+
+[[outputs]]
+id = "jGn7HbDUUno162Mw05Xxa"
+uri = "file://preview-4-on-samsung.png"
+type = "image"
+title = "4) كيف بتطلع على Samsung (squircle)"
