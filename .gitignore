@@ -39,3 +39,7 @@ yarn-error.*
 .vercel
 
 .env
+
+# EAS credentials (contain keystore passwords - never commit)
+credentials.json
+credentials/
