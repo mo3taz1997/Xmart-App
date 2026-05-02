@@ -1,0 +1,37 @@
+App signing
+
+App signing key certificate
+This is the public certificate for the app signing key that Google uses to sign each of your releases. Use it to register your key with API providers. The app signing key itself is not accessible, and is kept on a secure Google server.
+MD5 certificate fingerprint
+6F:36:B6:C6:0E:1E:DD:F6:80:70:00:5D:D6:BA:28:AB
+SHA-1 certificate fingerprint
+80:D0:E2:2E:D2:4D:1D:D2:FE:C8:90:AF:81:F5:0A:5D:E1:9C:C3:09
+SHA-256 certificate fingerprint
+DA:BA:09:0C:C9:99:58:6C:C3:2B:38:FF:01:DE:3F:FD:4A:4F:F7:CE:DE:06:DF:8D:AD:75:8B:9E:6F:47:0D:21
+Upgrade your app signing key
+Your current app signing key's encryption strength meets or exceeds Google Play's recommended minimum standard
+Once annually, you can upgrade your app signing key to move your users to a new key. Learn more
+
+Upload key certificate
+This is the public certificate for your private upload key. Use your upload key to sign each release so that Google knows updates are from you. Use the certificate below to register your upload key with API providers.
+MD5 certificate fingerprint
+6E:78:26:CB:01:98:28:4A:FF:41:01:1F:0A:17:9B:57
+SHA-1 certificate fingerprint
+6F:5F:B1:44:E7:A6:B4:A5:CC:7E:8F:AD:00:69:1A:7F:80:91:B7:E0
+SHA-256 certificate fingerprint
+51:87:F1:BB:1B:BD:A0:A2:33:B0:8C:42:9C:71:E2:F3:99:D9:0A:69:06:23:0B:66:6D:58:7E:A8:21:94:ED:63
+Request upload key reset
+To start using a new upload certificate, request an upload key reset
+Digital Asset Links JSON
+To associate your app with a website domain, copy and paste this snippet into your Digital Asset Links JSON file. If you already have a non-empty JSON file, merge this snippet with the existing statements according to documentation. Digital Asset Links JSON file is required if you want to use Android App Links to direct mobile web users to your app. Learn more
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.xmart.jo",
+      "sha256_cert_fingerprints":
+        ["DA:BA:09:0C:C9:99:58:6C:C3:2B:38:FF:01:DE:3F:FD:4A:4F:F7:CE:DE:06:DF:8D:AD:75:8B:9E:6F:47:0D:21"]
+    }
+  }
+]
