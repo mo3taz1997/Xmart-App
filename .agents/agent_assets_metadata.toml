@@ -36,3 +36,9 @@ id = "LpQ-ftSaWBUJPrbaLa4St"
 uri = "file://preview-ios-vs-android.png"
 type = "image"
 title = "معاينة: iOS 45% vs Android 30% — بتطلع بنفس الحجم بصرياً"
+
+[[outputs]]
+id = "XPcnLCwD8vIosfrFJvT9y"
+uri = "file://public_downloads/upload-certificate.pem.txt"
+type = "text"
+title = "Upload Certificate (PEM) - للرفع على Google Play"
