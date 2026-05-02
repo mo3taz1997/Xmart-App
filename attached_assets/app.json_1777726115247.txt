@@ -1,0 +1,1 @@
+{"expo":{"name":"XMART","slug":"xmart","ios":{"bundleIdentifier":"com.xmart.jo"},"extra":{"eas":{"projectId":"3e6b6783-234b-4908-9292-c1396a2444f9"}}}}
