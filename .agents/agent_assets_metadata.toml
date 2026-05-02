@@ -30,3 +30,9 @@ id = "jGn7HbDUUno162Mw05Xxa"
 uri = "file://preview-4-on-samsung.png"
 type = "image"
 title = "4) كيف بتطلع على Samsung (squircle)"
+
+[[outputs]]
+id = "LpQ-ftSaWBUJPrbaLa4St"
+uri = "file://preview-ios-vs-android.png"
+type = "image"
+title = "معاينة: iOS 45% vs Android 30% — بتطلع بنفس الحجم بصرياً"
