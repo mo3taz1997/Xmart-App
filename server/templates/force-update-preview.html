@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Force Update Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+  body { display: flex; gap: 40px; padding: 40px; background: #1a2438; min-height: 100vh; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .phone { width: 360px; height: 720px; background: #0B1A2E; border-radius: 40px; border: 8px solid #222; position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .phone-light { background: #F5F7FA; }
+  .label { color: white; font-weight: 700; font-size: 18px; text-align: center; margin-bottom: 12px; }
+  .backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card { width: 100%; max-width: 320px; background: #0B1A2E; border: 1px solid #1E3A5F; border-radius: 20px; padding: 24px; text-align: center; }
+  .card-light { background: #FFFFFF; border-color: #D8E0EA; }
+  .icon-wrap { width: 72px; height: 72px; border-radius: 36px; background: rgba(36, 140, 204, 0.15); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 36px; }
+  .title { font-weight: 700; font-size: 22px; margin-bottom: 12px; color: #FFFFFF; }
+  .title-light { color: #163259; }
+  .message { font-weight: 400; font-size: 15px; line-height: 1.5; margin-bottom: 24px; color: #A0B4CC; }
+  .message-light { color: #4A6580; }
+  .btn-primary { display: block; width: 100%; padding: 14px; background: #248CCC; color: white; border-radius: 12px; font-weight: 700; font-size: 16px; border: none; cursor: pointer; margin-bottom: 12px; }
+  .btn-secondary { padding: 10px 16px; color: #A0B4CC; font-weight: 600; font-size: 14px; background: transparent; border: none; cursor: pointer; }
+  .btn-secondary-light { color: #4A6580; }
+  .col { display: flex; flex-direction: column; }
+  .header { color: #248CCC; font-weight: 700; font-size: 22px; text-align: center; margin-bottom: 20px; width: 100%; }
+</style>
+</head>
+<body>
+  <div style="width:100%;text-align:center;color:white;font-size:28px;font-weight:700;margin-bottom:30px;">معاينة شاشة التحديث</div>
+
+  <div class="col">
+    <div class="label">⚠️ تحديث إجباري (Force)</div>
+    <div class="phone">
+      <div class="backdrop">
+        <div class="card">
+          <div class="icon-wrap">⬆️</div>
+          <div class="title">تحديث متوفر</div>
+          <div class="message">يتوفر إصدار جديد من تطبيق Xmart بمزايا وتحسينات جديدة. يرجى التحديث للاستمرار.</div>
+          <button class="btn-primary">تحديث الآن</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label">💡 تحديث اختياري (Optional)</div>
+    <div class="phone">
+      <div class="backdrop">
+        <div class="card">
+          <div class="icon-wrap">⬆️</div>
+          <div class="title">تحديث متوفر</div>
+          <div class="message">يتوفر إصدار جديد من تطبيق Xmart. ننصحك بالتحديث للاستفادة من آخر التحسينات.</div>
+          <button class="btn-primary">تحديث الآن</button>
+          <button class="btn-secondary">لاحقاً</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label">☀️ الوضع النهاري</div>
+    <div class="phone phone-light">
+      <div class="backdrop">
+        <div class="card card-light">
+          <div class="icon-wrap">⬆️</div>
+          <div class="title title-light">تحديث متوفر</div>
+          <div class="message message-light">يتوفر إصدار جديد من تطبيق Xmart. ننصحك بالتحديث للاستفادة من آخر التحسينات.</div>
+          <button class="btn-primary">تحديث الآن</button>
+          <button class="btn-secondary btn-secondary-light">لاحقاً</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

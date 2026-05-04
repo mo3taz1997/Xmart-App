@@ -700,6 +700,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/preview/force-update", async (_req: Request, res: Response) => {
+    const path = await import("path");
+    res.sendFile(path.resolve(process.cwd(), "server", "templates", "force-update-preview.html"));
+  });
+
   app.get("/api/app-version", async (_req: Request, res: Response) => {
     try {
       const rows = await db.select().from(appSettings);
