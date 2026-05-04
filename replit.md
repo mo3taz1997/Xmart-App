@@ -152,6 +152,20 @@ Preferred communication style: Simple, everyday language (Arabic).
 - **Keystore**: `credentials/android/keystore.jks` (gitignored), keyAlias `de52ad50fa775ae8d96c099131c5f9be`. Credentials in `credentials.json` (gitignored).
 - **After May 4**: bump versionCode 22→23 in app.json, run `npx eas-cli build --platform android --profile production`, then upload AAB via Play Console.
 
+### Force Update Feature (added May 4, 2026)
+- **Component**: `components/ForceUpdateModal.tsx` — bilingual (AR/EN) modal shown on app launch.
+- **Wired in**: `app/_layout.tsx` inside `RootLayoutNav`, alongside other overlays.
+- **Backend endpoint**: `GET /api/app-version` (in `server/routes.ts`) — reads from `app_settings` table.
+- **Native version source**: `expo-application` → `Application.nativeBuildVersion` (matches versionCode on Android, buildNumber on iOS).
+- **Settings keys** (in `app_settings` table — set via `PUT /api/admin/settings`):
+  - `min_android_version_code` (number) — show modal if device versionCode < this
+  - `min_ios_build_number` (number) — show modal if device buildNumber < this
+  - `force_update_enabled` ("true"/"false") — if true, hides "Later" button (mandatory update)
+  - `play_store_url` (optional) — defaults to `https://play.google.com/store/apps/details?id=com.xmart.jo`
+  - `app_store_url` (optional) — defaults to `https://apps.apple.com/app/id6760316670`
+- **Web safe**: returns null on `Platform.OS === 'web'`.
+- **Activation flow**: After new build (e.g. vc 23) is approved on stores, set `min_android_version_code=23` and `force_update_enabled=true` to force older users to update. Button opens correct store via `Linking.openURL`.
+
 ### Hard Rules
 - Never run EAS CLI directly from agent shell — user runs `npx eas ...` from local Shell.
 - Never add `android/` to `.easignore` (breaks Facebook SDK build).

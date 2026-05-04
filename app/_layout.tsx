@@ -28,6 +28,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useFonts, Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold } from "@expo-google-fonts/cairo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ForceUpdateModal } from "@/components/ForceUpdateModal";
 import { queryClient } from "@/lib/query-client";
 import { initMetaSdk, requestTrackingPermission, logAppOpen } from "@/lib/meta-events";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -328,6 +329,7 @@ function RootLayoutNav() {
       {showSplash && <AppSplashScreen onFinish={handleSplashFinish} />}
       <ThemeSwitchOverlay />
       <LanguageSwitchOverlay />
+      <ForceUpdateModal />
       <Stack
         screenOptions={{
           headerShown: false,

@@ -700,6 +700,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/app-version", async (_req: Request, res: Response) => {
+    try {
+      const rows = await db.select().from(appSettings);
+      const map: Record<string, string> = {};
+      rows.forEach((s) => { map[s.key] = s.value; });
+      res.json({
+        minAndroidVersionCode: parseInt(map.min_android_version_code || "0", 10) || 0,
+        minIosBuildNumber: parseInt(map.min_ios_build_number || "0", 10) || 0,
+        latestAndroidVersion: map.latest_android_version || "",
+        latestIosVersion: map.latest_ios_version || "",
+        forceUpdate: map.force_update_enabled === "true",
+        playStoreUrl: map.play_store_url || "https://play.google.com/store/apps/details?id=com.xmart.jo",
+        appStoreUrl: map.app_store_url || "https://apps.apple.com/app/id6760316670",
+      });
+    } catch (error: any) {
+      res.json({
+        minAndroidVersionCode: 0,
+        minIosBuildNumber: 0,
+        forceUpdate: false,
+        playStoreUrl: "https://play.google.com/store/apps/details?id=com.xmart.jo",
+        appStoreUrl: "https://apps.apple.com/app/id6760316670",
+      });
+    }
+  });
+
   app.get("/api/cart/:cartId", async (req: Request, res: Response) => {
     try {
       const { cartId } = req.params;
