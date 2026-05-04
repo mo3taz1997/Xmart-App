@@ -649,6 +649,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span data-i18n="الإعدادات العامة">الإعدادات العامة</span>
     </div>
+    <div class="nav-item" data-page="force-update" onclick="showPage('force-update')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="تحديث التطبيق">تحديث التطبيق</span>
+    </div>
     <div class="nav-item" data-page="admin-security" onclick="showPage('admin-security')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <span data-i18n="الأمان وكلمة المرور">الأمان وكلمة المرور</span>
@@ -930,6 +934,83 @@
           <input type="text" id="settingAnnouncementEn" placeholder="Free shipping on orders over 50 JOD">
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="page-force-update" style="display:none;">
+    <div class="page-header">
+      <h1 data-i18n="إعدادات تحديث التطبيق">إعدادات تحديث التطبيق</h1>
+      <button class="btn btn-primary" onclick="saveForceUpdateSettings()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span data-i18n="حفظ الإعدادات">حفظ الإعدادات</span>
+      </button>
+    </div>
+
+    <div class="card" style="background:#fff8e1;border:1px solid #ffd54f;">
+      <h3 style="color:#e65100;margin-bottom:8px;">⚠️ <span data-i18n="تنبيه مهم">تنبيه مهم</span></h3>
+      <p style="font-size:13px;color:#555;line-height:1.7;" data-i18n="عند تفعيل التحديث الإجباري، أي مستخدم عنده نسخة أقل من الحد الأدنى المحدد لن يستطيع استخدام التطبيق حتى يحدّث من المتجر. تأكد من رفع البيلد الجديد على Google Play و App Store قبل تفعيل هذه الميزة.">عند تفعيل التحديث الإجباري، أي مستخدم عنده نسخة أقل من الحد الأدنى المحدد لن يستطيع استخدام التطبيق حتى يحدّث من المتجر. تأكد من رفع البيلد الجديد على Google Play و App Store قبل تفعيل هذه الميزة.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 data-i18n="حالة التحديث">حالة التحديث</h3>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+        <label style="position:relative;display:inline-block;width:54px;height:30px;margin:0;">
+          <input type="checkbox" id="fuEnabled" style="opacity:0;width:0;height:0;" onchange="toggleFuSwitch()">
+          <span id="fuEnabledSlider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:30px;transition:.3s;">
+            <span style="position:absolute;height:24px;width:24px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;" id="fuEnabledDot"></span>
+          </span>
+        </label>
+        <div>
+          <div style="font-weight:600;font-size:14px;" data-i18n="تفعيل التحديث الإجباري">تفعيل التحديث الإجباري</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;" data-i18n="عند الإيقاف، لن تظهر شاشة التحديث للمستخدمين">عند الإيقاف، لن تظهر شاشة التحديث للمستخدمين</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>📱 <span data-i18n="إعدادات Android">إعدادات Android</span></h3>
+      </div>
+      <div class="settings-grid">
+        <div class="form-group">
+          <label data-i18n="الحد الأدنى لرقم النسخة (Version Code)">الحد الأدنى لرقم النسخة (Version Code)</label>
+          <input type="number" id="fuMinAndroid" placeholder="23" min="1">
+          <p style="font-size:12px;color:#888;margin-top:6px;" data-i18n="أي مستخدم عنده Version Code أقل من هذا الرقم سيُجبر على التحديث. (الحالي في app.json: 23)">أي مستخدم عنده Version Code أقل من هذا الرقم سيُجبر على التحديث. (الحالي في app.json: 23)</p>
+        </div>
+        <div class="form-group">
+          <label data-i18n="رابط Google Play">رابط Google Play</label>
+          <input type="text" id="fuPlayStoreUrl" placeholder="https://play.google.com/store/apps/details?id=com.xmart.jo">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>🍎 <span data-i18n="إعدادات iOS">إعدادات iOS</span></h3>
+      </div>
+      <div class="settings-grid">
+        <div class="form-group">
+          <label data-i18n="الحد الأدنى لرقم البيلد (Build Number)">الحد الأدنى لرقم البيلد (Build Number)</label>
+          <input type="number" id="fuMinIos" placeholder="20" min="1">
+          <p style="font-size:12px;color:#888;margin-top:6px;" data-i18n="أي مستخدم عنده Build Number أقل من هذا الرقم سيُجبر على التحديث. (الحالي في app.json: 20)">أي مستخدم عنده Build Number أقل من هذا الرقم سيُجبر على التحديث. (الحالي في app.json: 20)</p>
+        </div>
+        <div class="form-group">
+          <label data-i18n="رابط App Store">رابط App Store</label>
+          <input type="text" id="fuAppStoreUrl" placeholder="https://apps.apple.com/app/id6760316670">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:#e8f5e9;border:1px solid #81c784;">
+      <h3 style="color:#2e7d32;margin-bottom:8px;">💡 <span data-i18n="كيف تستخدم هذه الإعدادات">كيف تستخدم هذه الإعدادات</span></h3>
+      <ol style="font-size:13px;color:#555;line-height:1.9;padding-right:20px;">
+        <li data-i18n="ارفع البيلد الجديد على Google Play / App Store وانتظر حتى يتم نشره.">ارفع البيلد الجديد على Google Play / App Store وانتظر حتى يتم نشره.</li>
+        <li data-i18n="حدّث الحد الأدنى لرقم النسخة هنا (مثلاً 23 للأندرويد).">حدّث الحد الأدنى لرقم النسخة هنا (مثلاً 23 للأندرويد).</li>
+        <li data-i18n="فعّل خيار التحديث الإجباري واحفظ.">فعّل خيار التحديث الإجباري واحفظ.</li>
+        <li data-i18n="المستخدمون اللي عندهم نسخة قديمة سيرون شاشة التحديث فوراً.">المستخدمون اللي عندهم نسخة قديمة سيرون شاشة التحديث فوراً.</li>
+      </ol>
     </div>
   </div>
 
@@ -3629,6 +3710,43 @@ async function loadSettings() {
   showLogoPreview(settings.logoUrl, 'light');
   showLogoPreview(settings.logoDarkUrl, 'dark');
   updateSidebarLogo();
+  // Force update settings
+  document.getElementById('fuMinAndroid').value = settings.min_android_version_code || '';
+  document.getElementById('fuMinIos').value = settings.min_ios_build_number || '';
+  document.getElementById('fuPlayStoreUrl').value = settings.play_store_url || 'https://play.google.com/store/apps/details?id=com.xmart.jo';
+  document.getElementById('fuAppStoreUrl').value = settings.app_store_url || 'https://apps.apple.com/app/id6760316670';
+  const enabled = settings.force_update_enabled === 'true';
+  document.getElementById('fuEnabled').checked = enabled;
+  applyFuSwitchUI(enabled);
+}
+
+function applyFuSwitchUI(on) {
+  const slider = document.getElementById('fuEnabledSlider');
+  const dot = document.getElementById('fuEnabledDot');
+  if (!slider || !dot) return;
+  slider.style.background = on ? '#248CCC' : '#ccc';
+  dot.style.left = on ? '27px' : '3px';
+}
+
+function toggleFuSwitch() {
+  applyFuSwitchUI(document.getElementById('fuEnabled').checked);
+}
+
+async function saveForceUpdateSettings() {
+  const body = {
+    min_android_version_code: document.getElementById('fuMinAndroid').value.trim() || '0',
+    min_ios_build_number: document.getElementById('fuMinIos').value.trim() || '0',
+    play_store_url: document.getElementById('fuPlayStoreUrl').value.trim(),
+    app_store_url: document.getElementById('fuAppStoreUrl').value.trim(),
+    force_update_enabled: document.getElementById('fuEnabled').checked ? 'true' : 'false',
+  };
+  try {
+    await api('PUT', '/api/admin/settings', body);
+    Object.assign(settings, body);
+    showToast(adminLang === 'en' ? 'Update settings saved' : 'تم حفظ إعدادات التحديث بنجاح');
+  } catch (e) {
+    showToast(adminLang === 'en' ? 'Error saving settings' : 'حدث خطأ في حفظ الإعدادات', true);
+  }
 }
 
 function showLogoPreview(url, mode) {
