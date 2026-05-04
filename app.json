@@ -45,7 +45,7 @@
     },
     "android": {
       "package": "com.xmart.jo",
-      "versionCode": 22,
+      "versionCode": 23,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "com.google.android.gms.permission.AD_ID",
