@@ -128,6 +128,36 @@ Preferred communication style: Simple, everyday language (Arabic).
 - **Dedupe**: `purchasedOrderIds` Set persisted to AsyncStorage (`@meta_purchased_order_ids_v1`, capped at 200). Survives app relaunch.
 - **Build & validate**: After merge, run `npm run server:build` (esbuild) before deploy. Test events via Meta Events Manager → Test Events using device IDFA/IDFV.
 
+## Publishing State (May 2026) — CRITICAL
+
+### iOS — App Store
+- **Bundle ID**: `com.xmart.jo` | **App ID**: `6760316670` | **Team**: `WMJ2XWFP53` (Speed Of Excellence E-Commerce LLC)
+- **Apple ID**: development@xmart.me | **Distribution Cert**: `JGNX3HQPAJ` | **Cert Password**: `xmart2026`
+- **ASC API Key**: `622NA8R3C7` (saved on EAS, role: ADMIN, name: `[Expo] EAS Submit eAc5okNK9J`)
+- **Last Build**: `ed19e6fd-4e03-4b3e-8128-ef417c6f9b96` — version 2.3.0 (build 20) — uploaded to TestFlight ✅ May 2, 2026
+- **Status**: Build 20 "Ready to Submit" in TestFlight. User filling App Privacy form before Submit for Review.
+- **App Privacy answers** (must match — Facebook SDK detected by Apple):
+  - Collect data: **YES**
+  - Contact Info: ☑ Name, Email, Phone, Physical Address (NOT "Other")
+  - Identifiers: ☑ User ID, ☑ **Device ID** (FB SDK)
+  - Purchases: ☑ Purchases
+  - Usage Data: ☑ **Product Interaction**, ☑ **Advertising Data** (FB SDK)
+  - Location: ❌ NONE (app doesn't use GPS)
+  - Tracking="Yes" for: Device ID, Advertising Data, Product Interaction, Purchases
+
+### Android — Google Play
+- **Package**: `com.xmart.jo`
+- **Upload Key Reset**: APPROVED by Google. New key SHA1 `6C:BD:15:DD:55:50:8D:5F:26:4F:6F:F9:C9:16:88:C8:84:23:A7:E1` becomes active **May 4, 2026 at 3:02 PM UTC** (6:02 PM Jordan time).
+- **Until May 4**: Google rejects all AAB uploads. DO NOT attempt.
+- **Keystore**: `credentials/android/keystore.jks` (gitignored), keyAlias `de52ad50fa775ae8d96c099131c5f9be`. Credentials in `credentials.json` (gitignored).
+- **After May 4**: bump versionCode 22→23 in app.json, run `npx eas-cli build --platform android --profile production`, then upload AAB via Play Console.
+
+### Hard Rules
+- Never run EAS CLI directly from agent shell — user runs `npx eas ...` from local Shell.
+- Never add `android/` to `.easignore` (breaks Facebook SDK build).
+- Never commit `credentials.json` or `credentials/` (already gitignored).
+- Git remote is `github` not `origin`. Destructive git ops must go through Project Tasks.
+
 ## Performance Optimizations (March 2026)
 - **Lazy Loading Sections**: Home screen sections below the fold are lazy-loaded via `LazySection` wrapper. Only the first 3 sections render immediately; the rest mount when scrolled near viewport. Uses a scroll-driven registry pattern (no polling intervals).
 - **Memoization**: All home section components wrapped in `React.memo()` (SelectedCategories, BrandsStrip, MultiCollection, CollectionShowcase, PromoBannerSlider, StaticBanner, FeaturedProducts, CollectionProducts, ProductSliderSection). `ProductCard` callbacks (`handlePress`, `handleWishlist`) wrapped in `useCallback`. Styles computed via `useMemo`.
