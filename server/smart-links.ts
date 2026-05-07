@@ -13,7 +13,7 @@ const ANDROID_SHA256_FINGERPRINT = (process.env.ANDROID_SHA256_FINGERPRINT || ""
 const APP_STORE_URL = `https://apps.apple.com/jo/app/id${IOS_APP_STORE_ID}`;
 const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 
-const STORE_WEB_HOST = (process.env.STORE_WEB_HOST || "xmart.me").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+const STORE_WEB_HOST = (process.env.STORE_WEB_HOST || "xmart.jo").replace(/^https?:\/\//, "").replace(/\/+$/, "");
 
 function isMobileUserAgent(ua: string): boolean {
   if (!ua) return false;
