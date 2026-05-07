@@ -13,6 +13,18 @@ const ANDROID_SHA256_FINGERPRINT = (process.env.ANDROID_SHA256_FINGERPRINT || ""
 const APP_STORE_URL = `https://apps.apple.com/jo/app/id${IOS_APP_STORE_ID}`;
 const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 
+const STORE_WEB_HOST = (process.env.STORE_WEB_HOST || "xmart.me").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+
+function isMobileUserAgent(ua: string): boolean {
+  if (!ua) return false;
+  return /iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
+function isCrawlerUserAgent(ua: string): boolean {
+  if (!ua) return false;
+  return /bot|crawler|spider|facebookexternalhit|whatsapp|telegrambot|twitterbot|slackbot|linkedinbot|googlebot|bingbot|applebot|embedly|pinterest|skypeuripreview|discordbot|preview/i.test(ua);
+}
+
 type CacheEntry<T> = { data: T; ts: number };
 const linkCache = new Map<string, CacheEntry<any>>();
 
@@ -334,6 +346,14 @@ export function registerSmartLinkRoutes(app: Express) {
     try {
       const handle = String(req.params.handle || "").trim();
       if (!handle) return res.status(400).send("Missing product handle");
+
+      const ua = String(req.headers["user-agent"] || "");
+      const forceApp = String(req.query.app || "") === "1";
+      if (!forceApp && !isMobileUserAgent(ua) && !isCrawlerUserAgent(ua)) {
+        const target = `https://${STORE_WEB_HOST}/products/${encodeURIComponent(handle)}`;
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return res.redirect(302, target);
+      }
 
       const fwdProto = (req.headers["x-forwarded-proto"] as string || req.protocol || "https").split(",")[0].trim();
       const fwdHost = ((req.headers["x-forwarded-host"] as string) || "").split(",")[0].trim() || (req.headers.host as string) || SMART_LINK_HOST;
