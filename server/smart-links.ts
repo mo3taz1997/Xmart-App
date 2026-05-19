@@ -20,6 +20,21 @@ function isMobileUserAgent(ua: string): boolean {
   return /iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
+function isIOSUserAgent(ua: string): boolean {
+  if (!ua) return false;
+  return /iPhone|iPad|iPod/i.test(ua);
+}
+
+function isAndroidUserAgent(ua: string): boolean {
+  if (!ua) return false;
+  return /Android/i.test(ua);
+}
+
+function isNoPlayStoreDevice(ua: string): boolean {
+  if (!ua) return false;
+  return /HuaweiBrowser|HMSCore|HarmonyOS|AppGallery|; Silk\/|KFAPWI|KFGIWI|KFFOWI|KFMEWI|KFTBWI|KFSAWA|KFSAWI|KFASWI|KFARWI|KaiOS/i.test(ua);
+}
+
 function isCrawlerUserAgent(ua: string): boolean {
   if (!ua) return false;
   return /bot|crawler|spider|facebookexternalhit|whatsapp|telegrambot|twitterbot|slackbot|linkedinbot|googlebot|bingbot|applebot|embedly|pinterest|skypeuripreview|discordbot|preview/i.test(ua);
@@ -349,10 +364,21 @@ export function registerSmartLinkRoutes(app: Express) {
 
       const ua = String(req.headers["user-agent"] || "");
       const forceApp = String(req.query.app || "") === "1";
-      if (!forceApp && !isMobileUserAgent(ua) && !isCrawlerUserAgent(ua)) {
-        const target = `https://${STORE_WEB_HOST}/products/${encodeURIComponent(handle)}`;
-        res.setHeader("Cache-Control", "public, max-age=300");
-        return res.redirect(302, target);
+      const webTarget = `https://${STORE_WEB_HOST}/products/${encodeURIComponent(handle)}`;
+
+      if (!forceApp && !isCrawlerUserAgent(ua)) {
+        let redirectTarget: string | null = null;
+        if (isIOSUserAgent(ua)) {
+          redirectTarget = APP_STORE_URL;
+        } else if (isAndroidUserAgent(ua)) {
+          redirectTarget = isNoPlayStoreDevice(ua) ? webTarget : PLAY_STORE_URL;
+        } else if (!isMobileUserAgent(ua)) {
+          redirectTarget = webTarget;
+        }
+        if (redirectTarget) {
+          res.setHeader("Cache-Control", "public, max-age=300");
+          return res.redirect(302, redirectTarget);
+        }
       }
 
       const fwdProto = (req.headers["x-forwarded-proto"] as string || req.protocol || "https").split(",")[0].trim();
