@@ -367,18 +367,18 @@ export function registerSmartLinkRoutes(app: Express) {
       const webTarget = `https://${STORE_WEB_HOST}/products/${encodeURIComponent(handle)}`;
 
       if (!forceApp && !isCrawlerUserAgent(ua)) {
-        let redirectTarget: string | null = null;
-        if (isIOSUserAgent(ua)) {
+        let redirectTarget: string;
+        if (isNoPlayStoreDevice(ua)) {
+          redirectTarget = webTarget;
+        } else if (isIOSUserAgent(ua)) {
           redirectTarget = APP_STORE_URL;
         } else if (isAndroidUserAgent(ua)) {
-          redirectTarget = isNoPlayStoreDevice(ua) ? webTarget : PLAY_STORE_URL;
-        } else if (!isMobileUserAgent(ua)) {
+          redirectTarget = PLAY_STORE_URL;
+        } else {
           redirectTarget = webTarget;
         }
-        if (redirectTarget) {
-          res.setHeader("Cache-Control", "public, max-age=300");
-          return res.redirect(302, redirectTarget);
-        }
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return res.redirect(302, redirectTarget);
       }
 
       const fwdProto = (req.headers["x-forwarded-proto"] as string || req.protocol || "https").split(",")[0].trim();
