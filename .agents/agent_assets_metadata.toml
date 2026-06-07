@@ -42,3 +42,9 @@ id = "XPcnLCwD8vIosfrFJvT9y"
 uri = "file://public_downloads/upload-certificate.pem.txt"
 type = "text"
 title = "Upload Certificate (PEM) - للرفع على Google Play"
+
+[[outputs]]
+id = "sxWYxM609MTvI9_cygH-y"
+uri = "file://exports/xmart_production_dump.sql.gz"
+type = "unspecified"
+title = "نسخة قاعدة بيانات Xmart الإنتاجية (.sql.gz)"
