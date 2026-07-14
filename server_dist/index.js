@@ -199,7 +199,8 @@ var init_db = __esm({
       connectionString: process.env.DATABASE_URL,
       max: 10,
       idleTimeoutMillis: 3e4,
-      connectionTimeoutMillis: 1e4
+      connectionTimeoutMillis: 3e4,
+      keepAlive: true
     });
     pool.on("error", (err) => {
       console.error("[DB Pool] Unexpected error on idle client:", err.message);
@@ -1496,6 +1497,23 @@ var APPLE_TEAM_ID = (process.env.APPLE_TEAM_ID || "").trim();
 var ANDROID_SHA256_FINGERPRINT = (process.env.ANDROID_SHA256_FINGERPRINT || "").trim();
 var APP_STORE_URL = `https://apps.apple.com/jo/app/id${IOS_APP_STORE_ID}`;
 var PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+var STORE_WEB_HOST = (process.env.STORE_WEB_HOST || "xmart.jo").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+function isIOSUserAgent(ua) {
+  if (!ua) return false;
+  return /iPhone|iPad|iPod/i.test(ua);
+}
+function isAndroidUserAgent(ua) {
+  if (!ua) return false;
+  return /Android/i.test(ua);
+}
+function isNoPlayStoreDevice(ua) {
+  if (!ua) return false;
+  return /HuaweiBrowser|HMSCore|HarmonyOS|AppGallery|; Silk\/|KFAPWI|KFGIWI|KFFOWI|KFMEWI|KFTBWI|KFSAWA|KFSAWI|KFASWI|KFARWI|KaiOS/i.test(ua);
+}
+function isCrawlerUserAgent(ua) {
+  if (!ua) return false;
+  return /bot|crawler|spider|facebookexternalhit|whatsapp|telegrambot|twitterbot|slackbot|linkedinbot|googlebot|bingbot|applebot|embedly|pinterest|skypeuripreview|discordbot|preview/i.test(ua);
+}
 var linkCache = /* @__PURE__ */ new Map();
 function getCache(key, ttlMs) {
   const e = linkCache.get(key);
@@ -1772,6 +1790,23 @@ function registerSmartLinkRoutes(app2) {
     try {
       const handle = String(req.params.handle || "").trim();
       if (!handle) return res.status(400).send("Missing product handle");
+      const ua = String(req.headers["user-agent"] || "");
+      const forceApp = String(req.query.app || "") === "1";
+      const webTarget = `https://${STORE_WEB_HOST}/products/${encodeURIComponent(handle)}`;
+      if (!forceApp && !isCrawlerUserAgent(ua)) {
+        let redirectTarget;
+        if (isNoPlayStoreDevice(ua)) {
+          redirectTarget = webTarget;
+        } else if (isIOSUserAgent(ua)) {
+          redirectTarget = APP_STORE_URL;
+        } else if (isAndroidUserAgent(ua)) {
+          redirectTarget = PLAY_STORE_URL;
+        } else {
+          redirectTarget = webTarget;
+        }
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return res.redirect(302, redirectTarget);
+      }
       const fwdProto = (req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
       const fwdHost = (req.headers["x-forwarded-host"] || "").split(",")[0].trim() || req.headers.host || SMART_LINK_HOST;
       const baseUrl = `${fwdProto}://${fwdHost}`;
@@ -2214,7 +2249,8 @@ var pool2 = new pg2.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 3e4,
-  connectionTimeoutMillis: 1e4
+  connectionTimeoutMillis: 3e4,
+  keepAlive: true
 });
 pool2.on("error", (err) => {
   console.error("[SearchEngine DB] Unexpected error on idle client:", err.message);
@@ -3868,6 +3904,36 @@ async function registerRoutes(app2) {
       res.json({});
     }
   });
+  app2.get("/preview/force-update", async (_req, res) => {
+    const path3 = await import("path");
+    res.sendFile(path3.resolve(process.cwd(), "server", "templates", "force-update-preview.html"));
+  });
+  app2.get("/api/app-version", async (_req, res) => {
+    try {
+      const rows = await db.select().from(appSettings);
+      const map = {};
+      rows.forEach((s) => {
+        map[s.key] = s.value;
+      });
+      res.json({
+        minAndroidVersionCode: parseInt(map.min_android_version_code || "0", 10) || 0,
+        minIosBuildNumber: parseInt(map.min_ios_build_number || "0", 10) || 0,
+        latestAndroidVersion: map.latest_android_version || "",
+        latestIosVersion: map.latest_ios_version || "",
+        forceUpdate: map.force_update_enabled === "true",
+        playStoreUrl: map.play_store_url || "https://play.google.com/store/apps/details?id=com.xmart.jo",
+        appStoreUrl: map.app_store_url || "https://apps.apple.com/app/id6760316670"
+      });
+    } catch (error) {
+      res.json({
+        minAndroidVersionCode: 0,
+        minIosBuildNumber: 0,
+        forceUpdate: false,
+        playStoreUrl: "https://play.google.com/store/apps/details?id=com.xmart.jo",
+        appStoreUrl: "https://apps.apple.com/app/id6760316670"
+      });
+    }
+  });
   app2.get("/api/cart/:cartId", async (req, res) => {
     try {
       const { cartId } = req.params;
@@ -5135,86 +5201,193 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  let _cachedLegacyRates = null;
+  let _legacyDiscoverInFlight = null;
+  async function discoverShippingBrackets() {
+    const mutation = `
+      mutation Calc($input: DraftOrderInput!) {
+        draftOrderCalculate(input: $input) {
+          calculatedDraftOrder {
+            availableShippingRates { title price { amount currencyCode } }
+          }
+          userErrors { field message }
+        }
+      }`;
+    const probeAt = async (amount) => {
+      try {
+        const data = await shopifyAdminGraphQL(mutation, {
+          input: {
+            lineItems: [{
+              title: "Probe",
+              originalUnitPrice: amount.toFixed(2),
+              quantity: 1,
+              requiresShipping: true
+            }],
+            shippingAddress: {
+              firstName: "Probe",
+              lastName: "Probe",
+              address1: "Address",
+              city: "Amman",
+              country: "Jordan",
+              countryCode: "JO",
+              phone: "+962790000000",
+              zip: "11118"
+            }
+          }
+        });
+        const rates = data?.draftOrderCalculate?.calculatedDraftOrder?.availableShippingRates || [];
+        if (rates.length === 0) return null;
+        const sorted = [...rates].sort((a, b) => parseFloat(a.price?.amount || "0") - parseFloat(b.price?.amount || "0"));
+        const r = sorted[0];
+        return {
+          name: r.title,
+          price: parseFloat(r.price?.amount || "0").toFixed(3),
+          currency: r.price?.currencyCode || "JOD"
+        };
+      } catch (e) {
+        return null;
+      }
+    };
+    const sameRate = (a, b) => a && b && a.name === b.name && a.price === b.price && a.currency === b.currency;
+    const probes = [1, 10, 20, 35, 50, 75, 150, 300, 600];
+    const samples = [];
+    for (const amt of probes) {
+      samples.push({ amount: amt, rate: await probeAt(amt) });
+    }
+    const segments = [];
+    for (const s of samples) {
+      const last = segments[segments.length - 1];
+      if (last && sameRate(last.rate, s.rate)) {
+        last.hi = s.amount;
+      } else {
+        segments.push({ rate: s.rate, lo: s.amount, hi: s.amount });
+      }
+    }
+    for (let i = 0; i < segments.length - 1; i++) {
+      let lo = segments[i].hi;
+      let hi = segments[i + 1].lo;
+      while (hi - lo > 0.01) {
+        const mid = Math.round((lo + hi) / 2 * 100) / 100;
+        const r = await probeAt(mid);
+        if (sameRate(r, segments[i].rate)) lo = mid;
+        else hi = mid;
+      }
+      segments[i].hi = lo;
+      segments[i + 1].lo = hi;
+    }
+    const ordered = segments.filter((s) => s.rate).map((s, idx, arr) => ({
+      name: s.rate.name,
+      price: s.rate.price,
+      currency: s.rate.currency,
+      minSubtotal: idx === 0 ? 0 : s.lo,
+      maxSubtotal: idx === arr.length - 1 ? null : s.hi,
+      _priceNum: parseFloat(s.rate.price)
+    })).sort((a, b) => a._priceNum - b._priceNum).map(({ _priceNum, ...rest }) => rest);
+    return ordered;
+  }
+  async function calculateShippingViaDraftOrder(items, addr) {
+    const lineItems = items.filter((it) => it && it.variantId).map((it) => ({
+      variantId: String(it.variantId).startsWith("gid://") ? String(it.variantId) : `gid://shopify/ProductVariant/${it.variantId}`,
+      quantity: Math.max(1, parseInt(String(it.quantity), 10) || 1)
+    }));
+    if (lineItems.length === 0) return [];
+    const query = `
+      mutation CalcShipping($input: DraftOrderInput!) {
+        draftOrderCalculate(input: $input) {
+          calculatedDraftOrder {
+            availableShippingRates {
+              handle
+              title
+              price { amount currencyCode }
+            }
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+    const variables = {
+      input: {
+        lineItems,
+        shippingAddress: {
+          firstName: addr.firstName || "Customer",
+          lastName: addr.lastName || "Customer",
+          address1: addr.address1 || "Address",
+          city: addr.city || "Amman",
+          country: "Jordan",
+          countryCode: "JO",
+          phone: addr.phone || "+962790000000",
+          zip: addr.zip || "11118"
+        }
+      }
+    };
+    try {
+      const data = await shopifyAdminGraphQL(query, variables);
+      const errs = data?.draftOrderCalculate?.userErrors || [];
+      if (errs.length > 0) {
+        console.log("[ShippingRates] draftOrderCalculate userErrors:", JSON.stringify(errs));
+      }
+      const rates = data?.draftOrderCalculate?.calculatedDraftOrder?.availableShippingRates || [];
+      return rates.map((r) => ({
+        name: r.title,
+        price: parseFloat(r.price?.amount || "0").toFixed(3),
+        currency: r.price?.currencyCode || "JOD",
+        minSubtotal: null,
+        maxSubtotal: null
+      }));
+    } catch (e) {
+      console.error("[ShippingRates] draftOrderCalculate error:", e?.message || e);
+      return [];
+    }
+  }
+  app2.get("/api/shipping-rates", async (_req, res) => {
+    try {
+      const now = Date.now();
+      if (_cachedLegacyRates && _cachedLegacyRates.expires > now) {
+        return res.json(_cachedLegacyRates.rates);
+      }
+      if (!_legacyDiscoverInFlight) {
+        _legacyDiscoverInFlight = discoverShippingBrackets().then((rates2) => {
+          _cachedLegacyRates = { rates: rates2, expires: Date.now() + 60 * 60 * 1e3 };
+          return rates2;
+        }).catch((err) => {
+          console.error("[ShippingRates GET] discovery failed:", err?.message || err);
+          return _cachedLegacyRates?.rates || [];
+        }).finally(() => {
+          _legacyDiscoverInFlight = null;
+        });
+      }
+      const rates = await _legacyDiscoverInFlight;
+      res.json(rates);
+    } catch (error) {
+      console.error("[ShippingRates GET] error:", error?.message || error);
+      res.json(_cachedLegacyRates?.rates || []);
+    }
+  });
   app2.post("/api/shipping-rates", async (req, res) => {
     try {
-      const { items, city, address, firstName, lastName, phone } = req.body || {};
+      const { items, firstName, lastName, address, city, phone, zip } = req.body || {};
       if (!Array.isArray(items) || items.length === 0) {
         return res.json([]);
       }
-      const cartLines = items.filter((it) => it && it.variantId).map((it) => ({
-        merchandiseId: it.variantId,
-        quantity: Math.max(1, parseInt(it.quantity, 10) || 1)
-      }));
-      if (cartLines.length === 0) return res.json([]);
-      const deliveryAddress = {
-        firstName: firstName || "Buyer",
-        lastName: lastName || "Buyer",
-        address1: address || "Address",
-        city: city || "Amman",
-        country: "Jordan",
-        phone: phone || "+962790000000"
-      };
-      const cartInput = {
-        lines: cartLines,
-        buyerIdentity: {
-          countryCode: "JO",
-          deliveryAddressPreferences: [{ deliveryAddress }]
-        }
-      };
-      const SHIPPING_QUERY = `
-        mutation CartCreateForShipping($input: CartInput!) {
-          cartCreate(input: $input) {
-            cart {
-              deliveryGroups(first: 5) {
-                edges {
-                  node {
-                    deliveryOptions {
-                      handle
-                      title
-                      estimatedCost { amount currencyCode }
-                    }
-                  }
-                }
-              }
-            }
-            userErrors { field message }
-          }
-        }
-      `;
-      const data = await shopifyFetch(SHIPPING_QUERY, { input: cartInput });
-      const errs = data?.cartCreate?.userErrors || [];
-      if (errs.length > 0) {
-        console.log("[ShippingRates] cartCreate userErrors:", JSON.stringify(errs));
+      if (items.length > 50) {
+        return res.status(400).json({ error: "Too many line items" });
       }
-      const groups = data?.cartCreate?.cart?.deliveryGroups?.edges || [];
-      const ratesMap = /* @__PURE__ */ new Map();
-      for (const edge of groups) {
-        const opts = edge?.node?.deliveryOptions || [];
-        for (const opt of opts) {
-          const amount = parseFloat(opt?.estimatedCost?.amount || "0") || 0;
-          const currency = opt?.estimatedCost?.currencyCode || "JOD";
-          const key = `${opt?.title || "Standard Delivery"}__${currency}`;
-          const existing = ratesMap.get(key);
-          if (existing) {
-            existing.price += amount;
-          } else {
-            ratesMap.set(key, {
-              name: opt?.title || "Standard Delivery",
-              price: amount,
-              currency
-            });
-          }
-        }
-      }
-      const rates = Array.from(ratesMap.values()).sort((a, b) => a.price - b.price).map((r) => ({
-        name: r.name,
-        price: r.price.toFixed(3),
-        currency: r.currency
+      const safeItems = items.filter((it) => it && it.variantId).map((it) => ({
+        variantId: String(it.variantId),
+        quantity: Math.min(99, Math.max(1, parseInt(String(it.quantity), 10) || 1))
       }));
+      const rates = await calculateShippingViaDraftOrder(safeItems, {
+        firstName: firstName ? String(firstName).slice(0, 100) : void 0,
+        lastName: lastName ? String(lastName).slice(0, 100) : void 0,
+        address1: address ? String(address).slice(0, 200) : void 0,
+        city: city ? String(city).slice(0, 100) : void 0,
+        phone: phone ? String(phone).slice(0, 30) : void 0,
+        zip: zip ? String(zip).slice(0, 20) : void 0
+      });
       res.json(rates);
     } catch (error) {
-      console.error("[ShippingRates] error:", error?.message || error);
-      res.status(500).json({ error: error?.message || "Shipping rate lookup failed" });
+      console.error("[ShippingRates POST] error:", error?.message || error);
+      res.status(500).json({ error: "Failed to fetch shipping rates" });
     }
   });
   app2.post("/api/validate-discount", async (req, res) => {
