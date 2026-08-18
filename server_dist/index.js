@@ -186,7 +186,8 @@ var init_schema = __esm({
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
-  db: () => db
+  db: () => db,
+  pool: () => pool
 });
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
@@ -2601,7 +2602,21 @@ async function ensureSearchTables() {
     client.release();
   }
 }
+var syncInProgress = false;
+var stockRefreshInProgress = false;
 async function syncProductIndex() {
+  if (syncInProgress || stockRefreshInProgress) {
+    console.log("[SearchEngine] Sync skipped (another sync/refresh in progress)");
+    return 0;
+  }
+  syncInProgress = true;
+  try {
+    return await doSyncProductIndex();
+  } finally {
+    syncInProgress = false;
+  }
+}
+async function doSyncProductIndex() {
   console.log("[SearchEngine] Starting product sync from Shopify...");
   const startTime = Date.now();
   let allProducts = [];
@@ -2738,9 +2753,6 @@ async function syncProductIndex() {
     await client.query("COMMIT");
     const elapsed = Date.now() - startTime;
     console.log(`[SearchEngine] Synced ${allProducts.length - skippedDraft} active products in ${elapsed}ms (skipped ${skippedDraft} draft/archived)`);
-    autoSynonymsBuilt = false;
-    await buildAutoSynonyms();
-    return allProducts.length;
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("[SearchEngine] Sync failed:", err);
@@ -2748,8 +2760,23 @@ async function syncProductIndex() {
   } finally {
     client.release();
   }
+  autoSynonymsBuilt = false;
+  await buildAutoSynonyms();
+  return allProducts.length;
 }
 async function quickStockRefresh() {
+  if (stockRefreshInProgress || syncInProgress) {
+    console.log("[SearchEngine] Stock refresh skipped (another sync/refresh in progress)");
+    return 0;
+  }
+  stockRefreshInProgress = true;
+  try {
+    return await doQuickStockRefresh();
+  } finally {
+    stockRefreshInProgress = false;
+  }
+}
+async function doQuickStockRefresh() {
   console.log("[SearchEngine] Quick stock refresh starting...");
   const startTime = Date.now();
   let updated = 0;
@@ -2782,17 +2809,21 @@ async function quickStockRefresh() {
     hasNext = data.products?.pageInfo?.hasNextPage || false;
     cursor = data.products?.pageInfo?.endCursor || null;
   }
-  const client = await pool2.connect();
-  try {
+  if (stockMap.size > 0) {
+    const ids = [];
+    const avails = [];
     for (const [shopifyId, available] of stockMap) {
-      const res = await client.query(
-        "UPDATE search_index SET available_for_sale = $1, updated_at = NOW() WHERE shopify_id = $2 AND available_for_sale != $1",
-        [available, shopifyId]
-      );
-      updated += res.rowCount || 0;
+      ids.push(shopifyId);
+      avails.push(available);
     }
-  } finally {
-    client.release();
+    const res = await pool2.query(
+      `UPDATE search_index si
+       SET available_for_sale = v.available, updated_at = NOW()
+       FROM (SELECT unnest($1::text[]) AS shopify_id, unnest($2::boolean[]) AS available) v
+       WHERE si.shopify_id = v.shopify_id AND si.available_for_sale != v.available`,
+      [ids, avails]
+    );
+    updated = res.rowCount || 0;
   }
   const elapsed = Date.now() - startTime;
   console.log(`[SearchEngine] Stock refresh done in ${elapsed}ms \u2014 checked ${stockMap.size} products, updated ${updated}`);
